@@ -330,123 +330,127 @@ export default function AuthPage() {
               }`}
               onSubmit={handleSignUp}
             >
-              <h2 className="section-title">会員登録</h2>
               {signupSuccessEmail ? (
-                <div
-                  className="rounded-2xl border border-emerald-200/95 bg-gradient-to-b from-white to-emerald-50/50 px-[14px] py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <h3 className="text-base font-semibold leading-snug text-emerald-950">
-                    確認メールを送信しました
-                  </h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-[#2a5c45]">
-                    <span className="break-all font-medium text-emerald-900">{signupSuccessEmail}</span>
-                    {" に確認メールを送りました。メール内のリンクを押して認証してください。"}
-                  </p>
-                  <p className="mt-2.5 text-xs leading-relaxed text-[#4a7d62]">
-                    認証が完了したら、この画面からログインできます。
-                  </p>
-                </div>
-              ) : null}
-              <div className="soft-card-subtle">
-                <p className="text-sm leading-6 text-[#406984]">
-                  招待コードは必須です。お手元にご用意のうえ入力してください。
-                </p>
-              </div>
-              <label>
-                <span className="label-text">招待コード（必須）</span>
-                <input
-                  className="mock-input"
-                  type="text"
-                  placeholder="招待コードを入力"
-                  value={signupInviteCode}
-                  onChange={(e) => setSignupInviteCode(e.target.value)}
-                  required
-                />
-              </label>
-              <label>
-                <span className="label-text">メールアドレス（必須）</span>
-                <input
-                  className="mock-input"
-                  type="email"
-                  placeholder="example@mail.com"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  required
-                />
-              </label>
-              <label>
-                <span className="label-text">パスワード（必須）</span>
-                <input
-                  className="mock-input"
-                  type="password"
-                  placeholder="8文字以上"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  required
-                />
-              </label>
-              <label>
-                <span className="label-text">確認用パスワード（必須）</span>
-                <input
-                  className="mock-input"
-                  type="password"
-                  placeholder="もう一度入力してください"
-                  value={signupPasswordConfirm}
-                  onChange={(e) => setSignupPasswordConfirm(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                />
-                <span>
-                  <Link
-                    href="/terms"
-                    className="underline underline-offset-3"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <>
+                  <div
+                    className="rounded-2xl border border-emerald-200/95 bg-gradient-to-b from-white to-emerald-50/50 px-[14px] py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
+                    role="status"
+                    aria-live="polite"
                   >
-                    利用規約
-                  </Link>
-                  に同意する
-                </span>
-              </label>
-              <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={agreedPrivacy}
-                  onChange={(e) => setAgreedPrivacy(e.target.checked)}
-                />
-                <span>
-                  <Link
-                    href="/privacy"
-                    className="underline underline-offset-3"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    プライバシーポリシー
-                  </Link>
-                  に同意する
-                </span>
-              </label>
-              {signupMessage ? <p className="text-sm text-rose-700">{signupMessage}</p> : null}
-              <button className="primary-btn mt-1" type="submit" disabled={!isSignupReady}>
-                {isSignupSubmitting
-                  ? "送信中..."
-                  : signupSuccessEmail
-                    ? "確認メールを再送信する"
-                    : "確認メールを送信する"}
-              </button>
-              <p className="text-[11px] muted-text">
-                確認メールを送信します。メール認証後、初回ログインしてプロフィール登録へ進んでください。
-              </p>
+                    <h3 className="text-base font-semibold leading-snug text-emerald-950">
+                      確認メールを送信しました
+                    </h3>
+                    <p className="mt-2.5 text-sm leading-relaxed text-[#2a5c45]">
+                      <span className="break-all font-medium text-emerald-900">{signupSuccessEmail}</span>
+                      {" に確認メールを送りました。メール内のリンクを押して認証してください。"}
+                    </p>
+                    <p className="mt-2.5 text-xs leading-relaxed text-[#4a7d62]">
+                      認証が完了したら、この画面からログインできます。
+                    </p>
+                  </div>
+                  <button className="primary-btn mt-1" type="submit" disabled={!isSignupReady}>
+                    {isSignupSubmitting ? "送信中..." : "確認メールを再送信する"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="section-title">会員登録</h2>
+                  <div className="soft-card-subtle">
+                    <p className="text-sm leading-6 text-[#406984]">
+                      招待コードは必須です。お手元にご用意のうえ入力してください。
+                    </p>
+                  </div>
+                  <label>
+                    <span className="label-text">招待コード（必須）</span>
+                    <input
+                      className="mock-input"
+                      type="text"
+                      placeholder="招待コードを入力"
+                      value={signupInviteCode}
+                      onChange={(e) => setSignupInviteCode(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span className="label-text">メールアドレス（必須）</span>
+                    <input
+                      className="mock-input"
+                      type="email"
+                      placeholder="example@mail.com"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span className="label-text">パスワード（必須）</span>
+                    <input
+                      className="mock-input"
+                      type="password"
+                      placeholder="8文字以上"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span className="label-text">確認用パスワード（必須）</span>
+                    <input
+                      className="mock-input"
+                      type="password"
+                      placeholder="もう一度入力してください"
+                      value={signupPasswordConfirm}
+                      onChange={(e) => setSignupPasswordConfirm(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={agreedTerms}
+                      onChange={(e) => setAgreedTerms(e.target.checked)}
+                    />
+                    <span>
+                      <Link
+                        href="/terms"
+                        className="underline underline-offset-3"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        利用規約
+                      </Link>
+                      に同意する
+                    </span>
+                  </label>
+                  <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={agreedPrivacy}
+                      onChange={(e) => setAgreedPrivacy(e.target.checked)}
+                    />
+                    <span>
+                      <Link
+                        href="/privacy"
+                        className="underline underline-offset-3"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        プライバシーポリシー
+                      </Link>
+                      に同意する
+                    </span>
+                  </label>
+                  {signupMessage ? <p className="text-sm text-rose-700">{signupMessage}</p> : null}
+                  <button className="primary-btn mt-1" type="submit" disabled={!isSignupReady}>
+                    {isSignupSubmitting ? "送信中..." : "確認メールを送信する"}
+                  </button>
+                  <p className="text-[11px] muted-text">
+                    確認メールを送信します。メール認証後、初回ログインしてプロフィール登録へ進んでください。
+                  </p>
+                </>
+              )}
             </form>
           )}
         </section>
