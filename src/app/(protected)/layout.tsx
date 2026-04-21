@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 
-export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat", "/profile"] as const;
+export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
   const [talkBadgeCount, setTalkBadgeCount] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const guard = async () => {
@@ -72,6 +73,10 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     guard();
   }, [router]);
 
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
   if (isChecking) {
     return (
       <div className="mock-page">
@@ -114,14 +119,49 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     { href: "/search", label: "さがす", active: pathname.startsWith("/search") },
     { href: "/talk", label: "話したい", active: pathname.startsWith("/talk"), badge: talkBadgeCount },
     { href: "/chat", label: "チャット", active: pathname.startsWith("/chat") },
-    { href: "/profile", label: "プロフィール", active: pathname.startsWith("/profile") },
   ];
 
   return (
     <div className="min-h-dvh pb-20">
+      <div className="fixed right-4 top-4 z-30">
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#fffdfa] text-[#47687c] shadow-sm"
+          onClick={() => setIsMenuOpen((v) => !v)}
+          aria-label="メニューを開く"
+        >
+          ⚙
+        </button>
+        {isMenuOpen ? (
+          <div className="mt-2 w-44 rounded-2xl border border-[#d8e7ef] bg-white p-2 shadow-sm">
+            <Link
+              href="/profile"
+              className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+            >
+              プロフィールを確認
+            </Link>
+            <Link
+              href="/terms"
+              className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+            >
+              ルール
+            </Link>
+            <button
+              type="button"
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.replace("/auth");
+              }}
+            >
+              ログアウト
+            </button>
+          </div>
+        ) : null}
+      </div>
       {children}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-[#d9e8f1] bg-[#fffdfa]/95 backdrop-blur">
-        <div className="mx-auto grid max-w-[460px] grid-cols-5 px-2 py-2">
+        <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
