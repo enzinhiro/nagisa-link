@@ -28,6 +28,15 @@ type TalkCard = {
   area: string;
   wantToConnect: string;
   label: string;
+  expiresAt?: string;
+};
+
+type ChatRow = {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  expires_at: string;
+  status: "active";
 };
 
 export default function TalkPage() {
@@ -41,10 +50,11 @@ export default function TalkPage() {
   const [matchedCards, setMatchedCards] = useState<TalkCard[]>([]);
   const [receivedCards, setReceivedCards] = useState<TalkCard[]>([]);
   const [sentCards, setSentCards] = useState<TalkCard[]>([]);
+  const [endedCards, setEndedCards] = useState<TalkCard[]>([]);
 
   const hasAnyCards = useMemo(
-    () => matchedCards.length + receivedCards.length + sentCards.length > 0,
-    [matchedCards.length, receivedCards.length, sentCards.length]
+    () => matchedCards.length + receivedCards.length + sentCards.length + endedCards.length > 0,
+    [matchedCards.length, receivedCards.length, sentCards.length, endedCards.length]
   );
 
   const fetchTalks = async () => {
@@ -82,8 +92,24 @@ export default function TalkPage() {
     );
 
     const matchedUserIds = new Set<string>();
+    const endedUserIds = new Set<string>();
     const receivedWants: { wantId: string; otherUserId: string }[] = [];
     const sentWants: { wantId: string; otherUserId: string }[] = [];
+
+    const { data: chatsData } = await supabase
+      .from("chats")
+      .select("id,user_a_id,user_b_id,expires_at,status")
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`);
+
+    const chats = (chatsData ?? []) as ChatRow[];
+    const chatByOtherUser = new Map<string, ChatRow>();
+    for (const chat of chats) {
+      const otherId = chat.user_a_id === user.id ? chat.user_b_id : chat.user_a_id;
+      const prev = chatByOtherUser.get(otherId);
+      if (!prev || new Date(chat.expires_at).getTime() > new Date(prev.expires_at).getTime()) {
+        chatByOtherUser.set(otherId, chat);
+      }
+    }
 
     for (const want of wants) {
       const otherUserId = want.from_user_id === user.id ? want.to_user_id : want.from_user_id;
@@ -92,7 +118,12 @@ export default function TalkPage() {
       const isMutualAccepted =
         acceptedSet.has(`${user.id}->${otherUserId}`) && acceptedSet.has(`${otherUserId}->${user.id}`);
       if (isMutualAccepted) {
-        matchedUserIds.add(otherUserId);
+        const relatedChat = chatByOtherUser.get(otherUserId);
+        if (relatedChat && new Date(relatedChat.expires_at).getTime() <= Date.now()) {
+          endedUserIds.add(otherUserId);
+        } else {
+          matchedUserIds.add(otherUserId);
+        }
       }
 
       if (
@@ -113,17 +144,18 @@ export default function TalkPage() {
     }
 
     const matchedIdSet = new Set(Array.from(matchedUserIds));
+    const endedIdSet = new Set(Array.from(endedUserIds));
     const uniqueReceived = Array.from(
       new Map(
         receivedWants
-          .filter((item) => !matchedIdSet.has(item.otherUserId))
+          .filter((item) => !matchedIdSet.has(item.otherUserId) && !endedIdSet.has(item.otherUserId))
           .map((item) => [item.otherUserId, item])
       ).values()
     );
     const uniqueSent = Array.from(
       new Map(
         sentWants
-          .filter((item) => !matchedIdSet.has(item.otherUserId))
+          .filter((item) => !matchedIdSet.has(item.otherUserId) && !endedIdSet.has(item.otherUserId))
           .map((item) => [item.otherUserId, item])
       ).values()
     );
@@ -131,6 +163,7 @@ export default function TalkPage() {
     const profileIds = Array.from(
       new Set([
         ...Array.from(matchedUserIds),
+        ...Array.from(endedUserIds),
         ...uniqueReceived.map((item) => item.otherUserId),
         ...uniqueSent.map((item) => item.otherUserId),
       ])
@@ -140,6 +173,7 @@ export default function TalkPage() {
       setMatchedCards([]);
       setReceivedCards([]);
       setSentCards([]);
+      setEndedCards([]);
       setLoading(false);
       return;
     }
@@ -161,7 +195,7 @@ export default function TalkPage() {
       profileMap.set(profile.id, profile);
     }
 
-    const toCard = (id: string, label: string, wantId?: string): TalkCard | null => {
+    const toCard = (id: string, label: string, wantId?: string, expiresAt?: string): TalkCard | null => {
       const p = profileMap.get(id);
       if (!p) return null;
       return {
@@ -171,6 +205,7 @@ export default function TalkPage() {
         area: p.area,
         wantToConnect: p.want_to_connect,
         label,
+        expiresAt,
       };
     };
 
@@ -187,6 +222,11 @@ export default function TalkPage() {
         .map((item) => toCard(item.otherUserId, "送った", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
+    const ended = Array.from(endedUserIds)
+      .map((id) => toCard(id, "チャットは終了しました", undefined, chatByOtherUser.get(id)?.expires_at))
+      .filter((v): v is TalkCard => v !== null)
+      .sort((a, b) => new Date(b.expiresAt ?? 0).getTime() - new Date(a.expiresAt ?? 0).getTime());
+    setEndedCards(ended);
     setLoading(false);
   };
 
@@ -234,7 +274,7 @@ export default function TalkPage() {
     router.push(`/chat/${chatId}`);
   };
 
-  const renderCard = (card: TalkCard, section: "matched" | "received" | "sent") => (
+  const renderCard = (card: TalkCard, section: "matched" | "received" | "sent" | "ended") => (
     <article key={`${section}-${card.otherUserId}`} className="soft-card flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
@@ -273,6 +313,7 @@ export default function TalkPage() {
         </div>
       ) : null}
       {section === "sent" ? <p className="section-note">返答待ち</p> : null}
+      {section === "ended" ? <p className="section-note">チャットは終了しました</p> : null}
     </article>
   );
 
@@ -342,6 +383,17 @@ export default function TalkPage() {
               ) : (
                 <div className="soft-card-subtle">
                   <p className="section-note">まだ送ったリクエストはありません。</p>
+                </div>
+              )}
+            </section>
+
+            <section className="screen-stack">
+              <h2 className="section-title">終了済み</h2>
+              {endedCards.length > 0 ? (
+                endedCards.map((card) => renderCard(card, "ended"))
+              ) : (
+                <div className="soft-card-subtle">
+                  <p className="section-note">終了済みのチャットはありません。</p>
                 </div>
               )}
             </section>
