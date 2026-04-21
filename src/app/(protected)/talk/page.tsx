@@ -340,10 +340,13 @@ export default function TalkPage() {
         ) : null}
 
         {!loading && !message && !hasAnyCards ? (
-          <section className="soft-card">
+          <section className="soft-card flex flex-col gap-3">
             <p className="muted-text text-sm">
-              まだ「話したい」の動きはありません。気になる相手がいたら、さがす画面から送ってみましょう。
+              気になる相手がいたら「話してみたい」を送れます。
             </p>
+            <Link href="/search" className="secondary-btn !h-10">
+              さがすへ
+            </Link>
           </section>
         ) : null}
 

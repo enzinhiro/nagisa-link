@@ -155,7 +155,12 @@ export default function Home() {
         <section className="soft-card flex flex-col gap-3">
           <h2 className="section-title">進行中チャット</h2>
           {!loading && activeChats.length === 0 ? (
-            <p className="section-note">進行中のチャットはありません。</p>
+            <div className="soft-card-subtle flex flex-col gap-2">
+              <p className="section-note">まだ動きがありません。まずは相手を探してみましょう。</p>
+              <Link href="/search" className="secondary-btn !h-10">
+                さがすへ
+              </Link>
+            </div>
           ) : (
             activeChats.map((chat) => {
               const remaining = Math.max(

@@ -174,9 +174,20 @@ export default function ChatIndexPage() {
               {activeChats.length > 0 ? (
                 activeChats.map((chat) => renderCard(chat, "active"))
               ) : (
-                <div className="soft-card-subtle">
-                  <p className="section-note">進行中のチャットはありません。</p>
-                </div>
+                activeChats.length === 0 && endedChats.length === 0 ? (
+                  <div className="soft-card-subtle flex flex-col gap-2">
+                    <p className="section-note">
+                      一致した相手とのやり取りがここに表示されます。
+                    </p>
+                    <Link href="/talk" className="secondary-btn !h-10">
+                      話したいへ
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="soft-card-subtle">
+                    <p className="section-note">進行中のチャットはありません。</p>
+                  </div>
+                )
               )}
             </section>
 

@@ -294,10 +294,24 @@ export default function SearchPage() {
             </div>
           )}
           {!loading && !message && cards.length === 0 && (
-            <div className="soft-card">
+            <div className="soft-card flex flex-col gap-3">
               <p className="muted-text text-sm">
                 条件に一致する人がいませんでした。条件を少しゆるめて探してみましょう。
               </p>
+              <button
+                type="button"
+                className="secondary-btn !h-10"
+                onClick={() => {
+                  setKeyword("");
+                  setAreaFilter("");
+                  setAgeFilter("");
+                  setConnectionFilter("");
+                  setMeetingRangeFilter("");
+                  setTagFilters([]);
+                }}
+              >
+                条件を解除する
+              </button>
               {relaxedCards.length > 0 && (
                 <div className="mt-3 flex flex-col gap-2.5">
                   <p className="section-note">タグ条件を外した候補</p>
