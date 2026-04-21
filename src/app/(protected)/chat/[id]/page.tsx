@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 
@@ -37,6 +37,7 @@ export default function ChatDetailPage() {
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [inputBody, setInputBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const fetchChatDetail = async () => {
     setLoading(true);
@@ -110,6 +111,40 @@ export default function ChatDetailPage() {
   useEffect(() => {
     fetchChatDetail();
   }, [chatId]);
+
+  useEffect(() => {
+    if (!chatId || message || !otherProfile) return;
+
+    const channel = supabase
+      .channel(`messages:chat:${chatId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const row = payload.new as MessageRow;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev;
+            return [...prev, row].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatId, message, otherProfile]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!chatId || !currentUserId) return;
@@ -212,6 +247,7 @@ export default function ChatDetailPage() {
                     );
                   })
                 )}
+                <div ref={bottomRef} />
               </div>
             </section>
 
