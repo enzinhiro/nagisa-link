@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+
+const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
+const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -20,6 +23,75 @@ export default function AuthPage() {
   const [isSignupSubmitting, setIsSignupSubmitting] = useState(false);
   const [loginMessage, setLoginMessage] = useState("");
   const [signupMessage, setSignupMessage] = useState("");
+  const [signupMessageType, setSignupMessageType] = useState<"error" | "success">("error");
+
+  const isSignupReady =
+    signupInviteCode.trim().length > 0 &&
+    signupEmail.trim().length > 0 &&
+    signupPassword.length > 0 &&
+    signupPasswordConfirm.length > 0 &&
+    agreedTerms &&
+    agreedPrivacy &&
+    !isSignupSubmitting;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedTab = window.sessionStorage.getItem(AUTH_TAB_STORAGE_KEY);
+    if (savedTab === "login" || savedTab === "signup") {
+      setActiveTab(savedTab);
+    }
+
+    const savedSignup = window.sessionStorage.getItem(SIGNUP_FORM_STORAGE_KEY);
+    if (!savedSignup) return;
+    try {
+      const parsed = JSON.parse(savedSignup) as {
+        inviteCode?: string;
+        email?: string;
+        password?: string;
+        passwordConfirm?: string;
+        agreedTerms?: boolean;
+        agreedPrivacy?: boolean;
+      };
+      setSignupInviteCode(parsed.inviteCode ?? "");
+      setSignupEmail(parsed.email ?? "");
+      setSignupPassword(parsed.password ?? "");
+      setSignupPasswordConfirm(parsed.passwordConfirm ?? "");
+      setAgreedTerms(Boolean(parsed.agreedTerms));
+      setAgreedPrivacy(Boolean(parsed.agreedPrivacy));
+    } catch {
+      // ignore invalid stored data
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(AUTH_TAB_STORAGE_KEY, activeTab);
+  }, [activeTab]);
+
+  const serializedSignupState = useMemo(
+    () =>
+      JSON.stringify({
+        inviteCode: signupInviteCode,
+        email: signupEmail,
+        password: signupPassword,
+        passwordConfirm: signupPasswordConfirm,
+        agreedTerms,
+        agreedPrivacy,
+      }),
+    [
+      signupInviteCode,
+      signupEmail,
+      signupPassword,
+      signupPasswordConfirm,
+      agreedTerms,
+      agreedPrivacy,
+    ]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(SIGNUP_FORM_STORAGE_KEY, serializedSignupState);
+  }, [serializedSignupState]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,6 +116,22 @@ export default function AuthPage() {
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSignupMessage("");
+    setSignupMessageType("error");
+
+    if (!signupInviteCode.trim()) {
+      setSignupMessage("招待コードを入力してください。");
+      return;
+    }
+
+    if (!signupEmail.trim()) {
+      setSignupMessage("メールアドレスを入力してください。");
+      return;
+    }
+
+    if (!signupPassword) {
+      setSignupMessage("パスワードを入力してください。");
+      return;
+    }
 
     if (!agreedTerms || !agreedPrivacy) {
       setSignupMessage("利用規約とプライバシーポリシーへの同意が必要です。");
@@ -77,13 +165,13 @@ export default function AuthPage() {
 
     if (consumeError) {
       setIsSignupSubmitting(false);
-      setSignupMessage("招待コードの確認に失敗しました。時間をおいて再度お試しください。");
+      setSignupMessage("招待コードを確認できませんでした。時間をおいてお試しください。");
       return;
     }
 
     if (!consumeSucceeded) {
       setIsSignupSubmitting(false);
-      setSignupMessage("招待コードが無効、またはすでに使用済みです。");
+      setSignupMessage("招待コードが正しくないか、すでに使われています。");
       return;
     }
 
@@ -103,8 +191,8 @@ export default function AuthPage() {
     }
 
     setIsSignupSubmitting(false);
-
-    setSignupMessage("確認メールを送信しました。メール認証後にログインしてください。");
+    setSignupMessageType("success");
+    setSignupMessage("確認メールを送信しました。メールを確認してください。");
   };
 
   return (
@@ -181,11 +269,11 @@ export default function AuthPage() {
               <h2 className="section-title">会員登録</h2>
               <div className="soft-card-subtle">
                 <p className="text-sm leading-6 text-[#406984]">
-                  招待コードをお持ちの方のみ登録できます。
+                  招待コードは必須です。お手元にご用意のうえ入力してください。
                 </p>
               </div>
               <label>
-                <span className="label-text">招待コード</span>
+                <span className="label-text">招待コード（必須）</span>
                 <input
                   className="mock-input"
                   type="text"
@@ -196,7 +284,7 @@ export default function AuthPage() {
                 />
               </label>
               <label>
-                <span className="label-text">メールアドレス</span>
+                <span className="label-text">メールアドレス（必須）</span>
                 <input
                   className="mock-input"
                   type="email"
@@ -207,7 +295,7 @@ export default function AuthPage() {
                 />
               </label>
               <label>
-                <span className="label-text">パスワード</span>
+                <span className="label-text">パスワード（必須）</span>
                 <input
                   className="mock-input"
                   type="password"
@@ -218,7 +306,7 @@ export default function AuthPage() {
                 />
               </label>
               <label>
-                <span className="label-text">確認用パスワード</span>
+                <span className="label-text">確認用パスワード（必須）</span>
                 <input
                   className="mock-input"
                   type="password"
@@ -256,12 +344,16 @@ export default function AuthPage() {
                   に同意する
                 </span>
               </label>
-              {signupMessage && <p className="text-sm text-[#3f6680]">{signupMessage}</p>}
-              <button className="primary-btn mt-1" type="submit" disabled={isSignupSubmitting}>
+              {signupMessage && (
+                <p className={`text-sm ${signupMessageType === "error" ? "text-rose-700" : "text-[#3f6680]"}`}>
+                  {signupMessage}
+                </p>
+              )}
+              <button className="primary-btn mt-1" type="submit" disabled={!isSignupReady}>
                 {isSignupSubmitting ? "登録中..." : "会員登録する"}
               </button>
               <p className="text-[11px] muted-text">
-                会員登録後、確認メールが届きます。メール認証後に初回ログインしてプロフィール登録へ進んでください。
+                会員登録後に確認メールを送信します。メール認証後、初回ログインしてプロフィール登録へ進んでください。
               </p>
             </form>
           )}
