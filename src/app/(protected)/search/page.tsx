@@ -331,13 +331,13 @@ export default function SearchPage() {
           {!loading &&
             !message &&
             cards.map((card) => (
-              <article key={card.id} className="soft-card flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
-                  <p className="text-xs muted-text">{card.area}</p>
+              <article key={card.id} className="soft-card flex flex-col gap-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
+                  <p className="pt-0.5 text-xs muted-text">{card.area}</p>
                 </div>
                 <p
-                  className="text-sm text-[#365f78]"
+                  className="text-sm leading-6 text-[#365f78]"
                   style={{
                     display: "-webkit-box",
                     WebkitLineClamp: 3,
@@ -347,14 +347,14 @@ export default function SearchPage() {
                 >
                   {card.want_to_connect}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {card.child_interest_tags.slice(0, 3).map((tag) => (
                     <span key={`${card.id}-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
                       {tag}
                     </span>
                   ))}
                 </div>
-                <Link href={`/search/${card.id}`} className="secondary-btn !h-10">
+                <Link href={`/search/${card.id}`} className="secondary-btn !h-11">
                   詳細を見る
                 </Link>
               </article>
