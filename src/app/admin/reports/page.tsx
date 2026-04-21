@@ -99,13 +99,15 @@ export default function AdminReportsPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
+        <header className="soft-card flex flex-col gap-3.5">
           <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
             管理者トップに戻る
           </Link>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
-          <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
-          <p className="muted-text text-sm">新しい順に通報内容を確認できます。</p>
+          <div className="flex flex-col gap-2">
+            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+            <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
+            <p className="muted-text text-sm">新しい順に通報内容を確認できます。</p>
+          </div>
         </header>
 
         {loading ? (
@@ -122,15 +124,15 @@ export default function AdminReportsPage() {
 
         {!loading && !message && reports.length === 0 ? (
           <section className="soft-card">
-            <p className="muted-text text-sm">まだ通報はありません。必要時にここへ表示されます。</p>
+            <p className="muted-text text-sm">まだ通報はありません。通報が届いたときにここへ表示されます。</p>
           </section>
         ) : null}
 
         {!loading &&
           !message &&
           reports.map((row) => (
-            <article key={row.id} className="soft-card flex flex-col gap-2.5">
-              <div className="flex items-center justify-between gap-2">
+            <article key={row.id} className="soft-card flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
                 <p className="text-xs muted-text">{new Date(row.created_at).toLocaleString("ja-JP")}</p>
                 <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
                   {REASON_LABELS[row.reason]}
@@ -148,7 +150,7 @@ export default function AdminReportsPage() {
               </p>
               <Link
                 href={`/admin/reports/${row.id}`}
-                className="secondary-btn !h-10"
+                className="secondary-btn !h-11"
               >
                 詳細を見る
               </Link>
