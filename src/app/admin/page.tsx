@@ -11,6 +11,7 @@ export default function AdminHomePage() {
   const [message, setMessage] = useState("");
   const [reportCount, setReportCount] = useState<number | null>(null);
   const [suspendedCount, setSuspendedCount] = useState<number | null>(null);
+  const [inviteCount, setInviteCount] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchAdminSummary = async () => {
@@ -33,17 +34,23 @@ export default function AdminHomePage() {
         return;
       }
 
-      const [{ count: reportsTotal, error: reportsError }, { count: suspendedTotal, error: suspendedError }] =
+      const [
+        { count: reportsTotal, error: reportsError },
+        { count: suspendedTotal, error: suspendedError },
+        { data: inviteRows, error: invitesError },
+      ] =
         await Promise.all([
           supabase.from("reports").select("id", { count: "exact", head: true }),
           supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_suspended", true),
+          supabase.rpc("admin_list_invite_codes"),
         ]);
 
-      if (reportsError || suspendedError) {
+      if (reportsError || suspendedError || invitesError) {
         setMessage("件数の取得に失敗しました。時間をおいて再度お試しください。");
       } else {
         setReportCount(reportsTotal ?? 0);
         setSuspendedCount(suspendedTotal ?? 0);
+        setInviteCount((inviteRows ?? []).length);
       }
 
       setLoading(false);
@@ -90,6 +97,15 @@ export default function AdminHomePage() {
               <p className="text-sm text-[#365f78]">停止中ユーザー: {suspendedCount ?? 0}人</p>
               <Link href="/admin/users" className="secondary-btn !h-10">
                 ユーザー一覧へ
+              </Link>
+            </article>
+
+            <article className="soft-card flex flex-col gap-2.5">
+              <h2 className="section-title">招待コード管理</h2>
+              <p className="muted-text text-sm">招待コードを発行・確認します。</p>
+              <p className="text-sm text-[#365f78]">登録コード数: {inviteCount ?? 0}件</p>
+              <Link href="/admin/invites" className="secondary-btn !h-10">
+                招待コード管理へ
               </Link>
             </article>
           </>

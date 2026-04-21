@@ -1,0 +1,201 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../../../lib/supabase/client";
+
+type InviteRow = {
+  id: string;
+  code: string;
+  created_at: string;
+  is_used: boolean;
+  used_by_email: string | null;
+  note: string | null;
+};
+
+const ADMIN_EMAIL = "enzin-office@gmail.com";
+
+export default function AdminInvitesPage() {
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createNote, setCreateNote] = useState("");
+  const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+  const [invites, setInvites] = useState<InviteRow[]>([]);
+
+  const fetchInvites = async () => {
+    setLoading(true);
+    setMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("ログイン状態を確認できませんでした。");
+      setLoading(false);
+      return;
+    }
+
+    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
+      setMessage("この画面は管理者のみ利用できます。");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("admin_list_invite_codes");
+    if (error) {
+      setMessage("招待コード一覧の取得に失敗しました。");
+      setLoading(false);
+      return;
+    }
+
+    const rows = (data ?? []) as InviteRow[];
+    setInvites(rows);
+    setNoteDrafts(
+      rows.reduce<Record<string, string>>((acc, row) => {
+        acc[row.id] = row.note ?? "";
+        return acc;
+      }, {})
+    );
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchInvites();
+  }, []);
+
+  const handleCreateInvite = async () => {
+    setCreating(true);
+    setFeedbackMessage("");
+
+    const { error } = await supabase.rpc("admin_create_invite_code", {
+      input_note: createNote,
+    });
+
+    setCreating(false);
+    if (error) {
+      setFeedbackMessage("発行に失敗しました。時間をおいて再度お試しください。");
+      return;
+    }
+
+    setCreateNote("");
+    setFeedbackMessage("招待コードを発行しました。");
+    await fetchInvites();
+  };
+
+  const handleSaveNote = async (inviteId: string) => {
+    setSavingNoteId(inviteId);
+    setFeedbackMessage("");
+
+    const { data, error } = await supabase.rpc("admin_update_invite_note", {
+      input_invite_id: inviteId,
+      input_note: noteDrafts[inviteId] ?? "",
+    });
+
+    setSavingNoteId(null);
+    if (error || !data) {
+      setFeedbackMessage("メモの保存に失敗しました。");
+      return;
+    }
+
+    setFeedbackMessage("メモを保存しました。");
+    await fetchInvites();
+  };
+
+  return (
+    <div className="mock-page">
+      <main className="mock-shell screen-stack">
+        <header className="soft-card flex flex-col gap-3">
+          <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
+            管理者トップに戻る
+          </Link>
+          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+          <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
+          <p className="muted-text text-sm">招待コードを発行・確認します。</p>
+        </header>
+
+        {!loading && !message ? (
+          <section className="soft-card flex flex-col gap-3">
+            <h2 className="section-title">新規発行</h2>
+            <label>
+              <span className="label-text">共有先メモ（任意）</span>
+              <input
+                className="mock-input"
+                value={createNote}
+                onChange={(e) => setCreateNote(e.target.value)}
+                placeholder="例: 逗子ママ会 田中さん"
+              />
+            </label>
+            <button type="button" className="primary-btn !h-10" disabled={creating} onClick={handleCreateInvite}>
+              {creating ? "発行中..." : "新しいコードを発行"}
+            </button>
+          </section>
+        ) : null}
+
+        {loading ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">招待コードを読み込んでいます...</p>
+          </section>
+        ) : null}
+
+        {!loading && message ? (
+          <section className="soft-card">
+            <p className="text-sm text-rose-700">{message}</p>
+          </section>
+        ) : null}
+
+        {!loading && !message && feedbackMessage ? (
+          <section className="soft-card">
+            <p className="text-sm text-[#3f6680]">{feedbackMessage}</p>
+          </section>
+        ) : null}
+
+        {!loading && !message && invites.length === 0 ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">まだ招待コードはありません。上のボタンから発行できます。</p>
+          </section>
+        ) : null}
+
+        {!loading &&
+          !message &&
+          invites.map((invite) => (
+            <article key={invite.id} className="soft-card flex flex-col gap-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[#2f5f79] break-all">{invite.code}</p>
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}>
+                  {invite.is_used ? "使用済み" : "未使用"}
+                </span>
+              </div>
+              <p className="text-xs muted-text">発行日: {new Date(invite.created_at).toLocaleString("ja-JP")}</p>
+              <p className="text-sm text-[#365f78]">使用者メール: {invite.used_by_email ?? "未使用"}</p>
+              <label>
+                <span className="label-text">共有先メモ</span>
+                <input
+                  className="mock-input"
+                  value={noteDrafts[invite.id] ?? ""}
+                  onChange={(e) =>
+                    setNoteDrafts((prev) => ({
+                      ...prev,
+                      [invite.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="共有先メモを入力"
+                />
+              </label>
+              <button
+                type="button"
+                className="secondary-btn !h-10"
+                disabled={savingNoteId === invite.id}
+                onClick={() => handleSaveNote(invite.id)}
+              >
+                {savingNoteId === invite.id ? "保存中..." : "メモを保存"}
+              </button>
+            </article>
+          ))}
+      </main>
+    </div>
+  );
+}
