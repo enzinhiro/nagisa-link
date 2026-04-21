@@ -34,10 +34,15 @@ export default function ChatDetailPage() {
   const [message, setMessage] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherProfile, setOtherProfile] = useState<ProfileRow | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [inputBody, setInputBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+  const [reportReason, setReportReason] = useState("uncomfortable");
+  const [reportNote, setReportNote] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -47,6 +52,7 @@ export default function ChatDetailPage() {
     setMessage("");
     setOtherProfile(null);
     setMessages([]);
+    setOtherUserId(null);
     setExpiresAt(null);
     setIsExpired(false);
 
@@ -83,12 +89,13 @@ export default function ChatDetailPage() {
     const chatRow = chat as ChatRow;
     setExpiresAt(chatRow.expires_at);
     setIsExpired(new Date(chatRow.expires_at).getTime() <= Date.now());
-    const otherUserId = chatRow.user_a_id === user.id ? chatRow.user_b_id : chatRow.user_a_id;
+    const otherUserIdFromChat = chatRow.user_a_id === user.id ? chatRow.user_b_id : chatRow.user_a_id;
+    setOtherUserId(otherUserIdFromChat);
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id,nickname,area")
-      .eq("id", otherUserId)
+      .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
       .maybeSingle();
 
@@ -113,6 +120,37 @@ export default function ChatDetailPage() {
     setOtherProfile(profile as ProfileRow);
     setMessages((messageRows ?? []) as MessageRow[]);
     setLoading(false);
+  };
+
+  const handleReportSubmit = async () => {
+    if (!chatId || !currentUserId || !otherUserId) return;
+    if (currentUserId === otherUserId) {
+      setFeedbackMessage("この相手は通報対象にできません。");
+      return;
+    }
+
+    setFeedbackMessage("");
+    setIsReportSubmitting(true);
+
+    const { error } = await supabase.from("reports").insert({
+      chat_id: chatId,
+      reporter_user_id: currentUserId,
+      target_user_id: otherUserId,
+      reason: reportReason,
+      note: reportNote.trim() || null,
+    });
+
+    setIsReportSubmitting(false);
+
+    if (error) {
+      setFeedbackMessage("通報を送信できませんでした。時間をおいて再度お試しください。");
+      return;
+    }
+
+    setIsReportOpen(false);
+    setReportNote("");
+    setReportReason("uncomfortable");
+    setFeedbackMessage("通報を受け付けました。必要な場合のみ運営が確認します。");
   };
 
   useEffect(() => {
@@ -219,9 +257,19 @@ export default function ChatDetailPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
-          <Link href="/talk" className="text-sm muted-text underline underline-offset-3">
-            話したい一覧に戻る
-          </Link>
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/talk" className="text-sm muted-text underline underline-offset-3">
+              話したい一覧に戻る
+            </Link>
+            <button
+              type="button"
+              className="secondary-btn !h-9 !w-auto px-3"
+              onClick={() => setIsReportOpen((v) => !v)}
+              disabled={!otherUserId || !currentUserId}
+            >
+              運営に知らせる
+            </button>
+          </div>
           <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">チャット</p>
         </header>
 
@@ -239,6 +287,44 @@ export default function ChatDetailPage() {
 
         {!loading && !message && otherProfile ? (
           <>
+            {isReportOpen ? (
+              <section className="soft-card flex flex-col gap-3">
+                <h2 className="section-title">運営へのご連絡</h2>
+                <p className="section-note">必要な場合のみ、運営が内容を確認します。</p>
+                <label>
+                  <span className="label-text">理由</span>
+                  <select
+                    className="mock-select"
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                  >
+                    <option value="uncomfortable">不快な言動があった</option>
+                    <option value="solicitation">勧誘のように感じた</option>
+                    <option value="pressured_contact">連絡先交換を強く求められた</option>
+                    <option value="suspicious_profile">プロフィールに違和感がある</option>
+                    <option value="other">その他</option>
+                  </select>
+                </label>
+                <label>
+                  <span className="label-text">補足コメント（任意）</span>
+                  <textarea
+                    className="mock-textarea"
+                    value={reportNote}
+                    onChange={(e) => setReportNote(e.target.value)}
+                    placeholder="必要に応じてご記入ください"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={handleReportSubmit}
+                  disabled={isReportSubmitting}
+                >
+                  {isReportSubmitting ? "送信中..." : "通報を送信する"}
+                </button>
+              </section>
+            ) : null}
+
             <section className="soft-card flex items-center gap-3">
               <div className="h-11 w-11 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
               <div>
