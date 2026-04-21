@@ -21,6 +21,23 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (user.email) {
+        await supabase.rpc("link_invite_code_user", {
+          input_email: user.email,
+          input_user_id: user.id,
+        });
+      }
+
+      const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
+        "has_consumed_invite",
+        { input_email: user.email ?? "", input_user_id: user.id }
+      );
+
+      if (inviteError || !hasConsumedInvite) {
+        router.replace("/auth");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("profiles")
         .select("profile_completed")
