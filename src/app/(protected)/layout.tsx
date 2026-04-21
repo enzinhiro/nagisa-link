@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 
-export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
+export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat", "/profile"] as const;
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -114,13 +114,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     { href: "/search", label: "さがす", active: pathname.startsWith("/search") },
     { href: "/talk", label: "話したい", active: pathname.startsWith("/talk"), badge: talkBadgeCount },
     { href: "/chat", label: "チャット", active: pathname.startsWith("/chat") },
+    { href: "/profile", label: "プロフィール", active: pathname.startsWith("/profile") },
   ];
 
   return (
     <div className="min-h-dvh pb-20">
       {children}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-[#d9e8f1] bg-[#fffdfa]/95 backdrop-blur">
-        <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
+        <div className="mx-auto grid max-w-[460px] grid-cols-5 px-2 py-2">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
