@@ -97,33 +97,56 @@ export default function MyProfilePage() {
 
         {!loading && !message && profile ? (
           <>
-            <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title">基本情報</h2>
-              <p className="text-sm text-[#365f78]">表示名: {toMamaDisplayName(profile.nickname)}</p>
-              <p className="text-sm text-[#365f78]">地域: {profile.area}</p>
-            </section>
-
-            <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title">お子さんについて</h2>
-              <p className="text-sm text-[#365f78]">年齢帯: {profile.child_age_group}</p>
-              {profile.child_gender ? (
-                <p className="text-sm text-[#365f78]">性別: {profile.child_gender}</p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                {profile.child_interest_tags.map((tag) => (
-                  <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
-                    {tag}
-                  </span>
-                ))}
+            <section className="soft-card flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
+                <div>
+                  <h1 className="hero-title text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
+                  <p className="muted-text text-sm">{profile.area}</p>
+                </div>
               </div>
             </section>
 
             <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title">つながり方の希望</h2>
-              <p className="text-sm text-[#365f78]">今つながりたいこと: {profile.want_to_connect}</p>
-              <p className="text-sm text-[#365f78]">つながり方の希望: {profile.connection_preference}</p>
-              <p className="text-sm text-[#365f78]">会いやすい範囲: {profile.meeting_range}</p>
-              <p className="text-sm text-[#365f78]">ひとこと紹介: {profile.intro}</p>
+              <h2 className="section-title">プロフィール内容</h2>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">お子さんの年齢帯</p>
+                <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
+              </div>
+              {profile.child_gender ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">お子さんの性別</p>
+                  <p className="text-sm text-[#365f78]">{profile.child_gender}</p>
+                </div>
+              ) : null}
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">今つながりたいこと</p>
+                <p className="text-sm leading-6 text-[#365f78]">{profile.want_to_connect}</p>
+              </div>
+              {profile.child_interest_tags.length > 0 ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-2">お子さんの好きなこと</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.child_interest_tags.slice(0, 5).map((tag) => (
+                      <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">つながり方の希望</p>
+                <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">会いやすい範囲</p>
+                <p className="text-sm text-[#365f78]">{profile.meeting_range}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">ひとこと紹介</p>
+                <p className="text-sm leading-6 text-[#365f78]">{profile.intro}</p>
+              </div>
             </section>
 
             <Link href="/onboarding/profile" className="primary-btn">

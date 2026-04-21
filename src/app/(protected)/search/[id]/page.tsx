@@ -154,7 +154,7 @@ export default function SearchDetailPage() {
             </section>
 
             <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title">プロフィール</h2>
+              <h2 className="section-title">プロフィール内容</h2>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">お子さんの年齢帯</p>
                 <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
@@ -169,16 +169,18 @@ export default function SearchDetailPage() {
                 <p className="label-text mb-1">今つながりたいこと</p>
                 <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
               </div>
-              <div className="soft-card-subtle">
-                <p className="label-text mb-2">お子さんの好きなこと</p>
-                <div className="flex flex-wrap gap-2">
-                  {profile.child_interest_tags.slice(0, 5).map((tag) => (
-                    <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
-                      {tag}
-                    </span>
-                  ))}
+              {profile.child_interest_tags.length > 0 ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-2">お子さんの好きなこと</p>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.child_interest_tags.slice(0, 5).map((tag) => (
+                      <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">つながり方の希望</p>
                 <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
