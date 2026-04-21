@@ -1,8 +1,54 @@
 import Link from "next/link";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
-// TODO: 固定選択肢が確定したら差し替える
-const PLACEHOLDER_OPTIONS = ["選択してください"];
+const CHILD_AGE_GROUPS = [
+  "未就学",
+  "小学校低学年",
+  "小学校高学年",
+  "中学生",
+  "高校生",
+  "18歳以上",
+];
+
+const CHILD_GENDERS = [
+  "男の子",
+  "女の子",
+  "どちらもいる",
+  "その他 / 答えたくない",
+];
+
+const CHILD_INTEREST_TAGS = [
+  "ゲーム",
+  "YouTube",
+  "アニメ・マンガ",
+  "絵を描く",
+  "工作・ものづくり",
+  "電車・車",
+  "動物・生き物",
+  "外遊び",
+  "スポーツ",
+  "音楽",
+  "本・読書",
+  "パソコン・プログラミング",
+  "料理・お菓子",
+  "自然・散歩",
+  "その他",
+];
+
+const CONNECTION_PREFERENCES = [
+  "まずは親同士で少し話したい",
+  "似た状況の家庭と情報交換したい",
+  "子どもの好きなことが近い家庭とつながりたい",
+  "将来的に親子で会える相手を探したい",
+  "まずはオンラインでやり取りしたい",
+];
+
+const MEETING_RANGES = [
+  "同じ市町村なら話しやすい",
+  "近隣エリアまでならOK",
+  "少し離れていてもオンラインならOK",
+  "まずはメッセージだけでやり取りしたい",
+];
 
 export default function ProfileOnboardingPage() {
   return (
@@ -55,7 +101,7 @@ export default function ProfileOnboardingPage() {
               <option value="" disabled>
                 選択してください
               </option>
-              {PLACEHOLDER_OPTIONS.map((option) => (
+              {CHILD_AGE_GROUPS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -68,7 +114,7 @@ export default function ProfileOnboardingPage() {
               <option value="" disabled>
                 選択してください
               </option>
-              {PLACEHOLDER_OPTIONS.map((option) => (
+              {CHILD_GENDERS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -77,16 +123,19 @@ export default function ProfileOnboardingPage() {
           </label>
           <label>
             <span className="label-text">お子さんの好きなこと（最大5つ）</span>
-            <select className="mock-select" defaultValue="">
+            <select className="mock-select" defaultValue="" multiple size={6}>
               <option value="" disabled>
-                選択してください
+                好きなことを選択してください
               </option>
-              {PLACEHOLDER_OPTIONS.map((option) => (
+              {CHILD_INTEREST_TAGS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
+            <p className="mt-2 text-xs muted-text">
+              ※ 最大5つまで選ぶ想定です（モックでは選択数制御は未実装）
+            </p>
           </label>
         </section>
 
@@ -108,7 +157,7 @@ export default function ProfileOnboardingPage() {
               <option value="" disabled>
                 選択してください
               </option>
-              {PLACEHOLDER_OPTIONS.map((option) => (
+              {CONNECTION_PREFERENCES.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -121,7 +170,7 @@ export default function ProfileOnboardingPage() {
               <option value="" disabled>
                 選択してください
               </option>
-              {PLACEHOLDER_OPTIONS.map((option) => (
+              {MEETING_RANGES.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
