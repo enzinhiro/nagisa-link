@@ -34,13 +34,16 @@ export default function Home() {
         <section className="soft-card flex flex-col gap-4">
           <h2 className="section-title">はじめる</h2>
           <p className="muted-text text-sm">
-            ログイン、または会員登録からお進みください。
+            プロフィール完了後は、さがす画面から近い相手を探せます。
           </p>
           <div className="soft-card-subtle">
-            <p className="section-note">招待コード確認とメール認証を通した方のみ利用できます。</p>
+            <p className="section-note">地域・年齢帯・好きなことタグで最小絞り込みができます。</p>
           </div>
-          <Link className="primary-btn" href="/auth">
-            ログイン・会員登録へ
+          <Link className="primary-btn" href="/search">
+            さがす画面へ
+          </Link>
+          <Link className="secondary-btn" href="/talk">
+            話したい一覧を見る
           </Link>
         </section>
 
