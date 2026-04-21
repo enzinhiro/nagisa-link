@@ -22,6 +22,9 @@ const CHILD_GENDERS = [
   "その他 / 答えたくない",
 ];
 
+const PROFILE_SAVE_ERROR_UI =
+  "プロフィールの保存に失敗しました。時間をおいてもう一度お試しください。";
+
 const CHILD_INTEREST_TAGS = [
   "ゲーム",
   "YouTube",
@@ -217,7 +220,8 @@ export default function ProfileOnboardingPage() {
     setIsSubmitting(false);
 
     if (error) {
-      setMessage(error.message);
+      console.error("[onboarding/profile] profiles upsert failed", error);
+      setMessage(PROFILE_SAVE_ERROR_UI);
       return;
     }
 
