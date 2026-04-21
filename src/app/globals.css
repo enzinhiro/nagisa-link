@@ -81,11 +81,16 @@ a {
 .tab-btn {
   height: 40px;
   border-radius: 9999px;
-  border: 1px solid transparent;
+  border: 1px solid #d0e3ef;
   font-size: 14px;
   font-weight: 600;
   color: #4a6a7f;
-  background: transparent;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.tab-btn:hover {
+  background: #f5fbff;
 }
 
 .tab-btn-active {

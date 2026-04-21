@@ -41,11 +41,12 @@ const CHILD_INTEREST_TAGS = [
 ];
 
 const CONNECTION_PREFERENCES = [
-  "まずは親同士で少し話したい",
-  "似た状況の家庭と情報交換したい",
-  "子どもの好きなことが近い家庭とつながりたい",
-  "将来的に親子で会える相手を探したい",
-  "まずはオンラインでやり取りしたい",
+  "子ども同士で遊ぶきっかけを作りたい",
+  "まずは親同士でチャットしたい",
+  "まずは親同士で話したい",
+  "情報交換をしたい",
+  "近い悩みの人とつながりたい",
+  "その他（自由入力）",
 ];
 
 const MEETING_RANGES = [
@@ -70,6 +71,7 @@ export default function ProfileOnboardingPage() {
   const [childInterestTags, setChildInterestTags] = useState<string[]>([]);
   const [wantToConnect, setWantToConnect] = useState("");
   const [connectionPreference, setConnectionPreference] = useState("");
+  const [customConnectionPreference, setCustomConnectionPreference] = useState("");
   const [meetingRange, setMeetingRange] = useState("");
   const [intro, setIntro] = useState("");
 
@@ -112,7 +114,17 @@ export default function ProfileOnboardingPage() {
         setChildGender(data.child_gender ?? "");
         setChildInterestTags(data.child_interest_tags ?? []);
         setWantToConnect(data.want_to_connect ?? "");
-        setConnectionPreference(data.connection_preference ?? "");
+        const savedConnectionPreference = data.connection_preference ?? "";
+        if (
+          savedConnectionPreference &&
+          !CONNECTION_PREFERENCES.includes(savedConnectionPreference)
+        ) {
+          setConnectionPreference("その他（自由入力）");
+          setCustomConnectionPreference(savedConnectionPreference);
+        } else {
+          setConnectionPreference(savedConnectionPreference);
+          setCustomConnectionPreference("");
+        }
         setMeetingRange(data.meeting_range ?? "");
         setIntro(data.intro ?? "");
       }
@@ -124,6 +136,18 @@ export default function ProfileOnboardingPage() {
   }, [router]);
 
   const selectedTagCount = childInterestTags.length;
+  const isTagLimitReached = selectedTagCount >= 5;
+  const toggleInterestTag = (tag: string) => {
+    setChildInterestTags((prev) => {
+      if (prev.includes(tag)) {
+        return prev.filter((t) => t !== tag);
+      }
+      if (prev.length >= 5) {
+        return prev;
+      }
+      return [...prev, tag];
+    });
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -156,6 +180,17 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
+    if (connectionPreference === "その他（自由入力）") {
+      if (!customConnectionPreference.trim()) {
+        setMessage("つながり方の希望（自由入力）を入力してください。");
+        return;
+      }
+      if (customConnectionPreference.trim().length > 60) {
+        setMessage("つながり方の希望（自由入力）は60文字以内で入力してください。");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     const { error } = await supabase.from("profiles").upsert(
@@ -168,7 +203,10 @@ export default function ProfileOnboardingPage() {
         child_gender: childGender,
         child_interest_tags: childInterestTags,
         want_to_connect: wantToConnect.trim(),
-        connection_preference: connectionPreference,
+        connection_preference:
+          connectionPreference === "その他（自由入力）"
+            ? customConnectionPreference.trim()
+            : connectionPreference,
         meeting_range: meetingRange,
         intro: intro.trim(),
         profile_completed: true,
@@ -307,25 +345,31 @@ export default function ProfileOnboardingPage() {
               </select>
             </label>
             <label>
-              <span className="label-text">
-                お子さんの好きなこと（最大5つ）{selectedTagCount > 0 ? `: ${selectedTagCount}件選択中` : ""}
-              </span>
-              <select
-                className="mock-select"
-                value={childInterestTags}
-                onChange={(e) =>
-                  setChildInterestTags(Array.from(e.target.selectedOptions, (opt) => opt.value))
-                }
-                multiple
-                size={6}
-                required
-              >
-                {CHILD_INTEREST_TAGS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <span className="label-text">お子さんの好きなこと</span>
+              <p className="section-note mb-2">{selectedTagCount} / 5個選択中</p>
+              <div className="flex flex-wrap gap-2.5">
+                {CHILD_INTEREST_TAGS.map((tag) => {
+                  const isSelected = childInterestTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleInterestTag(tag)}
+                      className={`rounded-full border px-3 py-2 text-sm transition ${
+                        isSelected
+                          ? "border-[#8fcbe8] bg-[#d9f2ff] font-semibold text-[#1f5470]"
+                          : "border-[#d8e7ef] bg-white text-[#42657a]"
+                      }`}
+                    >
+                      {isSelected ? `✓ ${tag}` : tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <input type="hidden" required value={childInterestTags.length > 0 ? "selected" : ""} />
+              <p className="mt-2 text-xs muted-text">
+                最大5個まで選べます。{isTagLimitReached ? "上限に達しています。" : ""}
+              </p>
             </label>
           </section>
 
@@ -338,7 +382,7 @@ export default function ProfileOnboardingPage() {
               <span className="label-text">今つながりたいこと</span>
               <textarea
                 className="mock-textarea"
-                placeholder="例: まずは親同士で少し話したいです"
+                placeholder="例: 少しチャットでお話ししたいです。"
                 value={wantToConnect}
                 onChange={(e) => setWantToConnect(e.target.value)}
                 required
@@ -349,7 +393,13 @@ export default function ProfileOnboardingPage() {
               <select
                 className="mock-select"
                 value={connectionPreference}
-                onChange={(e) => setConnectionPreference(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setConnectionPreference(next);
+                  if (next !== "その他（自由入力）") {
+                    setCustomConnectionPreference("");
+                  }
+                }}
                 required
               >
                 <option value="" disabled>
@@ -362,6 +412,20 @@ export default function ProfileOnboardingPage() {
                 ))}
               </select>
             </label>
+            {connectionPreference === "その他（自由入力）" ? (
+              <label>
+                <span className="label-text">つながり方の希望（自由入力）</span>
+                <input
+                  className="mock-input"
+                  placeholder="例: まずは短いチャットから始めたいです"
+                  value={customConnectionPreference}
+                  onChange={(e) => setCustomConnectionPreference(e.target.value)}
+                  maxLength={60}
+                  required
+                />
+                <p className="mt-2 text-xs muted-text">60文字以内で入力してください。</p>
+              </label>
+            ) : null}
             <label>
               <span className="label-text">会いやすい範囲</span>
               <select

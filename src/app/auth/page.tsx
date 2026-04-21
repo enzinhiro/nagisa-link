@@ -349,7 +349,12 @@ export default function AuthPage() {
                   onChange={(e) => setAgreedTerms(e.target.checked)}
                 />
                 <span>
-                  <Link href="/terms" className="underline underline-offset-3">
+                  <Link
+                    href="/terms"
+                    className="underline underline-offset-3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     利用規約
                   </Link>
                   に同意する
@@ -363,7 +368,12 @@ export default function AuthPage() {
                   onChange={(e) => setAgreedPrivacy(e.target.checked)}
                 />
                 <span>
-                  <Link href="/privacy" className="underline underline-offset-3">
+                  <Link
+                    href="/privacy"
+                    className="underline underline-offset-3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     プライバシーポリシー
                   </Link>
                   に同意する
