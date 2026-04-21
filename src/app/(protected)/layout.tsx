@@ -1,15 +1,18 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [talkBadgeCount, setTalkBadgeCount] = useState(0);
 
   useEffect(() => {
     const guard = async () => {
@@ -56,6 +59,13 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
+      const { count } = await supabase
+        .from("wants")
+        .select("id", { count: "exact", head: true })
+        .eq("to_user_id", user.id)
+        .eq("status", "pending");
+      setTalkBadgeCount(count ?? 0);
+
       setIsChecking(false);
     };
 
@@ -99,5 +109,36 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  const tabs = [
+    { href: "/", label: "ホーム", active: pathname === "/" },
+    { href: "/search", label: "さがす", active: pathname.startsWith("/search") },
+    { href: "/talk", label: "話したい", active: pathname.startsWith("/talk"), badge: talkBadgeCount },
+    { href: "/chat", label: "チャット", active: pathname.startsWith("/chat") },
+  ];
+
+  return (
+    <div className="min-h-dvh pb-20">
+      {children}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-[#d9e8f1] bg-[#fffdfa]/95 backdrop-blur">
+        <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`relative flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs ${
+                tab.active ? "text-[#2f5f79] bg-[#ecf8ff]" : "text-[#6b8393]"
+              }`}
+            >
+              <span>{tab.label}</span>
+              {"badge" in tab && (tab.badge ?? 0) > 0 ? (
+                <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
+                  {tab.badge}
+                </span>
+              ) : null}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
 }

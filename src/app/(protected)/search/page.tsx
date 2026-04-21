@@ -103,9 +103,10 @@ export default function SearchPage() {
       let query = supabase
         .from("profiles")
         .select(
-          "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+          "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at,is_suspended"
         )
         .eq("profile_completed", true)
+        .eq("is_suspended", false)
         .neq("id", user.id);
 
       if (areaFilter) query = query.eq("area", areaFilter);
@@ -149,9 +150,10 @@ export default function SearchPage() {
         let relaxedQuery = supabase
           .from("profiles")
           .select(
-            "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+            "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at,is_suspended"
           )
           .eq("profile_completed", true)
+          .eq("is_suspended", false)
           .neq("id", user.id);
 
         if (areaFilter) relaxedQuery = relaxedQuery.eq("area", areaFilter);
@@ -345,9 +347,14 @@ export default function SearchPage() {
             ))}
         </section>
 
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          ホームに戻る
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/" className="secondary-btn !h-10">
+            ホームへ
+          </Link>
+          <Link href="/talk" className="secondary-btn !h-10">
+            話したいへ
+          </Link>
+        </div>
       </main>
     </div>
   );

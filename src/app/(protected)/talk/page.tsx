@@ -180,9 +180,10 @@ export default function TalkPage() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id,nickname,area,want_to_connect,profile_completed")
+      .select("id,nickname,area,want_to_connect,profile_completed,is_suspended")
       .in("id", profileIds)
-      .eq("profile_completed", true);
+      .eq("profile_completed", true)
+      .eq("is_suspended", false);
 
     if (profilesError) {
       setMessage("相手プロフィールの取得に失敗しました。");
@@ -400,9 +401,14 @@ export default function TalkPage() {
           </>
         ) : null}
 
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          ホームに戻る
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/" className="secondary-btn !h-10">
+            ホームへ
+          </Link>
+          <Link href="/search" className="secondary-btn !h-10">
+            さがすへ
+          </Link>
+        </div>
       </main>
     </div>
   );
