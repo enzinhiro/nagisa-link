@@ -31,16 +31,16 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="soft-card flex flex-col gap-3">
+        <section className="soft-card flex flex-col gap-4">
           <h2 className="section-title">はじめる</h2>
           <p className="muted-text text-sm">
             ログイン、または会員登録からお進みください。
           </p>
+          <div className="soft-card-subtle">
+            <p className="section-note">招待コード確認とメール認証を通した方のみ利用できます。</p>
+          </div>
           <Link className="primary-btn" href="/auth">
             ログイン・会員登録へ
-          </Link>
-          <Link className="secondary-btn" href="/onboarding/profile">
-            プロフィール登録画面を見る
           </Link>
         </section>
 
@@ -48,8 +48,8 @@ export default function Home() {
           <h2 className="section-title">登録の流れ</h2>
           <ol className="muted-text list-decimal space-y-1.5 pl-5 text-sm leading-6">
             <li>招待コード、メールアドレス、パスワードを入力</li>
-            <li>利用規約・プライバシーポリシーに同意</li>
-            <li>プロフィールを3ステップで登録</li>
+            <li>確認メールでメール認証を完了</li>
+            <li>初回ログイン後にプロフィールを3ステップで登録</li>
           </ol>
         </section>
       </main>
