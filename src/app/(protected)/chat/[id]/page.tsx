@@ -97,10 +97,11 @@ export default function ChatDetailPage() {
       .select("id,nickname,area")
       .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
+      .eq("is_suspended", false)
       .maybeSingle();
 
     if (profileError || !profile) {
-      setMessage("相手プロフィールが見つかりませんでした。");
+      setMessage("このユーザーは現在表示できません。");
       setLoading(false);
       return;
     }

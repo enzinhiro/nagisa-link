@@ -9,6 +9,7 @@ export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as co
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     const guard = async () => {
@@ -40,12 +41,18 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("profile_completed")
+        .select("profile_completed,is_suspended")
         .eq("id", user.id)
         .maybeSingle();
 
       if (error || !data?.profile_completed) {
         router.replace("/onboarding/profile");
+        return;
+      }
+
+      if (data.is_suspended) {
+        setIsSuspended(true);
+        setIsChecking(false);
         return;
       }
 
@@ -61,6 +68,31 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <main className="mock-shell screen-stack">
           <section className="soft-card">
             <p className="muted-text text-sm">読み込み中です...</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (isSuspended) {
+    return (
+      <div className="mock-page">
+        <main className="mock-shell screen-stack">
+          <section className="soft-card flex flex-col gap-3">
+            <h1 className="section-title">ご利用について</h1>
+            <p className="muted-text text-sm">
+              現在ご利用を停止しています。ご不明点は運営までご連絡ください。
+            </p>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.replace("/auth");
+              }}
+            >
+              ログアウト
+            </button>
           </section>
         </main>
       </div>
