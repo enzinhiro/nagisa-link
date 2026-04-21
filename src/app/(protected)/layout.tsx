@@ -141,7 +141,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               プロフィールを確認
             </Link>
             <Link
-              href="/terms"
+              href="/rules"
               className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
             >
               ルール
