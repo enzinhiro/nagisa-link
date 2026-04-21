@@ -276,17 +276,19 @@ export default function TalkPage() {
   };
 
   const renderCard = (card: TalkCard, section: "matched" | "received" | "sent" | "ended") => (
-    <article key={`${section}-${card.otherUserId}`} className="soft-card flex flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
+    <article key={`${section}-${card.otherUserId}`} className="soft-card flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
+          <p className="text-xs muted-text">{card.area}</p>
+        </div>
         <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">{card.label}</span>
       </div>
-      <p className="text-xs muted-text">{card.area}</p>
-      <p className="text-sm text-[#365f78]">{card.wantToConnect}</p>
+      <p className="text-sm leading-6 text-[#365f78]">{card.wantToConnect}</p>
       {section === "matched" ? (
         <button
           type="button"
-          className="secondary-btn !h-10"
+          className="secondary-btn !h-11"
           onClick={() => handleCreateOrOpenChat(card.otherUserId)}
           disabled={creatingChatUserId === card.otherUserId}
         >
@@ -297,7 +299,7 @@ export default function TalkPage() {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            className="primary-btn !h-10"
+            className="primary-btn !h-11"
             disabled={updatingWantId === card.wantId}
             onClick={() => handleResponse(card.wantId, "accepted")}
           >
@@ -305,7 +307,7 @@ export default function TalkPage() {
           </button>
           <button
             type="button"
-            className="secondary-btn !h-10"
+            className="secondary-btn !h-11"
             disabled={updatingWantId === card.wantId}
             onClick={() => handleResponse(card.wantId, "rejected")}
           >
@@ -359,7 +361,10 @@ export default function TalkPage() {
         {!loading && !message ? (
           <>
             <section className="screen-stack">
-              <h2 className="section-title">一致した</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">一致した</h2>
+                <p className="section-note">やり取りを始められます</p>
+              </div>
               {matchedCards.length > 0 ? (
                 matchedCards.map((card) => renderCard(card, "matched"))
               ) : (
@@ -370,7 +375,10 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">届いた</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">届いた</h2>
+                <p className="section-note">返答を選べます</p>
+              </div>
               {receivedCards.length > 0 ? (
                 receivedCards.map((card) => renderCard(card, "received"))
               ) : (
@@ -381,7 +389,10 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">送った</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">送った</h2>
+                <p className="section-note">お返事待ちです</p>
+              </div>
               {sentCards.length > 0 ? (
                 sentCards.map((card) => renderCard(card, "sent"))
               ) : (
@@ -392,7 +403,10 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">終了済み</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">終了済み</h2>
+                <p className="section-note">期限終了したやり取り</p>
+              </div>
               {endedCards.length > 0 ? (
                 endedCards.map((card) => renderCard(card, "ended"))
               ) : (
