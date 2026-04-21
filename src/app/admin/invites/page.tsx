@@ -108,28 +108,33 @@ export default function AdminInvitesPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
+        <header className="soft-card flex flex-col gap-3.5">
           <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
             管理者トップに戻る
           </Link>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
-          <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
-          <p className="muted-text text-sm">招待コードを発行・確認します。</p>
+          <div className="flex flex-col gap-2">
+            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+            <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
+            <p className="muted-text text-sm">発行・利用状況・共有先メモをここで確認できます。</p>
+          </div>
         </header>
 
         {!loading && !message ? (
-          <section className="soft-card flex flex-col gap-3">
-            <h2 className="section-title">新規発行</h2>
-            <label>
+          <section className="soft-card flex flex-col gap-3.5">
+            <div className="flex items-end justify-between gap-2">
+              <h2 className="section-title">新規発行</h2>
+              <p className="section-note">必要なときに1件ずつ発行します</p>
+            </div>
+            <label className="flex flex-col gap-1.5">
               <span className="label-text">共有先メモ（任意）</span>
               <input
-                className="mock-input"
+                className="mock-input !h-11"
                 value={createNote}
                 onChange={(e) => setCreateNote(e.target.value)}
                 placeholder="例: 逗子ママ会 田中さん"
               />
             </label>
-            <button type="button" className="primary-btn !h-10" disabled={creating} onClick={handleCreateInvite}>
+            <button type="button" className="primary-btn !h-11" disabled={creating} onClick={handleCreateInvite}>
               {creating ? "発行中..." : "新しいコードを発行"}
             </button>
           </section>
@@ -162,19 +167,21 @@ export default function AdminInvitesPage() {
         {!loading &&
           !message &&
           invites.map((invite) => (
-            <article key={invite.id} className="soft-card flex flex-col gap-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[#2f5f79] break-all">{invite.code}</p>
-                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}>
+            <article key={invite.id} className="soft-card flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold leading-6 text-[#2f5f79] break-all">{invite.code}</p>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}
+                >
                   {invite.is_used ? "使用済み" : "未使用"}
                 </span>
               </div>
               <p className="text-xs muted-text">発行日: {new Date(invite.created_at).toLocaleString("ja-JP")}</p>
               <p className="text-sm text-[#365f78]">使用者メール: {invite.used_by_email ?? "未使用"}</p>
-              <label>
+              <label className="flex flex-col gap-1.5">
                 <span className="label-text">共有先メモ</span>
                 <input
-                  className="mock-input"
+                  className="mock-input !h-11"
                   value={noteDrafts[invite.id] ?? ""}
                   onChange={(e) =>
                     setNoteDrafts((prev) => ({
@@ -187,7 +194,7 @@ export default function AdminInvitesPage() {
               </label>
               <button
                 type="button"
-                className="secondary-btn !h-10"
+                className="secondary-btn !h-11"
                 disabled={savingNoteId === invite.id}
                 onClick={() => handleSaveNote(invite.id)}
               >
