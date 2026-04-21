@@ -70,6 +70,13 @@ export default function SearchPage() {
   );
 
   const normalizedKeyword = useMemo(() => keyword.trim().toLowerCase(), [keyword]);
+  const hasActiveFilters =
+    keyword.trim().length > 0 ||
+    areaFilter.length > 0 ||
+    ageFilter.length > 0 ||
+    tagFilters.length > 0 ||
+    connectionFilter.length > 0 ||
+    meetingRangeFilter.length > 0;
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -199,11 +206,18 @@ export default function SearchPage() {
         </header>
 
         <section className="soft-card flex flex-col gap-3.5">
-          <h2 className="section-title">絞り込み</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="section-title">絞り込み</h2>
+            {hasActiveFilters ? (
+              <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">絞り込み中</span>
+            ) : (
+              <span className="text-xs muted-text">条件なし</span>
+            )}
+          </div>
           <label>
             <span className="label-text">キーワード検索</span>
             <input
-              className="mock-input"
+              className="mock-input !h-11"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="気になることや好きなことから、やさしく探してみましょう"
@@ -211,7 +225,7 @@ export default function SearchPage() {
           </label>
           <label>
             <span className="label-text">地域</span>
-            <select className="mock-select" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
+            <select className="mock-select !h-11" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
               <option value="">指定なし</option>
               {AREA_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -222,39 +236,9 @@ export default function SearchPage() {
           </label>
           <label>
             <span className="label-text">お子さんの年齢帯</span>
-            <select className="mock-select" value={ageFilter} onChange={(e) => setAgeFilter(e.target.value)}>
+            <select className="mock-select !h-11" value={ageFilter} onChange={(e) => setAgeFilter(e.target.value)}>
               <option value="">指定なし</option>
               {AGE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="label-text">つながり方の希望</span>
-            <select
-              className="mock-select"
-              value={connectionFilter}
-              onChange={(e) => setConnectionFilter(e.target.value)}
-            >
-              <option value="">指定なし</option>
-              {CONNECTION_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="label-text">会いやすい範囲</span>
-            <select
-              className="mock-select"
-              value={meetingRangeFilter}
-              onChange={(e) => setMeetingRangeFilter(e.target.value)}
-            >
-              <option value="">指定なし</option>
-              {MEETING_RANGE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -280,6 +264,52 @@ export default function SearchPage() {
               ))}
             </select>
           </label>
+          <label>
+            <span className="label-text">つながり方の希望</span>
+            <select
+              className="mock-select !h-11"
+              value={connectionFilter}
+              onChange={(e) => setConnectionFilter(e.target.value)}
+            >
+              <option value="">指定なし</option>
+              {CONNECTION_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="label-text">会いやすい範囲</span>
+            <select
+              className="mock-select !h-11"
+              value={meetingRangeFilter}
+              onChange={(e) => setMeetingRangeFilter(e.target.value)}
+            >
+              <option value="">指定なし</option>
+              {MEETING_RANGE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              className="secondary-btn !h-10"
+              onClick={() => {
+                setKeyword("");
+                setAreaFilter("");
+                setAgeFilter("");
+                setConnectionFilter("");
+                setMeetingRangeFilter("");
+                setTagFilters([]);
+              }}
+            >
+              条件を解除する
+            </button>
+          ) : null}
         </section>
 
         <section className="screen-stack">
@@ -310,7 +340,7 @@ export default function SearchPage() {
                   setTagFilters([]);
                 }}
               >
-                条件を解除する
+                条件を解除して探す
               </button>
               {relaxedCards.length > 0 && (
                 <div className="mt-3 flex flex-col gap-2.5">
