@@ -89,7 +89,7 @@ export default function ProfileOnboardingPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "real_name,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
+          "real_name,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,profile_completed"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -101,6 +101,10 @@ export default function ProfileOnboardingPage() {
       }
 
       if (data) {
+        if (data.profile_completed) {
+          router.replace("/");
+          return;
+        }
         setRealName(data.real_name ?? "");
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");

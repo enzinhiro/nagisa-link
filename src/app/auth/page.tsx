@@ -110,7 +110,32 @@ export default function AuthPage() {
       return;
     }
 
-    router.push("/onboarding/profile");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoginMessage("ログイン状態を確認できませんでした。");
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("profile_completed")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      setLoginMessage("プロフィール状態を確認できませんでした。時間をおいてお試しください。");
+      return;
+    }
+
+    if (profile?.profile_completed) {
+      router.replace("/");
+      return;
+    }
+
+    router.replace("/onboarding/profile");
   };
 
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
@@ -349,6 +374,9 @@ export default function AuthPage() {
                   {signupMessage}
                 </p>
               )}
+              {signupMessageType === "success" && signupMessage ? (
+                <p className="text-xs muted-text">認証後、初回ログイン時にプロフィール登録へ進みます。</p>
+              ) : null}
               <button className="primary-btn mt-1" type="submit" disabled={!isSignupReady}>
                 {isSignupSubmitting ? "登録中..." : "会員登録する"}
               </button>
