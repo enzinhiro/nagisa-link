@@ -341,6 +341,12 @@ export default function ChatDetailPage() {
               </div>
             </section>
 
+            <section className="soft-card-subtle">
+              <p className="text-xs leading-6 text-[#486f86]">
+                このやり取りは期間限定です。URL送信はできません。必要な場合のみ運営が確認することがあります。個人情報の共有は慎重に進めましょう。
+              </p>
+            </section>
+
             <section className="soft-card flex flex-col gap-3">
               <div className="soft-card-subtle">
                 <p className="text-sm text-[#365f78] leading-6">
