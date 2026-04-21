@@ -31,6 +31,10 @@ export default function RulesPage() {
             プライバシーポリシーを見る
           </Link>
         </section>
+
+        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
+          ホームに戻る
+        </Link>
       </main>
     </div>
   );

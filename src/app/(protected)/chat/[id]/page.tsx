@@ -259,8 +259,8 @@ export default function ChatDetailPage() {
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <Link href="/talk" className="text-sm muted-text underline underline-offset-3">
-              話したい一覧に戻る
+            <Link href="/chat" className="text-sm muted-text underline underline-offset-3">
+              チャット一覧に戻る
             </Link>
             <button
               type="button"
