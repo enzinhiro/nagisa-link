@@ -235,7 +235,12 @@ export default function AuthPage() {
                   checked={agreedTerms}
                   onChange={(e) => setAgreedTerms(e.target.checked)}
                 />
-                <span>利用規約に同意する</span>
+                <span>
+                  <Link href="/terms" className="underline underline-offset-3">
+                    利用規約
+                  </Link>
+                  に同意する
+                </span>
               </label>
               <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
                 <input
@@ -244,7 +249,12 @@ export default function AuthPage() {
                   checked={agreedPrivacy}
                   onChange={(e) => setAgreedPrivacy(e.target.checked)}
                 />
-                <span>プライバシーポリシーに同意する</span>
+                <span>
+                  <Link href="/privacy" className="underline underline-offset-3">
+                    プライバシーポリシー
+                  </Link>
+                  に同意する
+                </span>
               </label>
               {signupMessage && <p className="text-sm text-[#3f6680]">{signupMessage}</p>}
               <button className="primary-btn mt-1" type="submit" disabled={isSignupSubmitting}>
