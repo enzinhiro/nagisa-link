@@ -16,6 +16,20 @@ function formatSignUpErrorMessage(message: string): string {
   return message;
 }
 
+/** Same routing rule as after password login; null = profile fetch failed. */
+async function resolveAuthProfileDestination(
+  userId: string
+): Promise<"/" | "/onboarding/profile" | null> {
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("profile_completed")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) return null;
+  if (profile?.profile_completed) return "/";
+  return "/onboarding/profile";
+}
+
 export default function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -101,6 +115,35 @@ export default function AuthPage() {
     window.sessionStorage.setItem(SIGNUP_FORM_STORAGE_KEY, serializedSignupState);
   }, [serializedSignupState]);
 
+  // メール確認リンクなどで /auth に戻り URL からセッションが復元された直後も、ログイン済みと同じ次画面へ進める
+  useEffect(() => {
+    let cancelled = false;
+    const redirectIfAuthed = async (userId: string) => {
+      const dest = await resolveAuthProfileDestination(userId);
+      if (cancelled || dest === null) return;
+      router.replace(dest);
+    };
+    const sync = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) await redirectIfAuthed(session.user.id);
+    };
+    void sync();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled || !session?.user) return;
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        void redirectIfAuthed(session.user.id);
+      }
+    });
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginMessage("");
@@ -127,23 +170,12 @@ export default function AuthPage() {
       return;
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("profile_completed")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError) {
+    const destination = await resolveAuthProfileDestination(user.id);
+    if (destination === null) {
       setLoginMessage("プロフィール状態を確認できませんでした。時間をおいてお試しください。");
       return;
     }
-
-    if (profile?.profile_completed) {
-      router.replace("/");
-      return;
-    }
-
-    router.replace("/onboarding/profile");
+    router.replace(destination);
   };
 
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
