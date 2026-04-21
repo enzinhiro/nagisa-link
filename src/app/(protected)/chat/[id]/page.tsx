@@ -10,6 +10,7 @@ type ChatRow = {
   id: string;
   user_a_id: string;
   user_b_id: string;
+  expires_at: string;
 };
 
 type ProfileRow = {
@@ -37,6 +38,8 @@ export default function ChatDetailPage() {
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [inputBody, setInputBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const fetchChatDetail = async () => {
@@ -44,6 +47,8 @@ export default function ChatDetailPage() {
     setMessage("");
     setOtherProfile(null);
     setMessages([]);
+    setExpiresAt(null);
+    setIsExpired(false);
 
     const {
       data: { user },
@@ -64,7 +69,7 @@ export default function ChatDetailPage() {
 
     const { data: chat, error: chatError } = await supabase
       .from("chats")
-      .select("id,user_a_id,user_b_id")
+      .select("id,user_a_id,user_b_id,expires_at")
       .eq("id", chatId)
       .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
       .maybeSingle();
@@ -76,6 +81,8 @@ export default function ChatDetailPage() {
     }
 
     const chatRow = chat as ChatRow;
+    setExpiresAt(chatRow.expires_at);
+    setIsExpired(new Date(chatRow.expires_at).getTime() <= Date.now());
     const otherUserId = chatRow.user_a_id === user.id ? chatRow.user_b_id : chatRow.user_a_id;
 
     const { data: profile, error: profileError } = await supabase
@@ -166,6 +173,24 @@ export default function ChatDetailPage() {
 
     setIsSending(true);
 
+    const { data: chatRow, error: chatCheckError } = await supabase
+      .from("chats")
+      .select("expires_at,user_a_id,user_b_id")
+      .eq("id", chatId)
+      .or(`user_a_id.eq.${currentUserId},user_b_id.eq.${currentUserId}`)
+      .maybeSingle();
+
+    if (
+      chatCheckError ||
+      !chatRow ||
+      new Date(chatRow.expires_at as string).getTime() <= Date.now()
+    ) {
+      setIsSending(false);
+      setIsExpired(true);
+      setFeedbackMessage("このチャットは終了しました。");
+      return;
+    }
+
     const { error } = await supabase.from("messages").insert({
       chat_id: chatId,
       sender_user_id: currentUserId,
@@ -182,6 +207,13 @@ export default function ChatDetailPage() {
     setInputBody("");
     await fetchChatDetail();
   };
+
+  const remainingHours = (() => {
+    if (!expiresAt) return null;
+    const diffMs = new Date(expiresAt).getTime() - Date.now();
+    if (diffMs <= 0) return 0;
+    return Math.ceil(diffMs / (1000 * 60 * 60));
+  })();
 
   return (
     <div className="mock-page">
@@ -212,6 +244,13 @@ export default function ChatDetailPage() {
               <div>
                 <h1 className="hero-title text-lg font-semibold">{toMamaDisplayName(otherProfile.nickname)}</h1>
                 <p className="text-xs muted-text">{otherProfile.area}</p>
+                <p className="text-xs muted-text mt-1">
+                  {remainingHours === null
+                    ? ""
+                    : remainingHours > 0
+                      ? `残り${remainingHours}時間`
+                      : "このチャットは終了しました"}
+                </p>
               </div>
             </section>
 
@@ -253,6 +292,9 @@ export default function ChatDetailPage() {
 
             <section className="soft-card flex flex-col gap-2.5">
               {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
+              {isExpired ? (
+                <p className="text-sm muted-text">このチャットは終了しました。</p>
+              ) : null}
               <div className="flex gap-2">
               <input
                 className="mock-input"
@@ -260,13 +302,13 @@ export default function ChatDetailPage() {
                 value={inputBody}
                 onChange={(e) => setInputBody(e.target.value)}
                 maxLength={500}
-                disabled={isSending}
+                disabled={isSending || isExpired}
               />
               <button
                 type="button"
                 className="secondary-btn !w-[88px]"
                 onClick={handleSend}
-                disabled={isSending}
+                disabled={isSending || isExpired}
               >
                 送信
               </button>
