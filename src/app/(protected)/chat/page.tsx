@@ -129,15 +129,15 @@ export default function ChatIndexPage() {
   const renderCard = (card: ChatCard, type: "active" | "ended") => {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
     return (
-      <article key={`${type}-${card.id}`} className="soft-card flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-semibold text-[#2f5f79]">{card.otherDisplayName}</h3>
-          <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+      <article key={`${type}-${card.id}`} className="soft-card flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5">
+          <h3 className="font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
+          <p className="text-xs muted-text">地域: {card.otherArea}</p>
+          <span className="inline-flex w-fit rounded-full px-2.5 py-1 text-xs pill-blue">
             {type === "active" ? `残り${remainingHour}時間` : "終了済み"}
           </span>
         </div>
-        <p className="text-xs muted-text">地域: {card.otherArea}</p>
-        <Link href={`/chat/${card.id}`} className="secondary-btn !h-10">
+        <Link href={`/chat/${card.id}`} className="secondary-btn !h-11">
           チャットを開く
         </Link>
       </article>
@@ -170,7 +170,10 @@ export default function ChatIndexPage() {
         {!loading && !message ? (
           <>
             <section className="screen-stack">
-              <h2 className="section-title">進行中</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">進行中</h2>
+                <p className="section-note">いまやり取りできる相手</p>
+              </div>
               {activeChats.length > 0 ? (
                 activeChats.map((chat) => renderCard(chat, "active"))
               ) : (
@@ -185,14 +188,17 @@ export default function ChatIndexPage() {
                   </div>
                 ) : (
                   <div className="soft-card-subtle">
-                    <p className="section-note">進行中のチャットはありません。</p>
+                    <p className="section-note">進行中のチャットはありません。届いた「話したい」を確認してみましょう。</p>
                   </div>
                 )
               )}
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">終了済み</h2>
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">終了済み</h2>
+                <p className="section-note">期限が終了したやり取り</p>
+              </div>
               {endedChats.length > 0 ? (
                 endedChats.map((chat) => renderCard(chat, "ended"))
               ) : (
