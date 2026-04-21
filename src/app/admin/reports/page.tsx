@@ -100,6 +100,9 @@ export default function AdminReportsPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
+          <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
+            管理者トップに戻る
+          </Link>
           <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
           <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
           <p className="muted-text text-sm">新しい順に通報内容を確認できます。</p>

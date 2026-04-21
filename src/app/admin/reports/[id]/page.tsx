@@ -124,6 +124,9 @@ export default function AdminReportDetailPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
+          <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
+            管理者トップに戻る
+          </Link>
           <Link href="/admin/reports" className="text-sm muted-text underline underline-offset-3">
             通報一覧に戻る
           </Link>
