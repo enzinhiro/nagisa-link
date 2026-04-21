@@ -123,15 +123,20 @@ export default function AdminReportDetailPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
-            管理者トップに戻る
-          </Link>
-          <Link href="/admin/reports" className="text-sm muted-text underline underline-offset-3">
-            通報一覧に戻る
-          </Link>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
-          <h1 className="hero-title text-2xl font-semibold">通報詳細</h1>
+        <header className="soft-card flex flex-col gap-3.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
+              管理者トップに戻る
+            </Link>
+            <Link href="/admin/reports" className="text-sm muted-text underline underline-offset-3">
+              通報一覧に戻る
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+            <h1 className="hero-title text-2xl font-semibold">通報詳細</h1>
+            <p className="muted-text text-sm">内容を上から順に確認できます。</p>
+          </div>
         </header>
 
         {loading ? (
@@ -148,32 +153,51 @@ export default function AdminReportDetailPage() {
 
         {!loading && !message && report ? (
           <>
-            <section className="soft-card flex flex-col gap-2.5">
-              <p className="text-xs muted-text">{new Date(report.created_at).toLocaleString("ja-JP")}</p>
-              <p className="text-sm text-[#365f78]">理由: {REASON_LABELS[report.reason]}</p>
-              <p className="text-sm text-[#365f78]">
-                通報者: {nameMap.get(report.reporter_user_id) ?? "不明ユーザー"}
-              </p>
-              <p className="text-sm text-[#365f78]">
-                対象者: {nameMap.get(report.target_user_id) ?? "不明ユーザー"}
-              </p>
-              <p className="text-xs muted-text">chat_id: {report.chat_id}</p>
-              <p className="text-sm text-[#365f78]">補足コメント: {report.note?.trim() ? report.note : "なし"}</p>
+            <section className="soft-card flex flex-col gap-3">
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">通報日時</p>
+                <p className="text-sm text-[#365f78]">{new Date(report.created_at).toLocaleString("ja-JP")}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">理由</p>
+                <p className="text-sm text-[#365f78]">{REASON_LABELS[report.reason]}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">補足コメント</p>
+                <p className="text-sm leading-6 text-[#365f78]">{report.note?.trim() ? report.note : "なし"}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">通報した人</p>
+                <p className="text-sm text-[#365f78]">{nameMap.get(report.reporter_user_id) ?? "不明ユーザー"}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">通報対象</p>
+                <p className="text-sm text-[#365f78]">{nameMap.get(report.target_user_id) ?? "不明ユーザー"}</p>
+              </div>
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">chat_id</p>
+                <p className="text-xs muted-text break-all">{report.chat_id}</p>
+              </div>
             </section>
 
-            <section className="soft-card flex flex-col gap-2.5">
+            <section className="soft-card flex flex-col gap-3">
               <h2 className="section-title">対象チャット参加者</h2>
               {chat ? (
                 <>
-                  <p className="text-sm text-[#365f78]">
-                    user_a: {nameMap.get(chat.user_a_id) ?? "不明ユーザー"}
-                  </p>
-                  <p className="text-sm text-[#365f78]">
-                    user_b: {nameMap.get(chat.user_b_id) ?? "不明ユーザー"}
-                  </p>
-                  <p className="text-xs muted-text">
-                    expires_at: {chat.expires_at ? new Date(chat.expires_at).toLocaleString("ja-JP") : "なし"}
-                  </p>
+                  <div className="soft-card-subtle">
+                    <p className="label-text mb-1">user_a</p>
+                    <p className="text-sm text-[#365f78]">{nameMap.get(chat.user_a_id) ?? "不明ユーザー"}</p>
+                  </div>
+                  <div className="soft-card-subtle">
+                    <p className="label-text mb-1">user_b</p>
+                    <p className="text-sm text-[#365f78]">{nameMap.get(chat.user_b_id) ?? "不明ユーザー"}</p>
+                  </div>
+                  <div className="soft-card-subtle">
+                    <p className="label-text mb-1">expires_at</p>
+                    <p className="text-sm text-[#365f78]">
+                      {chat.expires_at ? new Date(chat.expires_at).toLocaleString("ja-JP") : "なし"}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <p className="muted-text text-sm">対象チャット情報は見つかりませんでした。</p>
