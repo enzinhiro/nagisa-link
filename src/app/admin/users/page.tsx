@@ -90,13 +90,15 @@ export default function AdminUsersPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
+        <header className="soft-card flex flex-col gap-3.5">
           <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
             管理者トップに戻る
           </Link>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
-          <h1 className="hero-title text-2xl font-semibold">ユーザー一覧</h1>
-          <p className="muted-text text-sm">ユーザーの停止・解除を行えます。</p>
+          <div className="flex flex-col gap-2">
+            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+            <h1 className="hero-title text-2xl font-semibold">ユーザー一覧</h1>
+            <p className="muted-text text-sm">利用状況を確認し、停止・解除を行えます。</p>
+          </div>
         </header>
 
         {loading ? (
@@ -119,28 +121,32 @@ export default function AdminUsersPage() {
 
         {!loading && !message && users.length === 0 ? (
           <section className="soft-card">
-            <p className="muted-text text-sm">まだユーザー情報がありません。</p>
+            <p className="muted-text text-sm">まだ表示できるユーザー情報がありません。</p>
           </section>
         ) : null}
 
         {!loading &&
           !message &&
           users.map((u) => (
-            <article key={u.id} className="soft-card flex flex-col gap-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-[#2f5f79]">{toMamaDisplayName(u.nickname)}</h3>
-                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${u.is_suspended ? "pill-pink" : "pill-blue"}`}>
-                  {u.is_suspended ? "停止中" : "通常"}
-                </span>
+            <article key={u.id} className="soft-card flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(u.nickname)}</h3>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${u.profile_completed ? "pill-blue" : "bg-[#eef4f8] text-[#6f8796]"}`}
+                  >
+                    {u.profile_completed ? "登録済み" : "未完了"}
+                  </span>
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${u.is_suspended ? "pill-pink" : "pill-blue"}`}>
+                    {u.is_suspended ? "停止中" : "利用中"}
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-[#365f78]">地域: {u.area || "未設定"}</p>
-              <p className="text-sm text-[#365f78]">
-                登録状態: {u.profile_completed ? "プロフィール完了" : "プロフィール未完了"}
-              </p>
               <p className="text-xs muted-text">登録日: {new Date(u.created_at).toLocaleString("ja-JP")}</p>
               <button
                 type="button"
-                className="secondary-btn !h-10"
+                className="secondary-btn !h-11"
                 onClick={() => handleToggleSuspend(u)}
                 disabled={updatingUserId === u.id}
               >
