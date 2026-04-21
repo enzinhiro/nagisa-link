@@ -8,6 +8,14 @@ import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
 
+function formatSignUpErrorMessage(message: string): string {
+  const normalized = message.trim().toLowerCase();
+  if (normalized.includes("email rate limit exceeded")) {
+    return "短時間に送信が集中しています。少し時間をおいてから、もう一度お試しください。";
+  }
+  return message;
+}
+
 export default function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -243,7 +251,7 @@ export default function AuthPage() {
     if (signUpError) {
       setIsSignupSubmitting(false);
       setSignupSuccessEmail(null);
-      setSignupMessage(signUpError.message);
+      setSignupMessage(formatSignUpErrorMessage(signUpError.message ?? ""));
       return;
     }
 
