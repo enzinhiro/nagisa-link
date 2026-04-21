@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 
@@ -9,7 +10,7 @@ type WantRow = {
   id: string;
   from_user_id: string;
   to_user_id: string;
-  status: "pending";
+  status: "pending" | "accepted" | "rejected";
 };
 
 type ProfileRow = {
@@ -21,6 +22,7 @@ type ProfileRow = {
 };
 
 type TalkCard = {
+  wantId?: string;
   otherUserId: string;
   nickname: string;
   area: string;
@@ -29,8 +31,13 @@ type TalkCard = {
 };
 
 export default function TalkPage() {
+  const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [updatingWantId, setUpdatingWantId] = useState<string | null>(null);
+  const [creatingChatUserId, setCreatingChatUserId] = useState<string | null>(null);
   const [matchedCards, setMatchedCards] = useState<TalkCard[]>([]);
   const [receivedCards, setReceivedCards] = useState<TalkCard[]>([]);
   const [sentCards, setSentCards] = useState<TalkCard[]>([]);
@@ -40,110 +47,192 @@ export default function TalkPage() {
     [matchedCards.length, receivedCards.length, sentCards.length]
   );
 
-  useEffect(() => {
-    const fetchTalks = async () => {
-      setLoading(true);
-      setMessage("");
+  const fetchTalks = async () => {
+    setLoading(true);
+    setMessage("");
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) {
-        setMessage("ログイン情報を確認できませんでした。");
-        setLoading(false);
-        return;
-      }
-
-      const { data: wantsData, error: wantsError } = await supabase
-        .from("wants")
-        .select("id,from_user_id,to_user_id,status")
-        .eq("status", "pending")
-        .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
-
-      if (wantsError) {
-        setMessage("一覧の取得に失敗しました。時間をおいて再度お試しください。");
-        setLoading(false);
-        return;
-      }
-
-      const wants = (wantsData ?? []) as WantRow[];
-      const wantsSet = new Set(wants.map((w) => `${w.from_user_id}->${w.to_user_id}`));
-
-      const matchedUserIds = new Set<string>();
-      const receivedUserIds: string[] = [];
-      const sentUserIds: string[] = [];
-
-      for (const want of wants) {
-        const otherUserId = want.from_user_id === user.id ? want.to_user_id : want.from_user_id;
-        if (!otherUserId || otherUserId === user.id) continue;
-
-        const hasReverse = wantsSet.has(`${otherUserId}->${user.id}`) && wantsSet.has(`${user.id}->${otherUserId}`);
-        if (hasReverse) {
-          matchedUserIds.add(otherUserId);
-          continue;
-        }
-
-        if (want.to_user_id === user.id) {
-          receivedUserIds.push(otherUserId);
-        } else if (want.from_user_id === user.id) {
-          sentUserIds.push(otherUserId);
-        }
-      }
-
-      const matchedIds = Array.from(matchedUserIds);
-      const matchedIdSet = new Set(matchedIds);
-      const uniqueReceivedIds = Array.from(new Set(receivedUserIds)).filter((id) => !matchedIdSet.has(id));
-      const uniqueSentIds = Array.from(new Set(sentUserIds)).filter((id) => !matchedIdSet.has(id));
-
-      const profileIds = Array.from(new Set([...matchedIds, ...uniqueReceivedIds, ...uniqueSentIds]));
-      if (profileIds.length === 0) {
-        setMatchedCards([]);
-        setReceivedCards([]);
-        setSentCards([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id,nickname,area,want_to_connect,profile_completed")
-        .in("id", profileIds)
-        .eq("profile_completed", true);
-
-      if (profilesError) {
-        setMessage("相手プロフィールの取得に失敗しました。");
-        setLoading(false);
-        return;
-      }
-
-      const profileMap = new Map<string, ProfileRow>();
-      for (const profile of (profilesData ?? []) as ProfileRow[]) {
-        profileMap.set(profile.id, profile);
-      }
-
-      const toCard = (id: string, label: string): TalkCard | null => {
-        const p = profileMap.get(id);
-        if (!p) return null;
-        return {
-          otherUserId: id,
-          nickname: p.nickname,
-          area: p.area,
-          wantToConnect: p.want_to_connect,
-          label,
-        };
-      };
-
-      setMatchedCards(matchedIds.map((id) => toCard(id, "一致した")).filter((v): v is TalkCard => v !== null));
-      setReceivedCards(
-        uniqueReceivedIds.map((id) => toCard(id, "届いた")).filter((v): v is TalkCard => v !== null)
-      );
-      setSentCards(uniqueSentIds.map((id) => toCard(id, "送った")).filter((v): v is TalkCard => v !== null));
+    if (!user) {
+      setMessage("ログイン情報を確認できませんでした。");
       setLoading(false);
+      return;
+    }
+
+    setCurrentUserId(user.id);
+
+    const { data: wantsData, error: wantsError } = await supabase
+      .from("wants")
+      .select("id,from_user_id,to_user_id,status")
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
+
+    if (wantsError) {
+      setMessage("一覧の取得に失敗しました。時間をおいて再度お試しください。");
+      setLoading(false);
+      return;
+    }
+
+    const wants = (wantsData ?? []) as WantRow[];
+    const acceptedSet = new Set(
+      wants
+        .filter((w) => w.status === "accepted")
+        .map((w) => `${w.from_user_id}->${w.to_user_id}`)
+    );
+
+    const matchedUserIds = new Set<string>();
+    const receivedWants: { wantId: string; otherUserId: string }[] = [];
+    const sentWants: { wantId: string; otherUserId: string }[] = [];
+
+    for (const want of wants) {
+      const otherUserId = want.from_user_id === user.id ? want.to_user_id : want.from_user_id;
+      if (!otherUserId || otherUserId === user.id) continue;
+
+      const isMutualAccepted =
+        acceptedSet.has(`${user.id}->${otherUserId}`) && acceptedSet.has(`${otherUserId}->${user.id}`);
+      if (isMutualAccepted) {
+        matchedUserIds.add(otherUserId);
+      }
+
+      if (
+        want.to_user_id === user.id &&
+        want.status === "pending" &&
+        !isMutualAccepted
+      ) {
+        receivedWants.push({ wantId: want.id, otherUserId });
+      }
+
+      if (
+        want.from_user_id === user.id &&
+        want.status === "pending" &&
+        !isMutualAccepted
+      ) {
+        sentWants.push({ wantId: want.id, otherUserId });
+      }
+    }
+
+    const matchedIdSet = new Set(Array.from(matchedUserIds));
+    const uniqueReceived = Array.from(
+      new Map(
+        receivedWants
+          .filter((item) => !matchedIdSet.has(item.otherUserId))
+          .map((item) => [item.otherUserId, item])
+      ).values()
+    );
+    const uniqueSent = Array.from(
+      new Map(
+        sentWants
+          .filter((item) => !matchedIdSet.has(item.otherUserId))
+          .map((item) => [item.otherUserId, item])
+      ).values()
+    );
+
+    const profileIds = Array.from(
+      new Set([
+        ...Array.from(matchedUserIds),
+        ...uniqueReceived.map((item) => item.otherUserId),
+        ...uniqueSent.map((item) => item.otherUserId),
+      ])
+    );
+
+    if (profileIds.length === 0) {
+      setMatchedCards([]);
+      setReceivedCards([]);
+      setSentCards([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id,nickname,area,want_to_connect,profile_completed")
+      .in("id", profileIds)
+      .eq("profile_completed", true);
+
+    if (profilesError) {
+      setMessage("相手プロフィールの取得に失敗しました。");
+      setLoading(false);
+      return;
+    }
+
+    const profileMap = new Map<string, ProfileRow>();
+    for (const profile of (profilesData ?? []) as ProfileRow[]) {
+      profileMap.set(profile.id, profile);
+    }
+
+    const toCard = (id: string, label: string, wantId?: string): TalkCard | null => {
+      const p = profileMap.get(id);
+      if (!p) return null;
+      return {
+        wantId,
+        otherUserId: id,
+        nickname: p.nickname,
+        area: p.area,
+        wantToConnect: p.want_to_connect,
+        label,
+      };
     };
 
+    setMatchedCards(
+      Array.from(matchedUserIds).map((id) => toCard(id, "一致した")).filter((v): v is TalkCard => v !== null)
+    );
+    setReceivedCards(
+      uniqueReceived
+        .map((item) => toCard(item.otherUserId, "届いた", item.wantId))
+        .filter((v): v is TalkCard => v !== null)
+    );
+    setSentCards(
+      uniqueSent
+        .map((item) => toCard(item.otherUserId, "送った", item.wantId))
+        .filter((v): v is TalkCard => v !== null)
+    );
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchTalks();
   }, []);
+
+  const handleResponse = async (wantId: string | undefined, nextStatus: "accepted" | "rejected") => {
+    if (!wantId || !currentUserId) return;
+    setUpdatingWantId(wantId);
+    setFeedbackMessage("");
+
+    const { error } = await supabase
+      .from("wants")
+      .update({ status: nextStatus })
+      .eq("id", wantId)
+      .eq("to_user_id", currentUserId);
+
+    setUpdatingWantId(null);
+
+    if (error) {
+      setFeedbackMessage("更新できませんでした。時間をおいて再度お試しください。");
+      return;
+    }
+
+    setFeedbackMessage(nextStatus === "accepted" ? "承諾しました。" : "今回は見送りました。");
+    await fetchTalks();
+  };
+
+  const handleCreateOrOpenChat = async (otherUserId: string) => {
+    setFeedbackMessage("");
+    setCreatingChatUserId(otherUserId);
+
+    const { data: chatId, error } = await supabase.rpc("create_or_get_chat_with_user", {
+      target_user_id: otherUserId,
+    });
+
+    setCreatingChatUserId(null);
+
+    if (error || !chatId) {
+      setFeedbackMessage("チャットの準備に失敗しました。時間をおいて再度お試しください。");
+      return;
+    }
+
+    router.push(`/chat/${chatId}`);
+  };
 
   const renderCard = (card: TalkCard, section: "matched" | "received" | "sent") => (
     <article key={`${section}-${card.otherUserId}`} className="soft-card flex flex-col gap-2.5">
@@ -154,16 +243,31 @@ export default function TalkPage() {
       <p className="text-xs muted-text">{card.area}</p>
       <p className="text-sm text-[#365f78]">{card.wantToConnect}</p>
       {section === "matched" ? (
-        <button type="button" className="secondary-btn !h-10" disabled>
-          チャット準備中
+        <button
+          type="button"
+          className="secondary-btn !h-10"
+          onClick={() => handleCreateOrOpenChat(card.otherUserId)}
+          disabled={creatingChatUserId === card.otherUserId}
+        >
+          {creatingChatUserId === card.otherUserId ? "準備中..." : "チャットへ進む"}
         </button>
       ) : null}
       {section === "received" ? (
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" className="primary-btn !h-10">
+          <button
+            type="button"
+            className="primary-btn !h-10"
+            disabled={updatingWantId === card.wantId}
+            onClick={() => handleResponse(card.wantId, "accepted")}
+          >
             話してみたい
           </button>
-          <button type="button" className="secondary-btn !h-10">
+          <button
+            type="button"
+            className="secondary-btn !h-10"
+            disabled={updatingWantId === card.wantId}
+            onClick={() => handleResponse(card.wantId, "rejected")}
+          >
             今回は見送る
           </button>
         </div>
@@ -198,6 +302,12 @@ export default function TalkPage() {
             <p className="muted-text text-sm">
               まだ「話したい」の動きはありません。気になる相手がいたら、さがす画面から送ってみましょう。
             </p>
+          </section>
+        ) : null}
+
+        {!loading && !message && feedbackMessage ? (
+          <section className="soft-card">
+            <p className="text-sm text-[#3f6680]">{feedbackMessage}</p>
           </section>
         ) : null}
 
