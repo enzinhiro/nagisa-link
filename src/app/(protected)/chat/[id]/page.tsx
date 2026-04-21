@@ -328,10 +328,10 @@ export default function ChatDetailPage() {
 
             <section className="soft-card flex items-center gap-3">
               <div className="h-11 w-11 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
-              <div>
+              <div className="flex flex-col gap-0.5">
                 <h1 className="hero-title text-lg font-semibold">{toMamaDisplayName(otherProfile.nickname)}</h1>
                 <p className="text-xs muted-text">{otherProfile.area}</p>
-                <p className="text-xs muted-text mt-1">
+                <p className="text-xs muted-text">
                   {remainingHours === null
                     ? ""
                     : remainingHours > 0
@@ -342,7 +342,7 @@ export default function ChatDetailPage() {
             </section>
 
             <section className="soft-card-subtle">
-              <p className="text-xs leading-6 text-[#486f86]">
+              <p className="text-xs leading-5 text-[#486f86]">
                 このやり取りは期間限定です。URL送信はできません。必要な場合のみ運営が確認することがあります。個人情報の共有は慎重に進めましょう。
               </p>
             </section>
@@ -353,7 +353,7 @@ export default function ChatDetailPage() {
                   まずはここからやり取りできます。安心できる範囲で短いメッセージから始めましょう。
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {messages.length === 0 ? (
                   <div className="rounded-2xl border border-[#d8e7ef] bg-white px-4 py-3">
                     <p className="text-sm muted-text">まだメッセージはありません。最初の一言を送ってみましょう。</p>
@@ -364,16 +364,24 @@ export default function ChatDetailPage() {
                     return (
                       <div
                         key={row.id}
-                        className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                        className={`flex ${isMine ? "justify-end" : "justify-start"} py-0.5`}
                       >
-                        <div
-                          className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-6 ${
-                            isMine
-                              ? "bg-[#dff2ff] text-[#2f5f79] border border-[#cde5f2]"
-                              : "bg-white text-[#365f78] border border-[#d8e7ef]"
-                          }`}
-                        >
-                          {row.body}
+                        <div className={`max-w-[84%] ${isMine ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                          <div
+                            className={`rounded-2xl px-4 py-2.5 text-sm leading-6 ${
+                              isMine
+                                ? "bg-[#dff2ff] text-[#2f5f79] border border-[#cde5f2]"
+                                : "bg-white text-[#365f78] border border-[#d8e7ef]"
+                            }`}
+                          >
+                            {row.body}
+                          </div>
+                          <p className="px-1 text-[11px] text-[#7f99a8]">
+                            {new Date(row.created_at).toLocaleTimeString("ja-JP", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
                         </div>
                       </div>
                     );
@@ -383,28 +391,28 @@ export default function ChatDetailPage() {
               </div>
             </section>
 
-            <section className="soft-card flex flex-col gap-2.5">
+            <section className="soft-card flex flex-col gap-3">
               {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
               {isExpired ? (
                 <p className="text-sm muted-text">このチャットは終了しました。</p>
               ) : null}
-              <div className="flex gap-2">
-              <input
-                className="mock-input"
-                placeholder="メッセージを入力"
-                value={inputBody}
-                onChange={(e) => setInputBody(e.target.value)}
-                maxLength={500}
-                disabled={isSending || isExpired}
-              />
-              <button
-                type="button"
-                className="secondary-btn !w-[88px]"
-                onClick={handleSend}
-                disabled={isSending || isExpired}
-              >
-                送信
-              </button>
+              <div className="flex items-end gap-2">
+                <input
+                  className="mock-input"
+                  placeholder="メッセージを入力"
+                  value={inputBody}
+                  onChange={(e) => setInputBody(e.target.value)}
+                  maxLength={500}
+                  disabled={isSending || isExpired}
+                />
+                <button
+                  type="button"
+                  className="secondary-btn !w-[88px]"
+                  onClick={handleSend}
+                  disabled={isSending || isExpired}
+                >
+                  送信
+                </button>
               </div>
             </section>
           </>
