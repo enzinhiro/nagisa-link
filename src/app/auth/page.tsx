@@ -345,7 +345,10 @@ export default function AuthPage() {
               はじめての方へ
             </p>
             <h1 className="hero-title text-2xl font-semibold">ログイン・会員登録</h1>
-            <p className="muted-text text-sm leading-6">会員登録は1〜2分で完了します。認証メール確認後にご利用いただけます。</p>
+            <p className="muted-text text-sm leading-6">
+              会員登録は1〜2分で完了します。<br />
+              認証メール確認後にご利用いただけます。
+            </p>
           </header>
         ) : null}
 
