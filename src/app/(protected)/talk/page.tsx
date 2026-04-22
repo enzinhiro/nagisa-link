@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
@@ -180,10 +179,9 @@ export default function TalkPage() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id,nickname,area,want_to_connect,profile_completed,is_suspended")
+      .select("id,nickname,area,want_to_connect,profile_completed")
       .in("id", profileIds)
-      .eq("profile_completed", true)
-      .eq("is_suspended", false);
+      .eq("profile_completed", true);
 
     if (profilesError) {
       setMessage("相手プロフィールの取得に失敗しました。");
@@ -210,17 +208,15 @@ export default function TalkPage() {
       };
     };
 
-    setMatchedCards(
-      Array.from(matchedUserIds).map((id) => toCard(id, "一致した")).filter((v): v is TalkCard => v !== null)
-    );
+    setMatchedCards(Array.from(matchedUserIds).map((id) => toCard(id, "一致")).filter((v): v is TalkCard => v !== null));
     setReceivedCards(
       uniqueReceived
-        .map((item) => toCard(item.otherUserId, "届いた", item.wantId))
+        .map((item) => toCard(item.otherUserId, "オファーが届いています", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
     setSentCards(
       uniqueSent
-        .map((item) => toCard(item.otherUserId, "送った", item.wantId))
+        .map((item) => toCard(item.otherUserId, "オファー中", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
     const ended = Array.from(endedUserIds)
@@ -323,11 +319,6 @@ export default function TalkPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">話したい</p>
-          <h1 className="hero-title text-2xl font-semibold">つながりリクエスト</h1>
-          <p className="muted-text text-sm">一致した・届いた・送ったを確認できます。</p>
-        </header>
 
         {loading ? (
           <section className="soft-card">
@@ -342,13 +333,8 @@ export default function TalkPage() {
         ) : null}
 
         {!loading && !message && !hasAnyCards ? (
-          <section className="soft-card flex flex-col gap-3">
-            <p className="muted-text text-sm">
-              気になる相手がいたら「話してみたい」を送れます。
-            </p>
-            <Link href="/search" className="secondary-btn !h-10">
-              さがすへ
-            </Link>
+          <section className="soft-card">
+            <p className="muted-text text-sm">オファーはまだありません。</p>
           </section>
         ) : null}
 
@@ -361,10 +347,7 @@ export default function TalkPage() {
         {!loading && !message ? (
           <>
             <section className="screen-stack">
-              <div className="flex items-end justify-between gap-2">
-                <h2 className="section-title">一致した</h2>
-                <p className="section-note">やり取りを始められます</p>
-              </div>
+              <h2 className="section-title">一致</h2>
               {matchedCards.length > 0 ? (
                 matchedCards.map((card) => renderCard(card, "matched"))
               ) : (
@@ -375,10 +358,7 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <div className="flex items-end justify-between gap-2">
-                <h2 className="section-title">届いた</h2>
-                <p className="section-note">返答を選べます</p>
-              </div>
+              <h2 className="section-title">オファーが届いています</h2>
               {receivedCards.length > 0 ? (
                 receivedCards.map((card) => renderCard(card, "received"))
               ) : (
@@ -389,10 +369,7 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <div className="flex items-end justify-between gap-2">
-                <h2 className="section-title">送った</h2>
-                <p className="section-note">お返事待ちです</p>
-              </div>
+              <h2 className="section-title">オファー中</h2>
               {sentCards.length > 0 ? (
                 sentCards.map((card) => renderCard(card, "sent"))
               ) : (
@@ -403,10 +380,7 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <div className="flex items-end justify-between gap-2">
-                <h2 className="section-title">終了済み</h2>
-                <p className="section-note">期限終了したやり取り</p>
-              </div>
+              <h2 className="section-title">終了済み</h2>
               {endedCards.length > 0 ? (
                 endedCards.map((card) => renderCard(card, "ended"))
               ) : (
@@ -418,14 +392,6 @@ export default function TalkPage() {
           </>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/" className="secondary-btn !h-10">
-            ホームへ
-          </Link>
-          <Link href="/search" className="secondary-btn !h-10">
-            さがすへ
-          </Link>
-        </div>
       </main>
     </div>
   );

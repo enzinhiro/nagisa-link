@@ -79,8 +79,7 @@ export default function ChatIndexPage() {
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("id,nickname,area")
-        .in("id", otherIds)
-        .eq("is_suspended", false);
+        .in("id", otherIds);
 
       const profileMap = new Map<string, ProfileRow>();
       for (const p of (profilesData ?? []) as ProfileRow[]) {
@@ -147,13 +146,6 @@ export default function ChatIndexPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">チャット</p>
-          <h1 className="hero-title text-2xl font-semibold">一致した相手とのやり取り</h1>
-          <p className="muted-text text-sm">
-            チャットは「話したい」で一致した相手から始まります。進行中のやり取りは順次ここに集約していきます。
-          </p>
-        </header>
 
         {loading ? (
           <section className="soft-card">
@@ -178,13 +170,8 @@ export default function ChatIndexPage() {
                 activeChats.map((chat) => renderCard(chat, "active"))
               ) : (
                 activeChats.length === 0 && endedChats.length === 0 ? (
-                  <div className="soft-card-subtle flex flex-col gap-2">
-                    <p className="section-note">
-                      一致した相手とのやり取りがここに表示されます。
-                    </p>
-                    <Link href="/talk" className="secondary-btn !h-10">
-                      話したいへ
-                    </Link>
+                  <div className="soft-card-subtle">
+                    <p className="section-note">チャットルームはまだありません。</p>
                   </div>
                 ) : (
                   <div className="soft-card-subtle">
@@ -210,9 +197,6 @@ export default function ChatIndexPage() {
           </>
         ) : null}
 
-        <Link className="secondary-btn !h-10" href="/talk">
-          話したい一覧へ
-        </Link>
       </main>
     </div>
   );

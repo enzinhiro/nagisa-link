@@ -110,10 +110,9 @@ export default function SearchPage() {
       let query = supabase
         .from("profiles")
         .select(
-          "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at,is_suspended"
+          "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
         )
         .eq("profile_completed", true)
-        .eq("is_suspended", false)
         .neq("id", user.id);
 
       if (areaFilter) query = query.eq("area", areaFilter);
@@ -157,10 +156,9 @@ export default function SearchPage() {
         let relaxedQuery = supabase
           .from("profiles")
           .select(
-            "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at,is_suspended"
+            "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
           .eq("profile_completed", true)
-          .eq("is_suspended", false)
           .neq("id", user.id);
 
         if (areaFilter) relaxedQuery = relaxedQuery.eq("area", areaFilter);
@@ -197,13 +195,6 @@ export default function SearchPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">
-            さがす
-          </p>
-          <h1 className="hero-title text-2xl font-semibold">つながれそうな相手を探す</h1>
-          <p className="muted-text text-sm">プロフィール完了ユーザーから、まずは10件を表示します。</p>
-        </header>
 
         <section className="soft-card flex flex-col gap-3.5">
           <div className="flex items-center justify-between gap-2">
@@ -391,14 +382,6 @@ export default function SearchPage() {
             ))}
         </section>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/" className="secondary-btn !h-10">
-            ホームへ
-          </Link>
-          <Link href="/talk" className="secondary-btn !h-10">
-            話したいへ
-          </Link>
-        </div>
       </main>
     </div>
   );
