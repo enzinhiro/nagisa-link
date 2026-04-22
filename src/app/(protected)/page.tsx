@@ -37,13 +37,7 @@ export default function Home() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <section className="soft-card flex flex-col gap-3">
-          <h1 className="section-title">ホーム</h1>
-          <p className="section-note">落ち着いて使えるベータ版として、シンプルな表示にしています。</p>
-          {!loading && message ? <p className="text-sm text-rose-700">{message}</p> : null}
-        </section>
-
+      <main className="mock-shell screen-stack pt-1">
         <section className="soft-card flex flex-col gap-3">
           <div className="flex items-end justify-between gap-2">
             <h2 className="section-title">進行中チャット</h2>
