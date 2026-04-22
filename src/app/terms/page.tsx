@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SERVICE_NAME } from "../../lib/brand";
 
 export default function TermsPage() {
   return (
@@ -7,7 +8,7 @@ export default function TermsPage() {
         <header className="soft-card flex flex-col gap-3">
           <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">ルール</p>
           <h1 className="hero-title text-2xl font-semibold">利用規約（最小版）</h1>
-          <p className="muted-text text-sm">渚リンクを安心してご利用いただくための基本ルールです。</p>
+          <p className="muted-text text-sm">{SERVICE_NAME}を安心してご利用いただくための基本ルールです。</p>
         </header>
 
         <section className="soft-card flex flex-col gap-3">

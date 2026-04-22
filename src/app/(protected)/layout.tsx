@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { SERVICE_NAME } from "../../lib/brand";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
@@ -131,7 +132,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     <div className="min-h-dvh pb-20 pt-13">
       <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
         <div className="mx-auto flex h-11 w-full max-w-[460px] items-center justify-between px-3">
-          <p className="text-[13px] font-semibold tracking-[0.02em] text-[#2f5f79]">NAGISA Link</p>
+          <p className="text-[13px] font-semibold tracking-[0.02em] text-[#2f5f79]">{SERVICE_NAME}</p>
           <div className="relative">
             <button
               type="button"

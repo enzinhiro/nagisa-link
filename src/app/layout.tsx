@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SERVICE_NAME } from "../lib/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "渚リンク",
-  description: "渚リンク UIモック",
+  title: SERVICE_NAME,
+  description: `${SERVICE_NAME} 公式アプリ`,
+  openGraph: {
+    title: SERVICE_NAME,
+    description: `${SERVICE_NAME} 公式アプリ`,
+  },
 };
 
 export default function RootLayout({
