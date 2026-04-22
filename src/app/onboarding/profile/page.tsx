@@ -79,10 +79,13 @@ export default function ProfileOnboardingPage() {
   const [intro, setIntro] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     const bootstrap = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      if (cancelled) return;
 
       if (!user) {
         router.push("/auth");
@@ -99,17 +102,21 @@ export default function ProfileOnboardingPage() {
         .eq("id", user.id)
         .maybeSingle();
 
+      if (cancelled) return;
+
       if (error) {
+        console.error("[onboarding/profile] profiles bootstrap select failed", error);
         setMessage("プロフィール情報の読み込みに失敗しました。");
         setIsBooting(false);
         return;
       }
 
+      if (data?.profile_completed === true) {
+        router.replace("/");
+        return;
+      }
+
       if (data) {
-        if (data.profile_completed) {
-          router.replace("/");
-          return;
-        }
         setRealName(data.real_name ?? "");
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");
@@ -135,7 +142,10 @@ export default function ProfileOnboardingPage() {
       setIsBooting(false);
     };
 
-    bootstrap();
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const selectedTagCount = childInterestTags.length;

@@ -26,7 +26,7 @@ async function resolveAuthProfileDestination(
     .eq("id", userId)
     .maybeSingle();
   if (profileError) return null;
-  if (profile?.profile_completed) return "/";
+  if (profile?.profile_completed === true) return "/";
   return "/onboarding/profile";
 }
 

@@ -14,12 +14,18 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isSuspended, setIsSuspended] = useState(false);
   const [talkBadgeCount, setTalkBadgeCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [profileGateError, setProfileGateError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const guard = async () => {
+      setProfileGateError(null);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      if (cancelled) return;
 
       if (!user) {
         router.replace("/auth");
@@ -33,6 +39,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         });
       }
 
+      if (cancelled) return;
+
       const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
         "has_consumed_invite",
         { input_email: user.email ?? "", input_user_id: user.id }
@@ -43,13 +51,26 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (cancelled) return;
+
       const { data, error } = await supabase
         .from("profiles")
         .select("profile_completed,is_suspended")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (error || !data?.profile_completed) {
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[protected/layout] profiles select failed", error);
+        setProfileGateError(
+          "プロフィール情報を読み込めませんでした。時間をおいてから再度お試しください。"
+        );
+        setIsChecking(false);
+        return;
+      }
+
+      if (!data || data.profile_completed !== true) {
         router.replace("/onboarding/profile");
         return;
       }
@@ -65,12 +86,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         .select("id", { count: "exact", head: true })
         .eq("to_user_id", user.id)
         .eq("status", "pending");
+      if (cancelled) return;
       setTalkBadgeCount(count ?? 0);
 
       setIsChecking(false);
     };
 
-    guard();
+    void guard();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   useEffect(() => {
@@ -83,6 +108,24 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <main className="mock-shell screen-stack">
           <section className="soft-card">
             <p className="muted-text text-sm">読み込み中です...</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (profileGateError) {
+    return (
+      <div className="mock-page">
+        <main className="mock-shell screen-stack">
+          <section className="soft-card flex flex-col gap-3">
+            <p className="text-sm text-rose-700">{profileGateError}</p>
+            <Link
+              href="/onboarding/profile"
+              className="secondary-btn !h-10 text-center leading-10"
+            >
+              プロフィール登録へ
+            </Link>
           </section>
         </main>
       </div>
