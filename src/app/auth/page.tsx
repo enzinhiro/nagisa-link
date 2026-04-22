@@ -7,6 +7,7 @@ import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
+const AUTH_DEBUG_KEY = "nagisa-link-auth-debug";
 
 function formatSignUpErrorMessage(message: string): string {
   const normalized = message.trim().toLowerCase();
@@ -46,6 +47,12 @@ export default function AuthPage() {
   const [loginMessage, setLoginMessage] = useState("");
   const [signupMessage, setSignupMessage] = useState("");
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
+  const isAuthDebugEnabled =
+    typeof window !== "undefined" && window.localStorage.getItem(AUTH_DEBUG_KEY) === "1";
+  const authDebugLog = (...args: unknown[]) => {
+    if (!isAuthDebugEnabled) return;
+    console.log("[auth-debug]", ...args);
+  };
 
   const isSignupReady =
     signupInviteCode.trim().length > 0 &&
@@ -118,36 +125,43 @@ export default function AuthPage() {
   // メール確認リンクなどで /auth に戻り URL からセッションが復元された直後も、ログイン済みと同じ次画面へ進める
   useEffect(() => {
     let cancelled = false;
+    authDebugLog("session effect mounted");
     let isRecoveringBrokenSession = false;
     const recoverBrokenSession = async () => {
       if (isRecoveringBrokenSession) return;
       isRecoveringBrokenSession = true;
+      authDebugLog("recoverBrokenSession:start");
       try {
         await supabase.auth.signOut({ scope: "local" });
       } catch (error) {
         console.error("[auth] failed to clear broken session", error);
       } finally {
+        authDebugLog("recoverBrokenSession:done");
         isRecoveringBrokenSession = false;
       }
     };
     const redirectIfAuthed = async (userId: string) => {
       const dest = await resolveAuthProfileDestination(userId);
       if (cancelled || dest === null) return;
+      authDebugLog("redirectIfAuthed", { userId, dest });
       router.replace(dest);
     };
     const validateCurrentSessionUser = async (): Promise<string | null> => {
       const { data, error } = await supabase.auth.getUser();
       if (!error && data.user) return data.user.id;
       const status = (error as { status?: number } | null)?.status;
+      authDebugLog("validateCurrentSessionUser:error", { status, message: error?.message });
       if (status === 401 || status === 403) {
         await recoverBrokenSession();
       }
       return null;
     };
     const sync = async () => {
+      authDebugLog("sync:start");
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      authDebugLog("sync:session", { hasUser: Boolean(session?.user) });
       if (!session?.user) return;
       const validUserId = await validateCurrentSessionUser();
       if (!validUserId || cancelled) return;
@@ -157,6 +171,7 @@ export default function AuthPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      authDebugLog("onAuthStateChange", { event, hasUser: Boolean(session?.user) });
       if (cancelled || !session?.user) return;
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         void (async () => {
@@ -168,6 +183,7 @@ export default function AuthPage() {
     });
     return () => {
       cancelled = true;
+      authDebugLog("session effect cleanup");
       subscription.unsubscribe();
     };
   }, [router]);
