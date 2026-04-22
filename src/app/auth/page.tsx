@@ -118,16 +118,40 @@ export default function AuthPage() {
   // メール確認リンクなどで /auth に戻り URL からセッションが復元された直後も、ログイン済みと同じ次画面へ進める
   useEffect(() => {
     let cancelled = false;
+    let isRecoveringBrokenSession = false;
+    const recoverBrokenSession = async () => {
+      if (isRecoveringBrokenSession) return;
+      isRecoveringBrokenSession = true;
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch (error) {
+        console.error("[auth] failed to clear broken session", error);
+      } finally {
+        isRecoveringBrokenSession = false;
+      }
+    };
     const redirectIfAuthed = async (userId: string) => {
       const dest = await resolveAuthProfileDestination(userId);
       if (cancelled || dest === null) return;
       router.replace(dest);
     };
+    const validateCurrentSessionUser = async (): Promise<string | null> => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data.user) return data.user.id;
+      const status = (error as { status?: number } | null)?.status;
+      if (status === 401 || status === 403) {
+        await recoverBrokenSession();
+      }
+      return null;
+    };
     const sync = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session?.user) await redirectIfAuthed(session.user.id);
+      if (!session?.user) return;
+      const validUserId = await validateCurrentSessionUser();
+      if (!validUserId || cancelled) return;
+      await redirectIfAuthed(validUserId);
     };
     void sync();
     const {
@@ -135,7 +159,11 @@ export default function AuthPage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled || !session?.user) return;
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-        void redirectIfAuthed(session.user.id);
+        void (async () => {
+          const validUserId = await validateCurrentSessionUser();
+          if (!validUserId || cancelled) return;
+          await redirectIfAuthed(validUserId);
+        })();
       }
     });
     return () => {
