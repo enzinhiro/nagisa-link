@@ -267,7 +267,7 @@ export default function AuthPage() {
     const normalizedInviteCode = signupInviteCode.trim().toUpperCase();
     const normalizedSignupEmail = signupEmail.trim().toLowerCase();
 
-    console.log("[auth] validate_invite_code using Supabase URL:", SUPABASE_URL_IN_USE);
+    authDebugLog("validate_invite_code", { supabaseUrl: SUPABASE_URL_IN_USE });
     const { data: isValidInviteCode, error: validateError } = await supabase.rpc(
       "validate_invite_code",
       { input_code: normalizedInviteCode }
@@ -289,7 +289,7 @@ export default function AuthPage() {
     }
 
     // Consume first to avoid creating auth-only accounts.
-    console.log("[auth] consume_invite_code using Supabase URL:", SUPABASE_URL_IN_USE);
+    authDebugLog("consume_invite_code", { supabaseUrl: SUPABASE_URL_IN_USE });
     const { data: consumeSucceeded, error: consumeError } = await supabase.rpc(
       "consume_invite_code",
       {
@@ -317,7 +317,7 @@ export default function AuthPage() {
     const redirectTo =
       typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined;
 
-    console.log("[auth] signUp using Supabase URL:", SUPABASE_URL_IN_USE);
+    authDebugLog("signUp", { supabaseUrl: SUPABASE_URL_IN_USE });
     const { error: signUpError } = await supabase.auth.signUp({
       email: normalizedSignupEmail,
       password: signupPassword,
