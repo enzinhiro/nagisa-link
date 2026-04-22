@@ -128,43 +128,48 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-dvh pb-20">
-      <div className="fixed right-4 top-4 z-30">
-        <button
-          type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#fffdfa] text-[#47687c] shadow-sm"
-          onClick={() => setIsMenuOpen((v) => !v)}
-          aria-label="メニューを開く"
-        >
-          ⚙
-        </button>
-        {isMenuOpen ? (
-          <div className="mt-2 w-44 rounded-2xl border border-[#d8e7ef] bg-white p-2 shadow-sm">
-            <Link
-              href="/profile"
-              className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
-            >
-              プロフィールを確認
-            </Link>
-            <Link
-              href="/rules"
-              className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
-            >
-              ルール
-            </Link>
+    <div className="min-h-dvh pb-20 pt-14">
+      <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#dceaf2] bg-[#f9fdff]/95 backdrop-blur">
+        <div className="mx-auto flex h-12 w-full max-w-[460px] items-center justify-between px-3">
+          <p className="text-sm font-semibold tracking-[0.02em] text-[#2f5f79]">NAGISA Link</p>
+          <div className="relative">
             <button
               type="button"
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#365f78] hover:bg-[#f2f9ff]"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.replace("/auth");
-              }}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
+              onClick={() => setIsMenuOpen((v) => !v)}
+              aria-label="メニューを開く"
             >
-              ログアウト
+              ⚙
             </button>
+            {isMenuOpen ? (
+              <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-[#d8e7ef] bg-white p-2 shadow-sm">
+                <Link
+                  href="/profile"
+                  className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+                >
+                  プロフィールを確認
+                </Link>
+                <Link
+                  href="/rules"
+                  className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+                >
+                  ルール
+                </Link>
+                <button
+                  type="button"
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    router.replace("/auth");
+                  }}
+                >
+                  ログアウト
+                </button>
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
+      </header>
       {children}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-[#d9e8f1] bg-[#fffdfa]/95 backdrop-blur">
         <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
