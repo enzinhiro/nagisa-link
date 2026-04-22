@@ -2,7 +2,6 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { APP_HEADER_LOGO_PATH, SERVICE_NAME } from "../../lib/brand";
@@ -134,14 +133,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
         <div className="mx-auto flex h-11 w-full max-w-[460px] items-center justify-between px-3">
           <Link href="/" className="inline-flex items-center" aria-label={`${SERVICE_NAME} ホームへ`}>
-            <Image
-              src={APP_HEADER_LOGO_PATH}
-              alt={SERVICE_NAME}
-              width={132}
-              height={28}
-              className="h-7 w-auto object-contain"
-              priority
-            />
+            <img src={APP_HEADER_LOGO_PATH} alt={SERVICE_NAME} className="h-7 w-auto object-contain" />
           </Link>
           <div className="relative">
             <button
