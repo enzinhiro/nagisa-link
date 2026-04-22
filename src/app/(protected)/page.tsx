@@ -57,7 +57,7 @@ export default function Home() {
       ? "届いた話したいを確認しましょう"
       : activeChatCount > 0
         ? "チャットを確認しましょう"
-        : "さがす画面から相手を探してみましょう";
+        : "まずは「さがす」から、気になる相手を見つけてみましょう。";
 
   return (
     <div className="mock-page">
@@ -65,25 +65,28 @@ export default function Home() {
         <section className="soft-card flex flex-col gap-3">
           <div className="flex items-end justify-between gap-2">
             <h2 className="section-title">新しい動き</h2>
-            <p className="section-note">いまの状況</p>
+            <p className="section-note">ベータ版</p>
           </div>
           {loading ? <p className="section-note">読み込み中...</p> : null}
           {!loading && message ? <p className="text-sm text-rose-700">{message}</p> : null}
           {!loading && !message ? (
             <div className="grid grid-cols-3 gap-2.5">
-              <Link href="/talk" className="soft-card-subtle text-center">
+              <div className="soft-card-subtle text-center">
                 <p className="text-xl font-semibold text-[#2f5f79]">{incomingCount}</p>
                 <p className="section-note">届いた話したい</p>
-              </Link>
-              <Link href="/talk" className="soft-card-subtle text-center">
+              </div>
+              <div className="soft-card-subtle text-center">
                 <p className="text-xl font-semibold text-[#2f5f79]">{matchedCount}</p>
                 <p className="section-note">一致した相手</p>
-              </Link>
-              <Link href="/chat" className="soft-card-subtle text-center">
+              </div>
+              <div className="soft-card-subtle text-center">
                 <p className="text-xl font-semibold text-[#2f5f79]">{activeChatCount}</p>
                 <p className="section-note">進行中チャット</p>
-              </Link>
+              </div>
             </div>
+          ) : null}
+          {!loading && !message ? (
+            <p className="text-xs muted-text">一部機能は順次公開予定です。現在はプロフィールと検索を先行提供しています。</p>
           ) : null}
         </section>
 
@@ -94,7 +97,9 @@ export default function Home() {
           </div>
           {!loading && activeChats.length === 0 ? (
             <div className="soft-card-subtle flex flex-col gap-2">
-              <p className="section-note">まだ動きがありません。まずは相手を探してみましょう。</p>
+              <p className="section-note">
+                いまは表示できるチャットがありません。チャット機能は準備が整い次第ご案内します。
+              </p>
               <Link href="/search" className="secondary-btn !h-11">
                 さがすへ
               </Link>
@@ -126,7 +131,9 @@ export default function Home() {
           </div>
           {!loading && recommended.length === 0 ? (
             <div className="soft-card-subtle flex flex-col gap-2">
-              <p className="section-note">まだおすすめ表示はありません。さがす画面から相手を探してみましょう。</p>
+              <p className="section-note">
+                まだおすすめを表示できません。プロフィール登録後、相手の検索からはじめられます。
+              </p>
               <Link href="/search" className="secondary-btn !h-11">
                 さがすへ
               </Link>
@@ -155,8 +162,8 @@ export default function Home() {
             <Link href="/search" className="secondary-btn !h-11">
               さがすへ
             </Link>
-            <Link href={incomingCount > 0 ? "/talk" : "/chat"} className="secondary-btn !h-11">
-              {incomingCount > 0 ? "話したいへ" : "チャットへ"}
+            <Link href="/profile" className="secondary-btn !h-11">
+              プロフィール確認
             </Link>
           </div>
         </section>

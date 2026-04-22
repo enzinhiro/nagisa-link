@@ -342,13 +342,10 @@ export default function AuthPage() {
         {!signupSuccessEmail ? (
           <header className="soft-card flex flex-col gap-2.5">
             <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-pink">
-              安心してご利用いただくために
+              はじめての方へ
             </p>
             <h1 className="hero-title text-2xl font-semibold">ログイン・会員登録</h1>
-            <p className="muted-text text-sm leading-6">
-              会員登録後、メール認証を完了してからログインできます。<br />
-              初回ログイン後にプロフィール登録へ進みます。
-            </p>
+            <p className="muted-text text-sm leading-6">会員登録は1〜2分で完了します。認証メール確認後にご利用いただけます。</p>
           </header>
         ) : null}
 
@@ -400,7 +397,7 @@ export default function AuthPage() {
               {activeTab === "login" ? (
             <form className="flex flex-col gap-3.5" onSubmit={handleLogin}>
               <h2 className="section-title">ログイン</h2>
-              <p className="section-note">登録済みのメールアドレスとパスワードで続けます。</p>
+              <p className="section-note">登録済みのメールアドレスで続けます。</p>
               <label>
                 <span className="label-text">メールアドレス</span>
                 <input
@@ -439,7 +436,7 @@ export default function AuthPage() {
               <h2 className="section-title">会員登録</h2>
               <div className="soft-card-subtle">
                 <p className="text-sm leading-6 text-[#406984]">
-                  招待コードは必須です。お手元にご用意のうえ入力してください。
+                  招待コードをご用意のうえ、順番に入力してください。
                 </p>
               </div>
               <label>
@@ -502,7 +499,7 @@ export default function AuthPage() {
                   >
                     利用規約
                   </Link>
-                  に同意する
+                  に同意して進む
                 </span>
               </label>
               <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
@@ -521,7 +518,7 @@ export default function AuthPage() {
                   >
                     プライバシーポリシー
                   </Link>
-                  に同意する
+                  に同意して進む
                 </span>
               </label>
               {signupMessage ? <p className="text-sm text-rose-700">{signupMessage}</p> : null}
@@ -529,7 +526,7 @@ export default function AuthPage() {
                 {isSignupSubmitting ? "送信中..." : "確認メールを送信する"}
               </button>
               <p className="text-[11px] muted-text">
-                確認メールを送信します。メール認証後、初回ログインしてプロフィール登録へ進んでください。
+                認証メール確認後、ログインしてプロフィール登録へ進んでください。
               </p>
             </form>
           )}

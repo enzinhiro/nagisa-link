@@ -268,18 +268,18 @@ export default function ProfileOnboardingPage() {
           <h1 className="hero-title text-2xl font-semibold">
             はじめにプロフィールを登録しましょう
           </h1>
-          <p className="muted-text text-sm leading-6">3ステップ・1〜2分で入力できます。</p>
+          <p className="muted-text text-sm leading-6">3つのステップで、安心してつながる準備を整えます。</p>
           <div className="soft-card-subtle">
             <p className="section-note">
-              入力した内容は、安心してつながるためのマッチングに利用されます。
+              入力内容はマッチングにのみ利用されます。公開範囲は画面内の案内をご確認ください。
             </p>
           </div>
         </header>
 
-        <form className="screen-stack" onSubmit={handleSubmit}>
+        <form className="screen-stack gap-3.5" onSubmit={handleSubmit}>
           <section className="soft-card flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <span className="step-chip">Step 1</span>
+              <span className="step-chip">STEP 1 / 3</span>
               <h2 className="section-title">基本情報</h2>
             </div>
             <label>
@@ -327,7 +327,7 @@ export default function ProfileOnboardingPage() {
 
           <section className="soft-card flex flex-col gap-3.5">
             <div className="flex items-center gap-2">
-              <span className="step-chip">Step 2</span>
+              <span className="step-chip">STEP 2 / 3</span>
               <h2 className="section-title">お子さんについて</h2>
             </div>
             <label>
@@ -397,7 +397,7 @@ export default function ProfileOnboardingPage() {
 
           <section className="soft-card flex flex-col gap-3.5">
             <div className="flex items-center gap-2">
-              <span className="step-chip">Step 3</span>
+              <span className="step-chip">STEP 3 / 3</span>
               <h2 className="section-title">つながり方の希望</h2>
             </div>
             <label>
@@ -479,7 +479,7 @@ export default function ProfileOnboardingPage() {
           </section>
 
           <section className="soft-card flex flex-col gap-2.5">
-            <p className="text-sm muted-text leading-6">入力内容を確認して、プロフィールを完了してください。</p>
+            <p className="text-sm muted-text leading-6">最後に内容を確認して完了してください。</p>
             {message && <p className="text-sm text-rose-700">{message}</p>}
             <button className="primary-btn" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "保存中..." : "プロフィールを完了してホームへ"}
