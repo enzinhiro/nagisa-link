@@ -131,14 +131,20 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh pb-20 pt-13">
       <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
-        <div className="mx-auto flex h-11 w-full max-w-[460px] items-center justify-between px-3">
-          <Link href="/" className="inline-flex items-center" aria-label={`${SERVICE_NAME} ホームへ`}>
-            <img src={APP_HEADER_LOGO_PATH} alt={SERVICE_NAME} className="h-7 w-auto object-contain" />
-          </Link>
+        <div className="mx-auto flex h-24 w-full max-w-[460px] items-center justify-between px-3">
+          <div className="flex items-center flex-none shrink-0 min-w-fit">
+            <Link href="/" className="flex items-center flex-none shrink-0 min-w-fit" aria-label={`${SERVICE_NAME} ホームへ`}>
+              <img
+                src={APP_HEADER_LOGO_PATH}
+                alt={SERVICE_NAME}
+                className="h-20 w-auto max-h-none flex-none shrink-0"
+              />
+            </Link>
+          </div>
           <div className="relative">
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
               onClick={() => setIsMenuOpen((v) => !v)}
               aria-label="メニューを開く"
             >
