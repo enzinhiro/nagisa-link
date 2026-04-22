@@ -23,9 +23,17 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       const {
         data: { user },
+        error: sessionUserError,
       } = await supabase.auth.getUser();
 
       if (cancelled) return;
+
+      const staleStatus = (sessionUserError as { status?: number } | null)?.status;
+      if (sessionUserError && (staleStatus === 401 || staleStatus === 403)) {
+        await supabase.auth.signOut({ scope: "local" });
+        router.replace("/auth");
+        return;
+      }
 
       if (!user) {
         router.replace("/auth");
@@ -75,8 +83,19 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      // wants/chats導線が未実装の環境でもホームを開けることを優先し、バッジは一旦固定
-      setTalkBadgeCount(0);
+      const { count: pendingInCount, error: pendingCountError } = await supabase
+        .from("wants")
+        .select("*", { count: "exact", head: true })
+        .eq("to_user", user.id)
+        .eq("status", "pending");
+
+      if (cancelled) return;
+
+      if (!pendingCountError && typeof pendingInCount === "number") {
+        setTalkBadgeCount(pendingInCount);
+      } else {
+        setTalkBadgeCount(0);
+      }
 
       setIsChecking(false);
     };
@@ -129,22 +148,22 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-dvh pb-20 pt-13">
-      <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
-        <div className="mx-auto flex h-24 w-full max-w-[460px] items-center justify-between px-3">
+    <div className="min-h-dvh pb-20 pt-14">
+      <header className="fixed left-0 right-0 top-0 z-30 h-14 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
+        <div className="mx-auto flex h-full w-full max-w-[460px] items-center justify-between px-3">
           <div className="flex items-center flex-none shrink-0 min-w-fit">
             <Link href="/" className="flex items-center flex-none shrink-0 min-w-fit" aria-label={`${SERVICE_NAME} ホームへ`}>
               <img
                 src={APP_HEADER_LOGO_PATH}
                 alt={SERVICE_NAME}
-                className="h-20 w-auto max-h-none flex-none shrink-0"
+                className="h-10 w-auto max-h-none flex-none shrink-0 max-w-[min(220px,55vw)] object-contain object-left"
               />
             </Link>
           </div>
           <div className="relative">
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
               onClick={() => setIsMenuOpen((v) => !v)}
               aria-label="メニューを開く"
             >

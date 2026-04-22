@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import {
+  chatByOtherUserMap,
+  pendingReceivedOffers,
+  pendingSentOffers,
+  splitMatchedAndEnded,
+} from "../../../lib/talk/wantsSummary";
 
 type WantRow = {
   id: string;
@@ -35,7 +41,7 @@ type ChatRow = {
   user_a_id: string;
   user_b_id: string;
   expires_at: string;
-  status: "active";
+  status: string;
 };
 
 export default function TalkPage() {
@@ -84,16 +90,6 @@ export default function TalkPage() {
     }
 
     const wants = (wantsData ?? []) as WantRow[];
-    const matchedDirectionSet = new Set(
-      wants
-        .filter((w) => w.status === "matched")
-        .map((w) => `${w.from_user}->${w.to_user}`)
-    );
-
-    const matchedUserIds = new Set<string>();
-    const endedUserIds = new Set<string>();
-    const receivedWants: { wantId: string; otherUserId: string }[] = [];
-    const sentWants: { wantId: string; otherUserId: string }[] = [];
 
     const { data: chatsData } = await supabase
       .from("chats")
@@ -101,69 +97,24 @@ export default function TalkPage() {
       .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`);
 
     const chats = (chatsData ?? []) as ChatRow[];
-    const chatByOtherUser = new Map<string, ChatRow>();
-    for (const chat of chats) {
-      const otherId = chat.user_a_id === user.id ? chat.user_b_id : chat.user_a_id;
-      const prev = chatByOtherUser.get(otherId);
-      if (!prev || new Date(chat.expires_at).getTime() > new Date(prev.expires_at).getTime()) {
-        chatByOtherUser.set(otherId, chat);
-      }
-    }
+    const chatByOtherUser = chatByOtherUserMap(user.id, chats);
 
-    for (const want of wants) {
-      const otherUserId = want.from_user === user.id ? want.to_user : want.from_user;
-      if (!otherUserId || otherUserId === user.id) continue;
+    const { matchedOtherIds, endedOtherIds } = splitMatchedAndEnded(user.id, wants, chatByOtherUser);
+    const matchedIdSet = new Set(matchedOtherIds);
+    const endedIdSet = new Set(endedOtherIds);
 
-      const isMutualMatched =
-        matchedDirectionSet.has(`${user.id}->${otherUserId}`) &&
-        matchedDirectionSet.has(`${otherUserId}->${user.id}`);
-      if (isMutualMatched) {
-        const relatedChat = chatByOtherUser.get(otherUserId);
-        if (relatedChat && new Date(relatedChat.expires_at).getTime() <= Date.now()) {
-          endedUserIds.add(otherUserId);
-        } else {
-          matchedUserIds.add(otherUserId);
-        }
-      }
+    const receivedWants = pendingReceivedOffers(user.id, wants, matchedIdSet, endedIdSet);
+    const sentWants = pendingSentOffers(user.id, wants, matchedIdSet, endedIdSet);
 
-      if (
-        want.to_user === user.id &&
-        want.status === "pending" &&
-        !isMutualMatched
-      ) {
-        receivedWants.push({ wantId: want.id, otherUserId });
-      }
-
-      if (
-        want.from_user === user.id &&
-        want.status === "pending" &&
-        !isMutualMatched
-      ) {
-        sentWants.push({ wantId: want.id, otherUserId });
-      }
-    }
-
-    const matchedIdSet = new Set(Array.from(matchedUserIds));
-    const endedIdSet = new Set(Array.from(endedUserIds));
     const uniqueReceived = Array.from(
-      new Map(
-        receivedWants
-          .filter((item) => !matchedIdSet.has(item.otherUserId) && !endedIdSet.has(item.otherUserId))
-          .map((item) => [item.otherUserId, item])
-      ).values()
+      new Map(receivedWants.map((item) => [item.otherUserId, item])).values()
     );
-    const uniqueSent = Array.from(
-      new Map(
-        sentWants
-          .filter((item) => !matchedIdSet.has(item.otherUserId) && !endedIdSet.has(item.otherUserId))
-          .map((item) => [item.otherUserId, item])
-      ).values()
-    );
+    const uniqueSent = Array.from(new Map(sentWants.map((item) => [item.otherUserId, item])).values());
 
     const profileIds = Array.from(
       new Set([
-        ...Array.from(matchedUserIds),
-        ...Array.from(endedUserIds),
+        ...matchedOtherIds,
+        ...endedOtherIds,
         ...uniqueReceived.map((item) => item.otherUserId),
         ...uniqueSent.map((item) => item.otherUserId),
       ])
@@ -209,7 +160,7 @@ export default function TalkPage() {
       };
     };
 
-    setMatchedCards(Array.from(matchedUserIds).map((id) => toCard(id, "一致")).filter((v): v is TalkCard => v !== null));
+    setMatchedCards(matchedOtherIds.map((id) => toCard(id, "一致")).filter((v): v is TalkCard => v !== null));
     setReceivedCards(
       uniqueReceived
         .map((item) => toCard(item.otherUserId, "オファーが届いています", item.wantId))
@@ -220,7 +171,7 @@ export default function TalkPage() {
         .map((item) => toCard(item.otherUserId, "オファー中", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
-    const ended = Array.from(endedUserIds)
+    const ended = Array.from(endedOtherIds)
       .map((id) => toCard(id, "チャットは終了しました", undefined, chatByOtherUser.get(id)?.expires_at))
       .filter((v): v is TalkCard => v !== null)
       .sort((a, b) => new Date(b.expiresAt ?? 0).getTime() - new Date(a.expiresAt ?? 0).getTime());
