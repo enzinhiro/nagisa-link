@@ -128,14 +128,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-dvh pb-20 pt-14">
-      <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#dceaf2] bg-[#f9fdff]/95 backdrop-blur">
-        <div className="mx-auto flex h-12 w-full max-w-[460px] items-center justify-between px-3">
-          <p className="text-sm font-semibold tracking-[0.02em] text-[#2f5f79]">NAGISA Link</p>
+    <div className="min-h-dvh pb-20 pt-13">
+      <header className="fixed left-0 right-0 top-0 z-30 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
+        <div className="mx-auto flex h-11 w-full max-w-[460px] items-center justify-between px-3">
+          <p className="text-[13px] font-semibold tracking-[0.02em] text-[#2f5f79]">NAGISA Link</p>
           <div className="relative">
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
               onClick={() => setIsMenuOpen((v) => !v)}
               aria-label="メニューを開く"
             >

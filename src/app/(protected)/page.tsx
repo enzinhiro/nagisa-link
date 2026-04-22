@@ -3,25 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { toMamaDisplayName } from "../../lib/profile/displayName";
-
-type ProfileRow = {
-  id: string;
-  nickname: string;
-  area: string;
-  want_to_connect: string;
-};
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [incomingCount] = useState(0);
-  const [matchedCount] = useState(0);
-  const [activeChatCount] = useState(0);
+  const [activeChatCount, setActiveChatCount] = useState(0);
   const [activeChats] = useState<Array<{ id: string; otherName: string; otherArea: string; expires_at: string }>>(
     []
   );
-  const [recommended, setRecommended] = useState<ProfileRow[]>([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -38,13 +27,7 @@ export default function Home() {
         return;
       }
 
-      const { data: recData } = await supabase
-        .from("profiles")
-        .select("id,nickname,area,want_to_connect")
-        .eq("profile_completed", true)
-        .neq("id", user.id)
-        .limit(3);
-      setRecommended((recData ?? []) as ProfileRow[]);
+      setActiveChatCount(0);
 
       setLoading(false);
     };
@@ -52,42 +35,13 @@ export default function Home() {
     fetchDashboard();
   }, []);
 
-  const nextActionText =
-    incomingCount > 0
-      ? "届いた話したいを確認しましょう"
-      : activeChatCount > 0
-        ? "チャットを確認しましょう"
-        : "まずは「さがす」から、気になる相手を見つけてみましょう。";
-
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3">
-          <div className="flex items-end justify-between gap-2">
-            <h2 className="section-title">新しい動き</h2>
-            <p className="section-note">ベータ版</p>
-          </div>
-          {loading ? <p className="section-note">読み込み中...</p> : null}
+          <h1 className="section-title">ホーム</h1>
+          <p className="section-note">落ち着いて使えるベータ版として、シンプルな表示にしています。</p>
           {!loading && message ? <p className="text-sm text-rose-700">{message}</p> : null}
-          {!loading && !message ? (
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="soft-card-subtle text-center">
-                <p className="text-xl font-semibold text-[#2f5f79]">{incomingCount}</p>
-                <p className="section-note">届いた話したい</p>
-              </div>
-              <div className="soft-card-subtle text-center">
-                <p className="text-xl font-semibold text-[#2f5f79]">{matchedCount}</p>
-                <p className="section-note">一致した相手</p>
-              </div>
-              <div className="soft-card-subtle text-center">
-                <p className="text-xl font-semibold text-[#2f5f79]">{activeChatCount}</p>
-                <p className="section-note">進行中チャット</p>
-              </div>
-            </div>
-          ) : null}
-          {!loading && !message ? (
-            <p className="text-xs muted-text">一部機能は順次公開予定です。現在はプロフィールと検索を先行提供しています。</p>
-          ) : null}
         </section>
 
         <section className="soft-card flex flex-col gap-3">
@@ -100,9 +54,7 @@ export default function Home() {
               <p className="section-note">
                 いまは表示できるチャットがありません。チャット機能は準備が整い次第ご案内します。
               </p>
-              <Link href="/search" className="secondary-btn !h-11">
-                さがすへ
-              </Link>
+              <p className="text-xs muted-text">気になる相手探しは「さがす」タブから進められます。</p>
             </div>
           ) : (
             activeChats.map((chat) => {
@@ -122,50 +74,6 @@ export default function Home() {
               );
             })
           )}
-        </section>
-
-        <section className="soft-card flex flex-col gap-3">
-          <div className="flex items-end justify-between gap-2">
-            <h2 className="section-title">おすすめの相手</h2>
-            <p className="section-note">まずはここから</p>
-          </div>
-          {!loading && recommended.length === 0 ? (
-            <div className="soft-card-subtle flex flex-col gap-2">
-              <p className="section-note">
-                まだおすすめを表示できません。プロフィール登録後、相手の検索からはじめられます。
-              </p>
-              <Link href="/search" className="secondary-btn !h-11">
-                さがすへ
-              </Link>
-            </div>
-          ) : (
-            recommended.map((person) => (
-              <article key={person.id} className="soft-card-subtle flex flex-col gap-2.5">
-                <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(person.nickname)}</h3>
-                <p className="text-xs muted-text">{person.area}</p>
-                <p className="text-sm leading-6 text-[#365f78]">{person.want_to_connect}</p>
-                <Link href={`/search/${person.id}`} className="secondary-btn !h-11">
-                  詳細を見る
-                </Link>
-              </article>
-            ))
-          )}
-        </section>
-
-        <section className="soft-card flex flex-col gap-3">
-          <div className="flex items-end justify-between gap-2">
-            <h2 className="section-title">次にやること</h2>
-            <p className="section-note">1アクションでOK</p>
-          </div>
-          <p className="text-sm text-[#365f78]">{nextActionText}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link href="/search" className="secondary-btn !h-11">
-              さがすへ
-            </Link>
-            <Link href="/profile" className="secondary-btn !h-11">
-              プロフィール確認
-            </Link>
-          </div>
         </section>
       </main>
     </div>
