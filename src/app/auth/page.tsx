@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
+import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
@@ -340,16 +342,35 @@ export default function AuthPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         {!signupSuccessEmail ? (
-          <header className="soft-card flex flex-col gap-2.5">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-pink">
-              はじめての方へ
-            </p>
-            <h1 className="hero-title text-2xl font-semibold">ログイン・会員登録</h1>
-            <p className="muted-text text-sm leading-6">
-              会員登録は1〜2分で完了します。<br />
-              認証メール確認後にご利用いただけます。
-            </p>
-          </header>
+          <section className="relative overflow-hidden rounded-[22px] border border-[#deecf4] bg-[#f8fdff]">
+            <div className="relative h-[46svh] min-h-[300px] max-h-[520px] w-full">
+              <Image
+                src={AUTH_TOP_IMAGE_PATH}
+                alt={SERVICE_NAME}
+                fill
+                priority
+                className="object-cover object-center"
+              />
+            </div>
+            <div className="relative -mt-12 rounded-t-[22px] bg-gradient-to-b from-[#f8fdff]/70 via-[#f8fdff]/96 to-[#f8fdff] px-3 pb-3 pt-4">
+              <div className="tab-shell">
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === "signup" ? "tab-btn-active" : ""}`}
+                  onClick={() => setActiveTab("signup")}
+                >
+                  新規登録
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === "login" ? "tab-btn-active" : ""}`}
+                  onClick={() => setActiveTab("login")}
+                >
+                  ログイン
+                </button>
+              </div>
+            </div>
+          </section>
         ) : null}
 
         <section className="soft-card flex flex-col gap-5">
@@ -380,23 +401,6 @@ export default function AuthPage() {
             </form>
           ) : (
             <>
-              <div className="tab-shell">
-                <button
-                  type="button"
-                  className={`tab-btn ${activeTab === "login" ? "tab-btn-active" : ""}`}
-                  onClick={() => setActiveTab("login")}
-                >
-                  ログイン
-                </button>
-                <button
-                  type="button"
-                  className={`tab-btn ${activeTab === "signup" ? "tab-btn-active" : ""}`}
-                  onClick={() => setActiveTab("signup")}
-                >
-                  会員登録
-                </button>
-              </div>
-
               {activeTab === "login" ? (
             <form className="flex flex-col gap-3.5" onSubmit={handleLogin}>
               <h2 className="section-title">ログイン</h2>
