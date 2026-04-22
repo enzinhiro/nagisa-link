@@ -243,7 +243,7 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
-    router.push("/");
+    router.push("/search");
   };
 
   if (isBooting) {
