@@ -70,7 +70,7 @@ export default function SearchDetailPage() {
         return;
       }
 
-      const { data: existingWant } = await supabase
+      const { data: existingWant, error: wantSelectError } = await supabase
         .from("wants")
         .select("id")
         .eq("from_user_id", user.id)
@@ -78,7 +78,11 @@ export default function SearchDetailPage() {
         .eq("status", "pending")
         .maybeSingle();
 
-      setHasPendingWant(Boolean(existingWant));
+      if (wantSelectError) {
+        console.warn("[search/[id]] wants lookup failed (送信状態の確認のみ影響):", wantSelectError);
+      }
+
+      setHasPendingWant(Boolean(existingWant) && !wantSelectError);
       setProfile(data as ProfileDetail);
       setLoading(false);
     };
