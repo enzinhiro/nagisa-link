@@ -11,7 +11,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
-  const [isSuspended, setIsSuspended] = useState(false);
   const [talkBadgeCount, setTalkBadgeCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
@@ -55,7 +54,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("profile_completed,is_suspended")
+        .select("profile_completed")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -72,12 +71,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       if (!data || data.profile_completed !== true) {
         router.replace("/onboarding/profile");
-        return;
-      }
-
-      if (data.is_suspended) {
-        setIsSuspended(true);
-        setIsChecking(false);
         return;
       }
 
@@ -126,31 +119,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             >
               プロフィール登録へ
             </Link>
-          </section>
-        </main>
-      </div>
-    );
-  }
-
-  if (isSuspended) {
-    return (
-      <div className="mock-page">
-        <main className="mock-shell screen-stack">
-          <section className="soft-card flex flex-col gap-3">
-            <h1 className="section-title">ご利用について</h1>
-            <p className="muted-text text-sm">
-              現在ご利用を停止しています。ご不明点は運営までご連絡ください。
-            </p>
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.replace("/auth");
-              }}
-            >
-              ログアウト
-            </button>
           </section>
         </main>
       </div>
