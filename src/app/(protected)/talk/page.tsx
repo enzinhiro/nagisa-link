@@ -7,9 +7,9 @@ import { toMamaDisplayName } from "../../../lib/profile/displayName";
 
 type WantRow = {
   id: string;
-  from_user_id: string;
-  to_user_id: string;
-  status: "pending" | "accepted" | "rejected";
+  from_user: string;
+  to_user: string;
+  status: "pending" | "matched" | "declined" | "cancelled";
 };
 
 type ProfileRow = {
@@ -74,8 +74,8 @@ export default function TalkPage() {
 
     const { data: wantsData, error: wantsError } = await supabase
       .from("wants")
-      .select("id,from_user_id,to_user_id,status")
-      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
+      .select("id,from_user,to_user,status")
+      .or(`from_user.eq.${user.id},to_user.eq.${user.id}`);
 
     if (wantsError) {
       setMessage("一覧の取得に失敗しました。時間をおいて再度お試しください。");
@@ -84,10 +84,10 @@ export default function TalkPage() {
     }
 
     const wants = (wantsData ?? []) as WantRow[];
-    const acceptedSet = new Set(
+    const matchedDirectionSet = new Set(
       wants
-        .filter((w) => w.status === "accepted")
-        .map((w) => `${w.from_user_id}->${w.to_user_id}`)
+        .filter((w) => w.status === "matched")
+        .map((w) => `${w.from_user}->${w.to_user}`)
     );
 
     const matchedUserIds = new Set<string>();
@@ -111,12 +111,13 @@ export default function TalkPage() {
     }
 
     for (const want of wants) {
-      const otherUserId = want.from_user_id === user.id ? want.to_user_id : want.from_user_id;
+      const otherUserId = want.from_user === user.id ? want.to_user : want.from_user;
       if (!otherUserId || otherUserId === user.id) continue;
 
-      const isMutualAccepted =
-        acceptedSet.has(`${user.id}->${otherUserId}`) && acceptedSet.has(`${otherUserId}->${user.id}`);
-      if (isMutualAccepted) {
+      const isMutualMatched =
+        matchedDirectionSet.has(`${user.id}->${otherUserId}`) &&
+        matchedDirectionSet.has(`${otherUserId}->${user.id}`);
+      if (isMutualMatched) {
         const relatedChat = chatByOtherUser.get(otherUserId);
         if (relatedChat && new Date(relatedChat.expires_at).getTime() <= Date.now()) {
           endedUserIds.add(otherUserId);
@@ -126,17 +127,17 @@ export default function TalkPage() {
       }
 
       if (
-        want.to_user_id === user.id &&
+        want.to_user === user.id &&
         want.status === "pending" &&
-        !isMutualAccepted
+        !isMutualMatched
       ) {
         receivedWants.push({ wantId: want.id, otherUserId });
       }
 
       if (
-        want.from_user_id === user.id &&
+        want.from_user === user.id &&
         want.status === "pending" &&
-        !isMutualAccepted
+        !isMutualMatched
       ) {
         sentWants.push({ wantId: want.id, otherUserId });
       }
@@ -231,16 +232,17 @@ export default function TalkPage() {
     fetchTalks();
   }, []);
 
-  const handleResponse = async (wantId: string | undefined, nextStatus: "accepted" | "rejected") => {
+  const handleResponse = async (wantId: string | undefined, nextStatus: "matched" | "declined") => {
     if (!wantId || !currentUserId) return;
     setUpdatingWantId(wantId);
     setFeedbackMessage("");
 
+    const respondedAt = new Date().toISOString();
     const { error } = await supabase
       .from("wants")
-      .update({ status: nextStatus })
+      .update({ status: nextStatus, responded_at: respondedAt })
       .eq("id", wantId)
-      .eq("to_user_id", currentUserId);
+      .eq("to_user", currentUserId);
 
     setUpdatingWantId(null);
 
@@ -249,7 +251,7 @@ export default function TalkPage() {
       return;
     }
 
-    setFeedbackMessage(nextStatus === "accepted" ? "承諾しました。" : "今回は見送りました。");
+    setFeedbackMessage(nextStatus === "matched" ? "承諾しました。" : "今回は見送りました。");
     await fetchTalks();
   };
 
@@ -297,7 +299,7 @@ export default function TalkPage() {
             type="button"
             className="primary-btn !h-11"
             disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, "accepted")}
+            onClick={() => handleResponse(card.wantId, "matched")}
           >
             話してみたい
           </button>
@@ -305,7 +307,7 @@ export default function TalkPage() {
             type="button"
             className="secondary-btn !h-11"
             disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, "rejected")}
+            onClick={() => handleResponse(card.wantId, "declined")}
           >
             今回は見送る
           </button>

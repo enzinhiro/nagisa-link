@@ -73,13 +73,13 @@ export default function SearchDetailPage() {
       const { data: existingWant, error: wantSelectError } = await supabase
         .from("wants")
         .select("id")
-        .eq("from_user_id", user.id)
-        .eq("to_user_id", profileId)
+        .eq("from_user", user.id)
+        .eq("to_user", profileId)
         .eq("status", "pending")
         .maybeSingle();
 
       if (wantSelectError) {
-        console.warn("[search/[id]] wants lookup failed (送信状態の確認のみ影響):", wantSelectError);
+        console.warn("[search/[id]] wants lookup failed:", wantSelectError);
       }
 
       setHasPendingWant(Boolean(existingWant) && !wantSelectError);
@@ -97,15 +97,18 @@ export default function SearchDetailPage() {
     setIsSendingWant(true);
 
     const { error } = await supabase.from("wants").insert({
-      from_user_id: currentUserId,
-      to_user_id: profile.id,
+      from_user: currentUserId,
+      to_user: profile.id,
       status: "pending",
     });
 
     setIsSendingWant(false);
 
     if (error) {
-      if (error.code === "23505") {
+      const dup =
+        error.code === "23505" ||
+        (typeof error.message === "string" && error.message.toLowerCase().includes("duplicate"));
+      if (dup) {
         setHasPendingWant(true);
         setTalkMessage("すでに送信済みです。お返事をお待ちください。");
         return;
