@@ -268,12 +268,7 @@ export default function ProfileOnboardingPage() {
           <h1 className="hero-title text-2xl font-semibold">
             はじめにプロフィールを登録しましょう
           </h1>
-          <p className="muted-text text-sm leading-6">3つのステップで、安心してつながる準備を整えます。</p>
-          <div className="soft-card-subtle">
-            <p className="section-note">
-              入力内容はマッチングにのみ利用されます。公開範囲は画面内の案内をご確認ください。
-            </p>
-          </div>
+          <p className="muted-text text-sm leading-6">3つのステップで入力できます。</p>
         </header>
 
         <form className="screen-stack gap-3.5" onSubmit={handleSubmit}>

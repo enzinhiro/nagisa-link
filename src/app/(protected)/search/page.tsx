@@ -238,7 +238,7 @@ export default function SearchPage() {
           </label>
           <label>
             <span className="label-text">
-              お子さんの好きなこと（複数選択可 / OR検索）
+              お子さんの好きなこと（複数選択）
               {tagFilters.length > 0 ? ` : ${tagFilters.length}件選択中` : ""}
             </span>
             <select

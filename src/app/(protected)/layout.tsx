@@ -171,14 +171,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       {children}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-[#d9e8f1] bg-[#fffdfa]/95 backdrop-blur">
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-[#e3edf3] bg-[#fffdfa]/96 backdrop-blur">
         <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
               className={`relative flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs ${
-                tab.active ? "text-[#2f5f79] bg-[#ecf8ff]" : "text-[#6b8393]"
+                tab.active
+                  ? "text-[#2f5f79] bg-[#ecf8ff] shadow-[inset_0_0_0_1px_rgba(156,206,231,0.35)]"
+                  : "text-[#6b8393]"
               }`}
             >
               <span>{tab.label}</span>
