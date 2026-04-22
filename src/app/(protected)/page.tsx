@@ -5,13 +5,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { toMamaDisplayName } from "../../lib/profile/displayName";
 
-type ChatRow = {
-  id: string;
-  user_a_id: string;
-  user_b_id: string;
-  expires_at: string;
-};
-
 type ProfileRow = {
   id: string;
   nickname: string;
@@ -22,10 +15,12 @@ type ProfileRow = {
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [incomingCount, setIncomingCount] = useState(0);
-  const [matchedCount, setMatchedCount] = useState(0);
-  const [activeChatCount, setActiveChatCount] = useState(0);
-  const [activeChats, setActiveChats] = useState<Array<ChatRow & { otherName: string; otherArea: string }>>([]);
+  const [incomingCount] = useState(0);
+  const [matchedCount] = useState(0);
+  const [activeChatCount] = useState(0);
+  const [activeChats] = useState<Array<{ id: string; otherName: string; otherArea: string; expires_at: string }>>(
+    []
+  );
   const [recommended, setRecommended] = useState<ProfileRow[]>([]);
 
   useEffect(() => {
@@ -43,73 +38,10 @@ export default function Home() {
         return;
       }
 
-      const { data: wantsData } = await supabase
-        .from("wants")
-        .select("from_user_id,to_user_id,status")
-        .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
-
-      const wants = (wantsData ?? []) as Array<{
-        from_user_id: string;
-        to_user_id: string;
-        status: "pending" | "accepted" | "rejected";
-      }>;
-
-      const incoming = wants.filter((w) => w.to_user_id === user.id && w.status === "pending");
-      setIncomingCount(incoming.length);
-
-      const acceptedSet = new Set(
-        wants.filter((w) => w.status === "accepted").map((w) => `${w.from_user_id}->${w.to_user_id}`)
-      );
-      const matchedUsers = new Set<string>();
-      for (const w of wants) {
-        const other = w.from_user_id === user.id ? w.to_user_id : w.from_user_id;
-        if (acceptedSet.has(`${user.id}->${other}`) && acceptedSet.has(`${other}->${user.id}`)) {
-          matchedUsers.add(other);
-        }
-      }
-      setMatchedCount(matchedUsers.size);
-
-      const { data: chatData } = await supabase
-        .from("chats")
-        .select("id,user_a_id,user_b_id,expires_at")
-        .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`);
-
-      const chats = (chatData ?? []) as ChatRow[];
-      const now = Date.now();
-      const active = chats
-        .filter((c) => new Date(c.expires_at).getTime() > now)
-        .sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime());
-      setActiveChatCount(active.length);
-
-      const activeOtherIds = Array.from(
-        new Set(active.map((c) => (c.user_a_id === user.id ? c.user_b_id : c.user_a_id)))
-      );
-      let profileMap = new Map<string, ProfileRow>();
-      if (activeOtherIds.length > 0) {
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("id,nickname,area,want_to_connect")
-          .in("id", activeOtherIds)
-          .eq("is_suspended", false);
-        profileMap = new Map((p ?? []).map((row) => [row.id, row as ProfileRow]));
-      }
-      setActiveChats(
-        active.slice(0, 2).map((chat) => {
-          const otherId = chat.user_a_id === user.id ? chat.user_b_id : chat.user_a_id;
-          const p = profileMap.get(otherId);
-          return {
-            ...chat,
-            otherName: p ? toMamaDisplayName(p.nickname) : "このユーザーは現在表示できません",
-            otherArea: p?.area ?? "-",
-          };
-        })
-      );
-
       const { data: recData } = await supabase
         .from("profiles")
         .select("id,nickname,area,want_to_connect")
         .eq("profile_completed", true)
-        .eq("is_suspended", false)
         .neq("id", user.id)
         .limit(3);
       setRecommended((recData ?? []) as ProfileRow[]);

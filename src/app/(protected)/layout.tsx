@@ -74,13 +74,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { count } = await supabase
-        .from("wants")
-        .select("id", { count: "exact", head: true })
-        .eq("to_user_id", user.id)
-        .eq("status", "pending");
-      if (cancelled) return;
-      setTalkBadgeCount(count ?? 0);
+      // wants/chats導線が未実装の環境でもホームを開けることを優先し、バッジは一旦固定
+      setTalkBadgeCount(0);
 
       setIsChecking(false);
     };
