@@ -352,7 +352,7 @@ export default function AuthPage() {
                 className="object-cover object-center"
               />
             </div>
-            <div className="relative -mt-12 rounded-t-[22px] bg-gradient-to-b from-[#f8fdff]/70 via-[#f8fdff]/96 to-[#f8fdff] px-3 pb-3 pt-4">
+            <div className="relative -mt-6 rounded-t-[22px] bg-gradient-to-b from-[#f8fdff]/60 via-[#f8fdff]/95 to-[#f8fdff] px-3 pb-3 pt-3">
               <div className="tab-shell">
                 <button
                   type="button"
