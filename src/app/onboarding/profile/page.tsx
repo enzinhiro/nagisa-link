@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
@@ -24,6 +25,13 @@ const CHILD_GENDERS = [
 
 const PROFILE_SAVE_ERROR_UI =
   "プロフィールの保存に失敗しました。時間をおいてもう一度お試しください。";
+const PROFILE_BOOTSTRAP_ERROR_UI =
+  "プロフィール情報の読み込みに失敗しました。時間をおいてもう一度お試しください。";
+
+function isNoRowError(error: PostgrestError | null): boolean {
+  if (!error) return false;
+  return error.code === "PGRST116" || error.message.toLowerCase().includes("0 rows");
+}
 
 const CHILD_INTEREST_TAGS = [
   "ゲーム",
@@ -104,9 +112,9 @@ export default function ProfileOnboardingPage() {
 
       if (cancelled) return;
 
-      if (error) {
+      if (error && !isNoRowError(error)) {
         console.error("[onboarding/profile] profiles bootstrap select failed", error);
-        setMessage("プロフィール情報の読み込みに失敗しました。");
+        setMessage(PROFILE_BOOTSTRAP_ERROR_UI);
         setIsBooting(false);
         return;
       }
