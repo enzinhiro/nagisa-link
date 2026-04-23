@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { isAdminEmail } from "../../../../lib/admin-access";
+import { AdminSectionNav } from "../../_components/admin-section-nav";
 
 type ReportRow = {
   id: string;
@@ -153,14 +154,7 @@ export default function AdminReportDetailPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3.5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
-              管理者トップに戻る
-            </Link>
-            <Link href="/admin/reports" className="text-sm muted-text underline underline-offset-3">
-              通報一覧に戻る
-            </Link>
-          </div>
+          <AdminSectionNav current="reports" breadcrumb="管理画面 / 通報管理 / 詳細" />
           <div className="flex flex-col gap-2">
             <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
             <h1 className="hero-title text-2xl font-semibold">通報詳細</h1>
@@ -189,6 +183,9 @@ export default function AdminReportDetailPage() {
         {!loading && !message && report ? (
           <>
             <section className="soft-card flex flex-col gap-3">
+              <Link href="/admin/reports" className="text-sm muted-text underline underline-offset-3">
+                通報一覧に戻る
+              </Link>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">通報日時</p>
                 <p className="text-sm text-[#365f78]">{new Date(report.created_at).toLocaleString("ja-JP")}</p>

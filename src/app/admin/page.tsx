@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { isAdminEmail } from "../../lib/admin-access";
+import { AdminSectionNav } from "./_components/admin-section-nav";
 
 export default function AdminHomePage() {
   const router = useRouter();
@@ -69,6 +70,7 @@ export default function AdminHomePage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
+          <AdminSectionNav current="home" />
           <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理</p>
           <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
           <p className="muted-text text-sm">運営用メニュー / 現在の状況</p>

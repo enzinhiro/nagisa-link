@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { isAdminEmail } from "../../../lib/admin-access";
+import { AdminSectionNav } from "../_components/admin-section-nav";
 
 type AdminUserRow = {
   id: string;
@@ -109,9 +110,7 @@ export default function AdminUsersPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3.5">
-          <Link href="/admin" className="text-sm muted-text underline underline-offset-3">
-            管理者トップに戻る
-          </Link>
+          <AdminSectionNav current="users" />
           <div className="flex flex-col gap-2">
             <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
             <h1 className="hero-title text-2xl font-semibold">ユーザー一覧</h1>
