@@ -526,9 +526,6 @@ export default function ProfileOnboardingPage() {
                 {missingRequiredLabels.length > 2 ? " など" : ""}）。
               </p>
             ) : null}
-            <Link className="text-center text-sm muted-text underline underline-offset-3" href="/">
-              トップに戻る
-            </Link>
           </section>
         </form>
       </main>
