@@ -296,7 +296,7 @@ export default function AuthPage() {
     if (!isValidInviteCode) {
       setIsSignupSubmitting(false);
       setSignupSuccessEmail(null);
-      setSignupMessage("招待コードが正しくありません。入力内容をご確認ください。");
+      setSignupMessage("この招待コードは利用できません。入力内容をご確認ください。");
       return;
     }
 
@@ -322,7 +322,7 @@ export default function AuthPage() {
     if (!consumeSucceeded) {
       setIsSignupSubmitting(false);
       setSignupSuccessEmail(null);
-      setSignupMessage("招待コードが正しくありません。入力内容をご確認ください。");
+      setSignupMessage("この招待コードは利用できません。入力内容をご確認ください。");
       return;
     }
 

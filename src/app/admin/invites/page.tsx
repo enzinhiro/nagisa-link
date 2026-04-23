@@ -11,6 +11,7 @@ type InviteRow = {
   code: string;
   created_at: string;
   is_used: boolean;
+  is_active: boolean;
   used_by_email: string | null;
   note: string | null;
 };
@@ -24,7 +25,7 @@ export default function AdminInvitesPage() {
   const [createNote, setCreateNote] = useState("");
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "unused" | "used">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "unused" | "used" | "disabled">("all");
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [invites, setInvites] = useState<InviteRow[]>([]);
 
@@ -54,7 +55,12 @@ export default function AdminInvitesPage() {
     }
 
     const rows = ((data ?? []) as InviteRow[]).sort((a, b) => {
-      if (a.is_used !== b.is_used) return a.is_used ? 1 : -1;
+      const rank = (row: InviteRow) => {
+        if (!row.is_active) return 2;
+        if (row.is_used) return 1;
+        return 0;
+      };
+      if (rank(a) !== rank(b)) return rank(a) - rank(b);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     setInvites(rows);
@@ -126,10 +132,25 @@ export default function AdminInvitesPage() {
   };
 
   const visibleInvites = invites.filter((invite) => {
-    if (statusFilter === "unused") return !invite.is_used;
+    if (statusFilter === "unused") return !invite.is_used && invite.is_active;
     if (statusFilter === "used") return invite.is_used;
+    if (statusFilter === "disabled") return !invite.is_active;
     return true;
   });
+
+  const handleToggleActive = async (invite: InviteRow) => {
+    setFeedbackMessage("");
+    const { data, error } = await supabase.rpc("admin_set_invite_code_active", {
+      input_invite_id: invite.id,
+      input_is_active: !invite.is_active,
+    });
+    if (error || !data) {
+      setFeedbackMessage("状態の更新に失敗しました。");
+      return;
+    }
+    setFeedbackMessage(invite.is_active ? "招待コードを無効化しました。" : "招待コードを有効化しました。");
+    await fetchInvites();
+  };
 
   return (
     <div className="mock-page">
@@ -197,14 +218,17 @@ export default function AdminInvitesPage() {
               <select
                 className="mock-select !h-9 !w-auto min-w-[120px]"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as "all" | "unused" | "used")}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as "all" | "unused" | "used" | "disabled")
+                }
               >
                 <option value="all">すべて</option>
                 <option value="unused">未使用のみ</option>
                 <option value="used">使用済みのみ</option>
+                <option value="disabled">無効のみ</option>
               </select>
             </div>
-            <p className="section-note">未使用を先に表示しています。</p>
+            <p className="section-note">未使用 → 使用済み → 無効 の順で表示しています。</p>
           </section>
         ) : null}
 
@@ -218,9 +242,11 @@ export default function AdminInvitesPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
+                      !invite.is_active ? "bg-[#eef4f8] text-[#6f8796]" : invite.is_used ? "pill-pink" : "pill-blue"
+                    }`}
                   >
-                    {invite.is_used ? "使用済み" : "未使用"}
+                    {!invite.is_active ? "無効" : invite.is_used ? "使用済み" : "未使用"}
                   </span>
                   <button
                     type="button"
@@ -255,6 +281,11 @@ export default function AdminInvitesPage() {
               >
                 {savingNoteId === invite.id ? "保存中..." : "メモを保存"}
               </button>
+              {!invite.is_used ? (
+                <button type="button" className="secondary-btn !h-11" onClick={() => handleToggleActive(invite)}>
+                  {invite.is_active ? "無効化" : "有効化"}
+                </button>
+              ) : null}
             </article>
           ))}
 
