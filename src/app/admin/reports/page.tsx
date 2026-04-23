@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { isAdminEmail } from "../../../lib/admin-access";
-import { AdminSectionNav } from "../_components/admin-section-nav";
 import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type ReportRow = {
@@ -132,9 +131,8 @@ export default function AdminReportsPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-24">
-        <header className="soft-card flex flex-col gap-1 !py-2.5">
-          <AdminSectionNav current="reports" />
+      <main className="mock-shell screen-stack pb-20">
+        <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
         </header>
 
