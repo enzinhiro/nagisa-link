@@ -500,8 +500,8 @@ export default function ChatDetailPage() {
   })();
 
   return (
-    <div className="mock-page h-[100dvh] overflow-hidden !p-0">
-      <main className="mx-auto flex h-full w-full max-w-[440px] flex-col gap-3 overflow-hidden px-[14px] pt-[14px] pb-[calc(74px+max(env(safe-area-inset-bottom),8px))]">
+    <div className="mock-page h-full overflow-hidden !p-0">
+      <main className="mx-auto flex h-full w-full max-w-[440px] flex-col gap-3 overflow-hidden px-[14px] pt-[14px] pb-[max(env(safe-area-inset-bottom),8px)]">
 
         {loading ? (
           <section className="soft-card">
@@ -588,7 +588,8 @@ export default function ChatDetailPage() {
             <section className="soft-card flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
               <div
                 ref={messagesContainerRef}
-                className="flex flex-1 flex-col gap-3 overflow-y-auto pb-6"
+                className="flex flex-1 flex-col gap-3 overflow-y-auto"
+                style={{ paddingBottom: "12px" }}
                 onScroll={(event) => {
                   const el = event.currentTarget;
                   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -635,7 +636,7 @@ export default function ChatDetailPage() {
               </div>
             </section>
 
-            <section className="shrink-0">
+            <section className="shrink-0 pb-[max(env(safe-area-inset-bottom),4px)]">
               <div className="soft-card flex flex-col gap-3">
                   {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
                   {isExpired ? (
