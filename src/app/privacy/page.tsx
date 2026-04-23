@@ -6,7 +6,7 @@ export default function PrivacyPage() {
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
           <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">ルール</p>
-          <h1 className="hero-title text-2xl font-semibold">プライバシーポリシー（最小版）</h1>
+          <h1 className="hero-title text-2xl font-semibold">プライバシーポリシー</h1>
           <p className="muted-text text-sm">個人情報の取り扱いに関する基本方針です。</p>
         </header>
 
@@ -37,11 +37,6 @@ export default function PrivacyPage() {
           <p className="muted-text text-sm leading-6">
             情報は利用目的に必要な期間のみ保持し、期間経過後は順次削除または適切な方法で管理します。
           </p>
-        </section>
-
-        <section className="soft-card flex flex-col gap-3">
-          <h2 className="section-title">お問い合わせ窓口（仮）</h2>
-          <p className="muted-text text-sm leading-6">運営窓口: support@example.com（仮）</p>
         </section>
 
         <Link href="/auth" className="text-center text-sm muted-text underline underline-offset-3">

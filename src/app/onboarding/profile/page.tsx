@@ -71,6 +71,7 @@ export default function ProfileOnboardingPage() {
   const router = useRouter();
   const [isBooting, setIsBooting] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -101,6 +102,7 @@ export default function ProfileOnboardingPage() {
       }
 
       setUserId(user.id);
+      const authRealName = String(user.user_metadata?.real_name ?? "").trim();
 
       const { data, error } = await supabase
         .from("profiles")
@@ -119,13 +121,10 @@ export default function ProfileOnboardingPage() {
         return;
       }
 
-      if (data?.profile_completed === true) {
-        router.replace("/");
-        return;
-      }
+      setIsEditingProfile(data?.profile_completed === true);
 
       if (data) {
-        setRealName(data.real_name ?? "");
+        setRealName((data.real_name ?? authRealName) || "");
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");
         setChildAgeGroup(data.child_age_group ?? "");
@@ -145,6 +144,8 @@ export default function ProfileOnboardingPage() {
         }
         setMeetingRange(data.meeting_range ?? "");
         setIntro(data.intro ?? "");
+      } else if (authRealName) {
+        setRealName(authRealName);
       }
 
       setIsBooting(false);
@@ -243,7 +244,7 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
-    router.push("/search");
+    router.push(isEditingProfile ? "/profile" : "/search");
   };
 
   if (isBooting) {
@@ -266,9 +267,11 @@ export default function ProfileOnboardingPage() {
             プロフィール登録
           </p>
           <h1 className="hero-title text-2xl font-semibold">
-            はじめにプロフィールを登録しましょう
+            {isEditingProfile ? "プロフィールを編集しましょう" : "はじめにプロフィールを登録しましょう"}
           </h1>
-          <p className="muted-text text-sm leading-6">3つのステップで入力できます。</p>
+          <p className="muted-text text-sm leading-6">
+            {isEditingProfile ? "内容を更新して保存できます。" : "3つのステップで入力できます。"}
+          </p>
         </header>
 
         <form className="screen-stack gap-3.5" onSubmit={handleSubmit}>
@@ -477,7 +480,7 @@ export default function ProfileOnboardingPage() {
             <p className="text-sm muted-text leading-6">最後に内容を確認して完了してください。</p>
             {message && <p className="text-sm text-rose-700">{message}</p>}
             <button className="primary-btn" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "保存中..." : "プロフィールを完了してホームへ"}
+              {isSubmitting ? "保存中..." : isEditingProfile ? "変更を保存する" : "プロフィールを完了してホームへ"}
             </button>
             <Link className="text-center text-sm muted-text underline underline-offset-3" href="/auth">
               認証ページに戻る

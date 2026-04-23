@@ -39,6 +39,7 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [signupInviteCode, setSignupInviteCode] = useState("");
+  const [signupRealName, setSignupRealName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
@@ -58,6 +59,7 @@ export default function AuthPage() {
 
   const isSignupReady =
     signupInviteCode.trim().length > 0 &&
+    signupRealName.trim().length > 0 &&
     signupEmail.trim().length > 0 &&
     signupPassword.length > 0 &&
     signupPasswordConfirm.length > 0 &&
@@ -77,6 +79,7 @@ export default function AuthPage() {
     try {
       const parsed = JSON.parse(savedSignup) as {
         inviteCode?: string;
+        realName?: string;
         email?: string;
         password?: string;
         passwordConfirm?: string;
@@ -84,6 +87,7 @@ export default function AuthPage() {
         agreedPrivacy?: boolean;
       };
       setSignupInviteCode(parsed.inviteCode ?? "");
+      setSignupRealName(parsed.realName ?? "");
       setSignupEmail(parsed.email ?? "");
       setSignupPassword(parsed.password ?? "");
       setSignupPasswordConfirm(parsed.passwordConfirm ?? "");
@@ -103,6 +107,7 @@ export default function AuthPage() {
     () =>
       JSON.stringify({
         inviteCode: signupInviteCode,
+        realName: signupRealName,
         email: signupEmail,
         password: signupPassword,
         passwordConfirm: signupPasswordConfirm,
@@ -111,6 +116,7 @@ export default function AuthPage() {
       }),
     [
       signupInviteCode,
+      signupRealName,
       signupEmail,
       signupPassword,
       signupPasswordConfirm,
@@ -234,6 +240,12 @@ export default function AuthPage() {
       return;
     }
 
+    if (!signupRealName.trim()) {
+      setSignupSuccessEmail(null);
+      setSignupMessage("本名を入力してください。");
+      return;
+    }
+
     if (!signupEmail.trim()) {
       setSignupSuccessEmail(null);
       setSignupMessage("メールアドレスを入力してください。");
@@ -323,7 +335,10 @@ export default function AuthPage() {
     const { error: signUpError } = await supabase.auth.signUp({
       email: normalizedSignupEmail,
       password: signupPassword,
-      options: { emailRedirectTo: redirectTo },
+      options: {
+        emailRedirectTo: redirectTo,
+        data: { real_name: signupRealName.trim() },
+      },
     });
 
     if (signUpError) {
@@ -456,6 +471,18 @@ export default function AuthPage() {
                   onChange={(e) => setSignupInviteCode(e.target.value)}
                   required
                 />
+              </label>
+              <label>
+                <span className="label-text">本名（公開されません）</span>
+                <input
+                  className="mock-input"
+                  type="text"
+                  placeholder="例: 渚 花子"
+                  value={signupRealName}
+                  onChange={(e) => setSignupRealName(e.target.value)}
+                  required
+                />
+                <p className="mt-2 text-xs muted-text">この名前は他の利用者には表示されません。</p>
               </label>
               <label>
                 <span className="label-text">メールアドレス（必須）</span>

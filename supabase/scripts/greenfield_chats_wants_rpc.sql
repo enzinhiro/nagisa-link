@@ -124,14 +124,12 @@ begin
 
   if not exists (
     select 1
-    from public.wants w1
-    join public.wants w2
-      on w1.from_user = me
-     and w1.to_user = target_user_id
-     and w1.status = 'matched'
-     and w2.from_user = target_user_id
-     and w2.to_user = me
-     and w2.status = 'matched'
+    from public.wants w
+    where w.status = 'matched'
+      and (
+        (w.from_user = me and w.to_user = target_user_id)
+        or (w.from_user = target_user_id and w.to_user = me)
+      )
   ) then
     raise exception 'not matched yet';
   end if;

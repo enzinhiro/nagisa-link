@@ -177,10 +177,10 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             {isMenuOpen ? (
               <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-[#d8e7ef] bg-white p-2 shadow-sm">
                 <Link
-                  href="/profile"
+                  href="/onboarding/profile"
                   className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
                 >
-                  プロフィールを確認
+                  プロフィールを編集
                 </Link>
                 <Link
                   href="/rules"

@@ -23,6 +23,7 @@ type ProfileRow = {
   nickname: string;
   area: string;
   want_to_connect: string;
+  connection_achievement_count: number;
   profile_completed: boolean;
 };
 
@@ -32,6 +33,7 @@ type TalkCard = {
   nickname: string;
   area: string;
   wantToConnect: string;
+  connectionAchievementCount: number;
   label: string;
   expiresAt?: string;
 };
@@ -89,7 +91,14 @@ export default function TalkPage() {
       return;
     }
 
-    const wants = (wantsData ?? []) as WantRow[];
+    const wants = (wantsData ?? []).map((raw) => ({
+      id: raw.id,
+      from_user: raw.from_user,
+      to_user: raw.to_user,
+      status: String(raw.status ?? "")
+        .trim()
+        .toLowerCase() as WantRow["status"],
+    })) as WantRow[];
 
     const { data: chatsData } = await supabase
       .from("chats")
@@ -131,7 +140,7 @@ export default function TalkPage() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id,nickname,area,want_to_connect,profile_completed")
+      .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed")
       .in("id", profileIds)
       .eq("profile_completed", true);
 
@@ -155,12 +164,26 @@ export default function TalkPage() {
         nickname: p.nickname,
         area: p.area,
         wantToConnect: p.want_to_connect,
+        connectionAchievementCount: p.connection_achievement_count ?? 0,
         label,
         expiresAt,
       };
     };
 
-    setMatchedCards(matchedOtherIds.map((id) => toCard(id, "一致")).filter((v): v is TalkCard => v !== null));
+    setMatchedCards(
+      matchedOtherIds.map((id) => {
+        const card = toCard(id, "一致");
+        if (card) return card;
+        return {
+          otherUserId: id,
+          nickname: "相手",
+          area: "",
+          wantToConnect: "一致しました。下のボタンからチャットへ進めます。",
+          connectionAchievementCount: 0,
+          label: "一致",
+        };
+      })
+    );
     setReceivedCards(
       uniqueReceived
         .map((item) => toCard(item.otherUserId, "オファーが届いています", item.wantId))
@@ -234,6 +257,11 @@ export default function TalkPage() {
         <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">{card.label}</span>
       </div>
       <p className="text-sm leading-6 text-[#365f78]">{card.wantToConnect}</p>
+      {card.connectionAchievementCount > 0 ? (
+        <div className="soft-card-subtle !px-3 !py-2">
+          <p className="text-xs text-[#5b798d]">つながり実績 {card.connectionAchievementCount}</p>
+        </div>
+      ) : null}
       {section === "matched" ? (
         <button
           type="button"
