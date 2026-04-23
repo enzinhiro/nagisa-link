@@ -105,6 +105,9 @@ export default function ChatDetailPage() {
       return;
     }
 
+    const profileRow = profile as ProfileRow;
+    setOtherProfile(profileRow);
+
     const { data: messageRows, error: messageError } = await supabase
       .from("messages")
       .select("id,created_at,sender_user_id,body")
@@ -113,11 +116,11 @@ export default function ChatDetailPage() {
 
     if (messageError) {
       setMessage("メッセージの取得に失敗しました。");
+      setMessages([]);
       setLoading(false);
       return;
     }
 
-    setOtherProfile(profile as ProfileRow);
     setMessages((messageRows ?? []) as MessageRow[]);
     setLoading(false);
   };
