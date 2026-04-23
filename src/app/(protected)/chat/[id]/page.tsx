@@ -7,6 +7,7 @@ import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
+import { setChatLastReadAt } from "../../../../lib/chat/read-state";
 
 type ChatRow = {
   id: string;
@@ -284,6 +285,13 @@ export default function ChatDetailPage() {
       forceScrollOnceRef.current = false;
     }
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    if (!currentUserId || !chatId || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (!last?.created_at) return;
+    setChatLastReadAt(currentUserId, chatId, last.created_at);
+  }, [chatId, currentUserId, messages]);
 
   useEffect(() => {
     const onVisible = () => {

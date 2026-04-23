@@ -6,6 +6,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
+import { getChatLastReadAt } from "../../../lib/chat/read-state";
 
 type ChatRow = {
   id: string;
@@ -22,6 +23,12 @@ type ProfileRow = {
   avatar_seed: number | null;
 };
 
+type MessageSummaryRow = {
+  chat_id: string;
+  sender_user_id: string;
+  created_at: string;
+};
+
 type ChatCard = {
   id: string;
   otherUserId: string;
@@ -31,6 +38,7 @@ type ChatCard = {
   otherAvatarSeed: number | null;
   expiresAt: string;
   isFallback: boolean;
+  hasUnread: boolean;
 };
 
 export default function ChatIndexPage() {
@@ -80,6 +88,7 @@ export default function ChatIndexPage() {
             .filter((id) => id !== user.id)
         )
       );
+      const chatIds = chats.map((c) => c.id);
 
       let { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
@@ -100,8 +109,28 @@ export default function ChatIndexPage() {
         profileMap.set(p.id, p);
       }
 
+      const { data: messageRows } = await supabase
+        .from("messages")
+        .select("chat_id,sender_user_id,created_at")
+        .in("chat_id", chatIds)
+        .order("created_at", { ascending: false });
+      const messageMap = new Map<string, MessageSummaryRow[]>();
+      for (const row of (messageRows ?? []) as MessageSummaryRow[]) {
+        const list = messageMap.get(row.chat_id) ?? [];
+        list.push(row);
+        messageMap.set(row.chat_id, list);
+      }
+
       const cards: ChatCard[] = chats.map((chat) => {
         const otherUserId = chat.user_a_id === user.id ? chat.user_b_id : chat.user_a_id;
+        const chatMessages = messageMap.get(chat.id) ?? [];
+        const latestMessage = chatMessages[0] ?? null;
+        const lastReadAt = getChatLastReadAt(user.id, chat.id);
+        const hasUnread = Boolean(
+          latestMessage &&
+            latestMessage.sender_user_id !== user.id &&
+            (!lastReadAt || new Date(latestMessage.created_at).getTime() > new Date(lastReadAt).getTime())
+        );
         const otherProfile = profileMap.get(otherUserId);
         if (!otherProfile) {
           return {
@@ -113,6 +142,7 @@ export default function ChatIndexPage() {
             otherAvatarSeed: null,
             expiresAt: chat.expires_at,
             isFallback: true,
+            hasUnread,
           };
         }
         return {
@@ -124,6 +154,7 @@ export default function ChatIndexPage() {
           otherAvatarSeed: otherProfile.avatar_seed,
           expiresAt: chat.expires_at,
           isFallback: false,
+          hasUnread,
         };
       });
 
@@ -157,6 +188,22 @@ export default function ChatIndexPage() {
     };
   }, [fetchChats]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("chat-list:messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => {
+          void fetchChats(false);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchChats]);
+
   const renderCard = (card: ChatCard, type: "active" | "ended") => {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
     return (
@@ -171,6 +218,11 @@ export default function ChatIndexPage() {
           <div className="min-w-0 flex flex-1 flex-col gap-1.5">
             <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
             <p className="text-xs muted-text">地域: {card.otherArea}</p>
+            {type === "active" && card.hasUnread ? (
+              <span className="inline-flex w-fit rounded-full bg-[#fff0f6] px-2 py-0.5 text-[10px] text-[#9a4d6f]">
+                新着
+              </span>
+            ) : null}
           </div>
           <span className="inline-flex w-fit rounded-full px-2.5 py-1 text-xs pill-blue">
             {type === "active" ? `残り${remainingHour}時間` : "終了済み"}
