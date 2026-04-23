@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
-import { APP_HEADER_LOGO_PATH, SERVICE_NAME } from "../../lib/brand";
+import { SERVICE_NAME } from "../../lib/brand";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
@@ -153,11 +153,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-full w-full max-w-[460px] items-center justify-between px-3">
           <div className="flex items-center flex-none shrink-0 min-w-fit">
             <Link href="/" className="flex items-center flex-none shrink-0 min-w-fit" aria-label={`${SERVICE_NAME} ホームへ`}>
-              <img
-                src={APP_HEADER_LOGO_PATH}
-                alt={SERVICE_NAME}
-                className="h-10 w-auto max-h-none flex-none shrink-0 max-w-[min(220px,55vw)] object-contain object-left"
-              />
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#b9dcee] bg-[#dff2ff] text-sm font-semibold text-[#2f5f79]">
+                N
+              </span>
+              <span className="ml-2 text-[15px] font-semibold tracking-[0.01em] text-[#2f5f79]">
+                {SERVICE_NAME}
+              </span>
             </Link>
           </div>
           <div className="relative">
