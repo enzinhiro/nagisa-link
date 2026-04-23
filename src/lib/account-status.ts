@@ -6,6 +6,34 @@ export type ProfileGateStatus = {
   isSuspended: boolean;
 };
 
+function isNoProfileRowError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "PGRST116") return true;
+  return (error.message ?? "").toLowerCase().includes("0 rows");
+}
+
+async function ensureProfileRowExists(userId: string): Promise<void> {
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: userId,
+      nickname: "未設定",
+      area: "未設定",
+      child_age_group: "未設定",
+      child_gender: "未設定",
+      child_interest_tags: [],
+      want_to_connect: "未設定",
+      connection_preference: "未設定",
+      meeting_range: "未設定",
+      intro: "未設定",
+      profile_completed: false,
+    },
+    { onConflict: "id" }
+  );
+  if (error) {
+    console.warn("[account-status] could not create fallback profile row", error);
+  }
+}
+
 export async function fetchProfileGateStatus(userId: string): Promise<ProfileGateStatus | null> {
   const { data, error } = await supabase
     .from("profiles")
@@ -13,7 +41,14 @@ export async function fetchProfileGateStatus(userId: string): Promise<ProfileGat
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) return null;
+  if (error && !isNoProfileRowError(error)) return null;
+  if (!data) {
+    await ensureProfileRowExists(userId);
+    return {
+      profileCompleted: false,
+      isSuspended: false,
+    };
+  }
 
   return {
     profileCompleted: data?.profile_completed === true,

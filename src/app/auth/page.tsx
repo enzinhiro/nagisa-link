@@ -20,12 +20,11 @@ function formatSignUpErrorMessage(message: string): string {
   return message;
 }
 
-/** Same routing rule as after password login; null = profile fetch failed. */
 async function resolveAuthProfileDestination(
   userId: string
-): Promise<"/" | "/onboarding/profile" | "/suspended" | null> {
+): Promise<"/" | "/onboarding/profile" | "/suspended"> {
   const status = await fetchProfileGateStatus(userId);
-  if (!status) return null;
+  if (!status) return "/onboarding/profile";
   if (status.isSuspended) return "/suspended";
   if (status.profileCompleted) return "/";
   return "/onboarding/profile";
@@ -221,10 +220,6 @@ export default function AuthPage() {
     }
 
     const destination = await resolveAuthProfileDestination(user.id);
-    if (destination === null) {
-      setLoginMessage("プロフィール状態を確認できませんでした。時間をおいてお試しください。");
-      return;
-    }
     router.replace(destination);
   };
 
