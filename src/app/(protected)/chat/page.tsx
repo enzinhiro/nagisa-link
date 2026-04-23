@@ -47,6 +47,15 @@ export default function ChatIndexPage() {
   const [activeChats, setActiveChats] = useState<ChatCard[]>([]);
   const [endedChats, setEndedChats] = useState<ChatCard[]>([]);
 
+  const logRealtime = useCallback((label: string, extra?: unknown) => {
+    if (process.env.NODE_ENV === "production") return;
+    if (extra !== undefined) {
+      console.info(`[chat list realtime] ${label}`, extra);
+      return;
+    }
+    console.info(`[chat list realtime] ${label}`);
+  }, []);
+
   const fetchChats = useCallback(
     async (showLoading = true) => {
       if (showLoading) setLoading(true);
@@ -175,17 +184,10 @@ export default function ChatIndexPage() {
 
   useEffect(() => {
     void fetchChats();
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
+    const timer = window.setInterval(() => {
       void fetchChats(false);
-    };
-    const onFocus = () => void fetchChats(false);
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onFocus);
-    };
+    }, 15000);
+    return () => window.clearInterval(timer);
   }, [fetchChats]);
 
   useEffect(() => {
@@ -194,15 +196,19 @@ export default function ChatIndexPage() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        () => {
+        (payload) => {
+          const row = payload.new as MessageSummaryRow;
+          logRealtime("INSERT received", { chatId: row.chat_id });
           void fetchChats(false);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        logRealtime(`status=${status}`);
+      });
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchChats]);
+  }, [fetchChats, logRealtime]);
 
   const renderCard = (card: ChatCard, type: "active" | "ended") => {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));

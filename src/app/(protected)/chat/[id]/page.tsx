@@ -28,6 +28,7 @@ type MessageRow = {
   sender_user_id: string;
   body: string;
 };
+type RealtimeMessageRow = MessageRow & { chat_id?: string };
 
 type PendingOptimisticMessage = {
   tempId: string;
@@ -304,10 +305,10 @@ export default function ChatDetailPage() {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `chat_id=eq.${chatId}`,
         },
         (payload) => {
-          const row = payload.new as MessageRow;
+          const row = payload.new as RealtimeMessageRow;
+          if (row.chat_id !== chatId) return;
           const wasNearBottom = isNearBottom();
           logRealtime("INSERT received", { id: row.id, sender: row.sender_user_id, chatId });
           setMessages((prev) => {
@@ -330,6 +331,9 @@ export default function ChatDetailPage() {
           if (row.sender_user_id === currentUserId || wasNearBottom) {
             forceScrollOnceRef.current = true;
           }
+          // Keep UI consistent even if local merge misses a case.
+          void refreshMessages();
+          void refreshChatExpiry();
         }
       )
       .subscribe((status) => {
@@ -364,24 +368,31 @@ export default function ChatDetailPage() {
   }, [loading, messages, scheduleScrollToBottom]);
 
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      void refreshMessages();
-      void refreshChatExpiry();
-    };
     const onOnline = () => {
       void refreshMessages();
       void refreshChatExpiry();
     };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
     window.addEventListener("online", onOnline);
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
       window.removeEventListener("online", onOnline);
     };
   }, [refreshChatExpiry, refreshMessages]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const initialHeight = viewport.height;
+    const onResize = () => {
+      const keyboardNowOpen = viewport.height < initialHeight - 100;
+      if (keyboardNowOpen && (shouldAutoScrollRef.current || forceScrollOnceRef.current)) {
+        scheduleScrollToBottom("auto");
+      }
+    };
+    viewport.addEventListener("resize", onResize);
+    return () => {
+      viewport.removeEventListener("resize", onResize);
+    };
+  }, [scheduleScrollToBottom]);
 
   useEffect(() => {
     if (!chatId) return;
@@ -489,8 +500,8 @@ export default function ChatDetailPage() {
   })();
 
   return (
-    <div className="mock-page">
-      <main className="mock-shell screen-stack">
+    <div className="mock-page h-[100dvh] overflow-hidden !p-0">
+      <main className="mx-auto flex h-full w-full max-w-[440px] flex-col gap-3 overflow-hidden px-[14px] pt-[14px] pb-[calc(74px+max(env(safe-area-inset-bottom),8px))]">
 
         {loading ? (
           <section className="soft-card">
@@ -507,7 +518,7 @@ export default function ChatDetailPage() {
         {!loading && !message && otherProfile ? (
           <>
             {isReportOpen ? (
-              <section className="soft-card flex flex-col gap-3">
+              <section className="soft-card shrink-0 flex flex-col gap-3">
                 <h2 className="section-title">運営へのご連絡</h2>
                 <p className="section-note">必要な場合のみ、運営が内容を確認します。</p>
                 <label>
@@ -544,7 +555,7 @@ export default function ChatDetailPage() {
               </section>
             ) : null}
 
-            <section className="soft-card flex items-center gap-3">
+            <section className="soft-card shrink-0 flex items-center gap-3">
               <ProfileAvatar
                 userId={otherProfile.id}
                 avatarSeed={otherProfile.avatar_seed}
@@ -574,10 +585,10 @@ export default function ChatDetailPage() {
               </button>
             </section>
 
-            <section className="soft-card flex min-h-[52dvh] flex-col gap-3">
+            <section className="soft-card flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
               <div
                 ref={messagesContainerRef}
-                className="flex flex-1 flex-col gap-3 overflow-y-auto"
+                className="flex flex-1 flex-col gap-3 overflow-y-auto pb-6"
                 onScroll={(event) => {
                   const el = event.currentTarget;
                   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -620,32 +631,34 @@ export default function ChatDetailPage() {
                     );
                   })
                 )}
-                <div className="h-5 shrink-0" aria-hidden="true" />
+                <div className="h-6 shrink-0" aria-hidden="true" />
               </div>
             </section>
 
-            <section className="soft-card sticky bottom-[74px] z-10 flex flex-col gap-3">
-              {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
-              {isExpired ? (
-                <p className="text-sm muted-text">このチャットは終了しました。</p>
-              ) : null}
-              <div className="flex items-end gap-2">
-                <input
-                  className="mock-input"
-                  placeholder="メッセージを入力"
-                  value={inputBody}
-                  onChange={(e) => setInputBody(e.target.value)}
-                  maxLength={500}
-                  disabled={isSending || isExpired}
-                />
-                <button
-                  type="button"
-                  className="secondary-btn !w-[88px]"
-                  onClick={handleSend}
-                  disabled={isSending || isExpired}
-                >
-                  送信
-                </button>
+            <section className="shrink-0">
+              <div className="soft-card flex flex-col gap-3">
+                  {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
+                  {isExpired ? (
+                    <p className="text-sm muted-text">このチャットは終了しました。</p>
+                  ) : null}
+                  <div className="flex items-end gap-2">
+                    <input
+                      className="mock-input"
+                      placeholder="メッセージを入力"
+                      value={inputBody}
+                      onChange={(e) => setInputBody(e.target.value)}
+                      maxLength={500}
+                      disabled={isSending || isExpired}
+                    />
+                    <button
+                      type="button"
+                      className="secondary-btn !w-[88px]"
+                      onClick={handleSend}
+                      disabled={isSending || isExpired}
+                    >
+                      送信
+                    </button>
+                  </div>
               </div>
             </section>
           </>
