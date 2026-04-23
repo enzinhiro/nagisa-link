@@ -588,7 +588,7 @@ export default function ChatDetailPage() {
             <section className="soft-card flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
               <div
                 ref={messagesContainerRef}
-                className="flex flex-1 flex-col gap-3 overflow-y-auto"
+                className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
                 style={{ paddingBottom: "12px" }}
                 onScroll={(event) => {
                   const el = event.currentTarget;
