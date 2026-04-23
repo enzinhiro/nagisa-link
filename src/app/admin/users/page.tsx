@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { isAdminEmail } from "../../../lib/admin-access";
 
@@ -25,6 +25,9 @@ export default function AdminUsersPage() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
+  const [inviteFilter, setInviteFilter] = useState<"all" | "used" | "unused">("all");
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -81,6 +84,27 @@ export default function AdminUsersPage() {
     await fetchUsers();
   };
 
+  const filteredUsers = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    return users.filter((u) => {
+      const matchesKeyword =
+        keyword.length === 0 ||
+        (u.real_name ?? "").toLowerCase().includes(keyword) ||
+        (u.nickname ?? "").toLowerCase().includes(keyword) ||
+        (u.email ?? "").toLowerCase().includes(keyword);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? !u.is_suspended : u.is_suspended);
+
+      const matchesInvite =
+        inviteFilter === "all" ||
+        (inviteFilter === "used" ? u.invite_used : !u.invite_used);
+
+      return matchesKeyword && matchesStatus && matchesInvite;
+    });
+  }, [users, searchText, statusFilter, inviteFilter]);
+
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
@@ -113,15 +137,62 @@ export default function AdminUsersPage() {
           </section>
         ) : null}
 
+        {!loading && !message ? (
+          <section className="soft-card flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="label-text">検索（本名・ニックネーム・メール）</span>
+              <input
+                className="mock-input !h-11"
+                placeholder="キーワードで検索"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-[#5b798d]">状態</span>
+                <select
+                  className="mock-select !h-10"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
+                >
+                  <option value="all">すべて</option>
+                  <option value="active">利用中のみ</option>
+                  <option value="suspended">停止中のみ</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-[#5b798d]">招待コード</span>
+                <select
+                  className="mock-select !h-10"
+                  value={inviteFilter}
+                  onChange={(e) => setInviteFilter(e.target.value as "all" | "used" | "unused")}
+                >
+                  <option value="all">すべて</option>
+                  <option value="used">使用済み</option>
+                  <option value="unused">不明/未使用</option>
+                </select>
+              </label>
+            </div>
+            <p className="text-xs muted-text">表示件数: {filteredUsers.length}件</p>
+          </section>
+        ) : null}
+
         {!loading && !message && users.length === 0 ? (
           <section className="soft-card">
             <p className="muted-text text-sm">まだ表示できるユーザー情報がありません。</p>
           </section>
         ) : null}
 
+        {!loading && !message && users.length > 0 && filteredUsers.length === 0 ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">条件に一致するユーザーはいません。</p>
+          </section>
+        ) : null}
+
         {!loading &&
           !message &&
-          users.map((u) => (
+          filteredUsers.map((u) => (
             <article key={u.id} className="soft-card flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
