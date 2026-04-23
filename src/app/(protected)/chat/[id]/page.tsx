@@ -6,7 +6,6 @@ import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
-import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
 import { setChatLastReadAt } from "../../../../lib/chat/read-state";
 
 type ChatRow = {
@@ -55,6 +54,7 @@ export default function ChatDetailPage() {
   const [message, setMessage] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherProfile, setOtherProfile] = useState<ProfileRow | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -126,8 +126,9 @@ export default function ChatDetailPage() {
     setIsExpired(false);
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
 
     if (!user) {
       setMessage("ログイン状態を確認できませんでした。");
@@ -135,6 +136,7 @@ export default function ChatDetailPage() {
       return;
     }
     setCurrentUserId(user.id);
+    setCurrentUserEmail(user.email ?? null);
 
     if (!chatId) {
       setMessage("チャットが見つかりませんでした。");
@@ -161,23 +163,13 @@ export default function ChatDetailPage() {
     const otherUserIdFromChat = chatRow.user_a_id === user.id ? chatRow.user_b_id : chatRow.user_a_id;
     setOtherUserId(otherUserIdFromChat);
 
-    let { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id,nickname,area,avatar_seed")
+      // Avoid schema-dependent column errors on chat open.
+      .select("id,nickname,area")
       .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
       .maybeSingle();
-
-    if (profileError && isMissingProfileColumnError(profileError)) {
-      const fallback = await supabase
-        .from("profiles")
-        .select("id,nickname,area")
-        .eq("id", otherUserIdFromChat)
-        .eq("profile_completed", true)
-        .maybeSingle();
-      profile = fallback.data ? { ...fallback.data, avatar_seed: null } : null;
-      profileError = fallback.error;
-    }
 
     if (profileError || !profile) {
       setMessage("このユーザーは現在表示できません。");
@@ -185,7 +177,12 @@ export default function ChatDetailPage() {
       return;
     }
 
-    const profileRow = profile as ProfileRow;
+    const profileRow: ProfileRow = {
+      id: profile.id,
+      nickname: profile.nickname,
+      area: profile.area,
+      avatar_seed: null,
+    };
     setOtherProfile(profileRow);
 
     const { data: messageRows, error: messageError } = await supabase
@@ -216,10 +213,7 @@ export default function ChatDetailPage() {
     setFeedbackMessage("");
     setIsReportSubmitting(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+    if (!(await canPerformUserWriteAction(currentUserId, currentUserEmail))) {
       setIsReportSubmitting(false);
       setFeedbackMessage("ご利用停止中のため、この操作はできません。");
       return;
@@ -360,10 +354,7 @@ export default function ChatDetailPage() {
 
     setIsSending(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+    if (!(await canPerformUserWriteAction(currentUserId, currentUserEmail))) {
       setIsSending(false);
       setFeedbackMessage("ご利用停止中のため、この操作はできません。");
       return;
