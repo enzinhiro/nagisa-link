@@ -70,11 +70,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       if (cancelled) return;
 
       if (!status) {
-        console.error("[protected/layout] profiles select failed");
-        setProfileGateError(
-          "プロフィール情報を読み込めませんでした。時間をおいてから再度お試しください。"
-        );
-        setIsChecking(false);
+        router.replace("/onboarding/profile");
         return;
       }
 
