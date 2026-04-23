@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
@@ -81,7 +81,6 @@ export default function ChatDetailPage() {
   const [reportNote, setReportNote] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const forceScrollOnceRef = useRef(false);
@@ -91,10 +90,8 @@ export default function ChatDetailPage() {
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const container = messagesContainerRef.current;
-    if (container) {
-      container.scrollTo({ top: container.scrollHeight, behavior });
-    }
-    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior });
   }, []);
 
   const scheduleScrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
@@ -354,7 +351,7 @@ export default function ChatDetailPage() {
     };
   }, [chatId, currentUserId, isNearBottom, logRealtime, refreshChatExpiry, refreshMessages]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!loading && messages.length > 0 && !initialScrolledRef.current) {
       initialScrolledRef.current = true;
       scheduleScrollToBottom("auto");
@@ -623,7 +620,7 @@ export default function ChatDetailPage() {
                     );
                   })
                 )}
-                <div ref={bottomRef} />
+                <div className="h-5 shrink-0" aria-hidden="true" />
               </div>
             </section>
 
