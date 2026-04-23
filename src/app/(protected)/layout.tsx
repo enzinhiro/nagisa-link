@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { APP_HEADER_LOGO_PATH, SERVICE_NAME } from "../../lib/brand";
 import { isAdminEmail } from "../../lib/admin-access";
+import { fetchProfileGateStatus } from "../../lib/account-status";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
@@ -65,16 +66,11 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("profile_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-
+      const status = await fetchProfileGateStatus(user.id);
       if (cancelled) return;
 
-      if (error) {
-        console.error("[protected/layout] profiles select failed", error);
+      if (!status) {
+        console.error("[protected/layout] profiles select failed");
         setProfileGateError(
           "プロフィール情報を読み込めませんでした。時間をおいてから再度お試しください。"
         );
@@ -82,7 +78,13 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (!data || data.profile_completed !== true) {
+      // Keep admin recoverable even if accidentally suspended.
+      if (status.isSuspended && !isAdminEmail(user.email)) {
+        router.replace("/suspended");
+        return;
+      }
+
+      if (!status.profileCompleted) {
         router.replace("/onboarding/profile");
         return;
       }

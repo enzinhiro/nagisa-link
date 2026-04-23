@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
+import { fetchProfileGateStatus } from "../../lib/account-status";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
@@ -22,14 +23,11 @@ function formatSignUpErrorMessage(message: string): string {
 /** Same routing rule as after password login; null = profile fetch failed. */
 async function resolveAuthProfileDestination(
   userId: string
-): Promise<"/" | "/onboarding/profile" | null> {
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("profile_completed")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profileError) return null;
-  if (profile?.profile_completed === true) return "/";
+): Promise<"/" | "/onboarding/profile" | "/suspended" | null> {
+  const status = await fetchProfileGateStatus(userId);
+  if (!status) return null;
+  if (status.isSuspended) return "/suspended";
+  if (status.profileCompleted) return "/";
   return "/onboarding/profile";
 }
 
