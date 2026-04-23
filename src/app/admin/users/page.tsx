@@ -4,17 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { isAdminEmail } from "../../../lib/admin-access";
 
 type AdminUserRow = {
   id: string;
+  real_name: string | null;
   nickname: string;
+  email: string | null;
   area: string;
-  profile_completed: boolean;
-  is_suspended: boolean;
-  suspended_at: string | null;
   created_at: string;
+  is_suspended: boolean;
+  invite_used: boolean;
+  invite_code: string | null;
 };
 
 export default function AdminUsersPage() {
@@ -43,10 +44,7 @@ export default function AdminUsersPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,nickname,area,profile_completed,is_suspended,suspended_at,created_at")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("admin_list_users");
 
     if (error) {
       setMessage("ユーザー一覧の取得に失敗しました。");
@@ -67,17 +65,14 @@ export default function AdminUsersPage() {
     setUpdatingUserId(target.id);
 
     const nextSuspended = !target.is_suspended;
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        is_suspended: nextSuspended,
-        suspended_at: nextSuspended ? new Date().toISOString() : null,
-      })
-      .eq("id", target.id);
+    const { data: updated, error } = await supabase.rpc("admin_set_user_suspension", {
+      input_user_id: target.id,
+      input_suspended: nextSuspended,
+    });
 
     setUpdatingUserId(null);
 
-    if (error) {
+    if (error || !updated) {
       setFeedbackMessage("更新に失敗しました。時間をおいて再度お試しください。");
       return;
     }
@@ -128,35 +123,39 @@ export default function AdminUsersPage() {
           !message &&
           users.map((u) => (
             <article key={u.id} className="soft-card flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(u.nickname)}</h3>
-                <div className="flex flex-col items-end gap-1.5">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
-                      u.profile_completed ? "pill-blue" : "bg-[#eef4f8] text-[#6f8796]"
-                    }`}
-                  >
-                    {u.profile_completed ? "登録済み" : "未完了"}
-                  </span>
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
-                      u.is_suspended ? "pill-pink" : "pill-blue"
-                    }`}
-                  >
-                    {u.is_suspended ? "停止中" : "利用中"}
-                  </span>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{u.nickname || "（未設定）"}</h3>
+                  <p className="text-xs text-[#5b798d]">本名: {u.real_name?.trim() ? u.real_name : "未登録"}</p>
+                  <p className="truncate text-xs text-[#5b798d]">メール: {u.email ?? "未登録"}</p>
                 </div>
+                <span
+                  className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs ${
+                    u.is_suspended ? "pill-pink" : "pill-blue"
+                  }`}
+                >
+                  {u.is_suspended ? "停止中" : "利用中"}
+                </span>
               </div>
               <p className="text-sm text-[#365f78]">地域: {u.area || "未設定"}</p>
+              <p className="text-sm text-[#365f78]">
+                招待コード: {u.invite_used ? "使用済み" : "未使用"}
+                {u.invite_code ? `（${u.invite_code}）` : ""}
+              </p>
               <p className="text-xs muted-text">登録日: {new Date(u.created_at).toLocaleString("ja-JP")}</p>
-              <button
-                type="button"
-                className="secondary-btn !h-11"
-                onClick={() => handleToggleSuspend(u)}
-                disabled={updatingUserId === u.id}
-              >
-                {u.is_suspended ? "解除する" : "停止する"}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <Link href={`/admin/users/${u.id}`} className="secondary-btn !h-11">
+                  詳細を見る
+                </Link>
+                <button
+                  type="button"
+                  className="secondary-btn !h-11"
+                  onClick={() => handleToggleSuspend(u)}
+                  disabled={updatingUserId === u.id}
+                >
+                  {u.is_suspended ? "停止を解除" : "利用停止"}
+                </button>
+              </div>
             </article>
           ))}
 
