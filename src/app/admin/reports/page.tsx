@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { isAdminEmail } from "../../../lib/admin-access";
@@ -37,12 +37,20 @@ const STATUS_LABELS: Record<ReportRow["status"], string> = {
   resolved: "対応済み",
 };
 
+const STATUS_BADGE_CLASS: Record<ReportRow["status"], string> = {
+  unhandled: "bg-[#fff3f3] text-[#9a4d4d] border border-[#f3cccc]",
+  reviewing: "bg-[#fff9ec] text-[#8a6b2f] border border-[#f2e0b2]",
+  resolved: "bg-[#eef7ff] text-[#3f6680] border border-[#cfe3f5]",
+};
+
 export default function AdminReportsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
+  const [statusFilter, setStatusFilter] = useState<"all" | ReportRow["status"]>("all");
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -102,6 +110,24 @@ export default function AdminReportsPage() {
     fetchReports();
   }, [router]);
 
+  const visibleReports = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    return reports.filter((row) => {
+      if (statusFilter !== "all" && row.status !== statusFilter) return false;
+      if (!keyword) return true;
+      const reporterName = (nameMap.get(row.reporter_user_id) ?? "不明ユーザー").toLowerCase();
+      const targetName = (nameMap.get(row.target_user_id) ?? "不明ユーザー").toLowerCase();
+      const reason = REASON_LABELS[row.reason].toLowerCase();
+      const chatId = row.chat_id.toLowerCase();
+      return (
+        reason.includes(keyword) ||
+        reporterName.includes(keyword) ||
+        targetName.includes(keyword) ||
+        chatId.includes(keyword)
+      );
+    });
+  }, [reports, statusFilter, searchText, nameMap]);
+
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
@@ -134,9 +160,53 @@ export default function AdminReportsPage() {
           </section>
         ) : null}
 
+        {!loading && !message && reports.length > 0 ? (
+          <section className="soft-card flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`secondary-btn !h-9 !w-auto px-3 text-xs ${statusFilter === "all" ? "ring-1 ring-[#9ec3de]" : ""}`}
+                onClick={() => setStatusFilter("all")}
+              >
+                すべて
+              </button>
+              <button
+                type="button"
+                className={`secondary-btn !h-9 !w-auto px-3 text-xs ${statusFilter === "unhandled" ? "ring-1 ring-[#e5b3b3]" : ""}`}
+                onClick={() => setStatusFilter("unhandled")}
+              >
+                未対応のみ
+              </button>
+              <button
+                type="button"
+                className={`secondary-btn !h-9 !w-auto px-3 text-xs ${statusFilter === "reviewing" ? "ring-1 ring-[#e8cf9a]" : ""}`}
+                onClick={() => setStatusFilter("reviewing")}
+              >
+                確認中のみ
+              </button>
+              <button
+                type="button"
+                className={`secondary-btn !h-9 !w-auto px-3 text-xs ${statusFilter === "resolved" ? "ring-1 ring-[#b9d6ee]" : ""}`}
+                onClick={() => setStatusFilter("resolved")}
+              >
+                対応済みのみ
+              </button>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="label-text">検索</span>
+              <input
+                className="mock-input !h-11"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="理由 / 通報者 / 対象者 / chat_id で検索"
+              />
+            </label>
+          </section>
+        ) : null}
+
         {!loading &&
           !message &&
-          reports.map((row) => (
+          visibleReports.map((row) => (
             <article key={row.id} className="soft-card flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs muted-text">{new Date(row.created_at).toLocaleString("ja-JP")}</p>
@@ -144,7 +214,7 @@ export default function AdminReportsPage() {
                   <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
                     {REASON_LABELS[row.reason]}
                   </span>
-                  <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${STATUS_BADGE_CLASS[row.status]}`}>
                     {STATUS_LABELS[row.status]}
                   </span>
                 </div>
@@ -159,6 +229,9 @@ export default function AdminReportsPage() {
               <p className="text-xs muted-text">
                 補足コメント: {row.note && row.note.trim().length > 0 ? "あり" : "なし"}
               </p>
+              {row.status === "unhandled" ? (
+                <p className="text-xs text-[#9a4d4d]">要確認: 未対応の通報です。</p>
+              ) : null}
               <Link
                 href={`/admin/reports/${row.id}`}
                 className="secondary-btn !h-11"
@@ -167,6 +240,12 @@ export default function AdminReportsPage() {
               </Link>
             </article>
           ))}
+
+        {!loading && !message && reports.length > 0 && visibleReports.length === 0 ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">条件に一致する通報はありません。フィルタや検索条件を変更してください。</p>
+          </section>
+        ) : null}
 
         <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
           ホームに戻る

@@ -129,6 +129,7 @@ export default function AdminReportDetailPage() {
 
   const handleUpdateStatus = async (nextStatus: ReportRow["status"]) => {
     if (!report) return;
+    if (report.status === nextStatus) return;
     setUpdatingStatus(nextStatus);
     setFeedbackMessage("");
 
@@ -226,26 +227,26 @@ export default function AdminReportDetailPage() {
                 <button
                   type="button"
                   className="secondary-btn !h-10"
-                  disabled={updatingStatus !== null}
+                  disabled={updatingStatus !== null || report.status === "unhandled"}
                   onClick={() => handleUpdateStatus("unhandled")}
                 >
-                  未対応にする
+                  {updatingStatus === "unhandled" ? "更新中..." : "未対応にする"}
                 </button>
                 <button
                   type="button"
                   className="secondary-btn !h-10"
-                  disabled={updatingStatus !== null}
+                  disabled={updatingStatus !== null || report.status === "reviewing"}
                   onClick={() => handleUpdateStatus("reviewing")}
                 >
-                  確認中にする
+                  {updatingStatus === "reviewing" ? "更新中..." : "確認中にする"}
                 </button>
                 <button
                   type="button"
                   className="secondary-btn !h-10"
-                  disabled={updatingStatus !== null}
+                  disabled={updatingStatus !== null || report.status === "resolved"}
                   onClick={() => handleUpdateStatus("resolved")}
                 >
-                  対応済みにする
+                  {updatingStatus === "resolved" ? "更新中..." : "対応済みにする"}
                 </button>
               </div>
             </section>
