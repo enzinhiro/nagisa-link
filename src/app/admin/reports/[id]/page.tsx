@@ -11,6 +11,7 @@ type ReportRow = {
   id: string;
   created_at: string;
   reason: "uncomfortable" | "solicitation" | "pressured_contact" | "suspicious_profile" | "other";
+  status: "unhandled" | "reviewing" | "resolved";
   reporter_user_id: string;
   target_user_id: string;
   chat_id: string;
@@ -37,6 +38,12 @@ const REASON_LABELS: Record<ReportRow["reason"], string> = {
   other: "その他",
 };
 
+const STATUS_LABELS: Record<ReportRow["status"], string> = {
+  unhandled: "未対応",
+  reviewing: "確認中",
+  resolved: "対応済み",
+};
+
 export default function AdminReportDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -47,6 +54,8 @@ export default function AdminReportDetailPage() {
   const [report, setReport] = useState<ReportRow | null>(null);
   const [chat, setChat] = useState<ChatRow | null>(null);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [updatingStatus, setUpdatingStatus] = useState<ReportRow["status"] | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -69,7 +78,7 @@ export default function AdminReportDetailPage() {
 
       const { data: reportData, error: reportError } = await supabase
         .from("reports")
-        .select("id,created_at,reason,reporter_user_id,target_user_id,chat_id,note")
+        .select("id,created_at,reason,status,reporter_user_id,target_user_id,chat_id,note")
         .eq("id", reportId)
         .maybeSingle();
 
@@ -118,6 +127,27 @@ export default function AdminReportDetailPage() {
     fetchDetail();
   }, [reportId, router]);
 
+  const handleUpdateStatus = async (nextStatus: ReportRow["status"]) => {
+    if (!report) return;
+    setUpdatingStatus(nextStatus);
+    setFeedbackMessage("");
+
+    const { error } = await supabase
+      .from("reports")
+      .update({ status: nextStatus })
+      .eq("id", report.id);
+
+    setUpdatingStatus(null);
+
+    if (error) {
+      setFeedbackMessage("ステータス更新に失敗しました。");
+      return;
+    }
+
+    setReport((prev) => (prev ? { ...prev, status: nextStatus } : prev));
+    setFeedbackMessage("ステータスを更新しました。");
+  };
+
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
@@ -149,6 +179,12 @@ export default function AdminReportDetailPage() {
           </section>
         ) : null}
 
+        {!loading && !message && feedbackMessage ? (
+          <section className="soft-card">
+            <p className="text-sm text-[#3f6680]">{feedbackMessage}</p>
+          </section>
+        ) : null}
+
         {!loading && !message && report ? (
           <>
             <section className="soft-card flex flex-col gap-3">
@@ -161,20 +197,56 @@ export default function AdminReportDetailPage() {
                 <p className="text-sm text-[#365f78]">{REASON_LABELS[report.reason]}</p>
               </div>
               <div className="soft-card-subtle">
+                <p className="label-text mb-1">状態</p>
+                <p className="text-sm text-[#365f78]">{STATUS_LABELS[report.status]}</p>
+              </div>
+              <div className="soft-card-subtle">
                 <p className="label-text mb-1">補足コメント</p>
                 <p className="text-sm leading-6 text-[#365f78]">{report.note?.trim() ? report.note : "なし"}</p>
               </div>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">通報した人</p>
                 <p className="text-sm text-[#365f78]">{nameMap.get(report.reporter_user_id) ?? "不明ユーザー"}</p>
+                <Link href={`/admin/users/${report.reporter_user_id}`} className="mt-2 text-xs text-[#3f7aa0] underline underline-offset-2">
+                  ユーザー詳細を見る
+                </Link>
               </div>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">通報対象</p>
                 <p className="text-sm text-[#365f78]">{nameMap.get(report.target_user_id) ?? "不明ユーザー"}</p>
+                <Link href={`/admin/users/${report.target_user_id}`} className="mt-2 text-xs text-[#3f7aa0] underline underline-offset-2">
+                  ユーザー詳細を見る
+                </Link>
               </div>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">chat_id</p>
                 <p className="text-xs muted-text break-all">{report.chat_id}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  className="secondary-btn !h-10"
+                  disabled={updatingStatus !== null}
+                  onClick={() => handleUpdateStatus("unhandled")}
+                >
+                  未対応にする
+                </button>
+                <button
+                  type="button"
+                  className="secondary-btn !h-10"
+                  disabled={updatingStatus !== null}
+                  onClick={() => handleUpdateStatus("reviewing")}
+                >
+                  確認中にする
+                </button>
+                <button
+                  type="button"
+                  className="secondary-btn !h-10"
+                  disabled={updatingStatus !== null}
+                  onClick={() => handleUpdateStatus("resolved")}
+                >
+                  対応済みにする
+                </button>
               </div>
             </section>
 

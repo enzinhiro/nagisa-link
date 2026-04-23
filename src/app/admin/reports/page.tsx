@@ -11,6 +11,7 @@ type ReportRow = {
   id: string;
   created_at: string;
   reason: "uncomfortable" | "solicitation" | "pressured_contact" | "suspicious_profile" | "other";
+  status: "unhandled" | "reviewing" | "resolved";
   reporter_user_id: string;
   target_user_id: string;
   chat_id: string;
@@ -28,6 +29,12 @@ const REASON_LABELS: Record<ReportRow["reason"], string> = {
   pressured_contact: "外部連絡先交換を強く求められた",
   suspicious_profile: "プロフィールに違和感",
   other: "その他",
+};
+
+const STATUS_LABELS: Record<ReportRow["status"], string> = {
+  unhandled: "未対応",
+  reviewing: "確認中",
+  resolved: "対応済み",
 };
 
 export default function AdminReportsPage() {
@@ -58,7 +65,7 @@ export default function AdminReportsPage() {
 
       const { data, error } = await supabase
         .from("reports")
-        .select("id,created_at,reason,reporter_user_id,target_user_id,chat_id,note")
+        .select("id,created_at,reason,status,reporter_user_id,target_user_id,chat_id,note")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -133,9 +140,14 @@ export default function AdminReportsPage() {
             <article key={row.id} className="soft-card flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs muted-text">{new Date(row.created_at).toLocaleString("ja-JP")}</p>
-                <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
-                  {REASON_LABELS[row.reason]}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
+                    {REASON_LABELS[row.reason]}
+                  </span>
+                  <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                    {STATUS_LABELS[row.status]}
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-[#365f78]">
                 通報者: {nameMap.get(row.reporter_user_id) ?? "不明ユーザー"}
