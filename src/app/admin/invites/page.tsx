@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
@@ -12,7 +13,9 @@ type InviteRow = {
   created_at: string;
   is_used: boolean;
   is_active: boolean;
+  used_by_user_id: string | null;
   used_by_email: string | null;
+  used_at: string | null;
   note: string | null;
 };
 
@@ -281,6 +284,14 @@ export default function AdminInvitesPage() {
               </div>
               <p className="text-xs muted-text">発行日: {new Date(invite.created_at).toLocaleString("ja-JP")}</p>
               <p className="text-sm text-[#365f78]">使用者メール: {invite.used_by_email ?? "未使用"}</p>
+              {invite.used_at ? (
+                <p className="text-xs muted-text">使用日時: {new Date(invite.used_at).toLocaleString("ja-JP")}</p>
+              ) : null}
+              {invite.used_by_user_id ? (
+                <Link href={`/admin/users/${invite.used_by_user_id}`} className="text-xs text-[#3f7aa0] underline underline-offset-2">
+                  使用ユーザー詳細を見る
+                </Link>
+              ) : null}
               <label className="flex flex-col gap-1.5">
                 <span className="label-text">共有先メモ</span>
                 <input

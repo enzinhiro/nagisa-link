@@ -17,6 +17,8 @@ type AdminUserDetailRow = {
   is_suspended: boolean;
   invite_used: boolean;
   invite_code: string | null;
+  invite_note: string | null;
+  invite_used_at: string | null;
   intro: string | null;
   want_to_connect: string | null;
 };
@@ -161,6 +163,15 @@ export default function AdminUserDetailPage() {
               <p className="text-sm text-[#365f78]">
                 {userDetail.invite_used ? "使用済み" : "未使用"}
                 {userDetail.invite_code ? `（${userDetail.invite_code}）` : ""}
+              </p>
+              <p className="mt-1 text-sm text-[#365f78]">
+                共有先メモ: {userDetail.invite_note?.trim() ? userDetail.invite_note : "未設定"}
+              </p>
+              <p className="mt-1 text-xs muted-text">
+                使用日時:{" "}
+                {userDetail.invite_used_at
+                  ? new Date(userDetail.invite_used_at).toLocaleString("ja-JP")
+                  : "未記録"}
               </p>
             </div>
             <div className="soft-card-subtle">

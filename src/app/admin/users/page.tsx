@@ -17,6 +17,7 @@ type AdminUserRow = {
   is_suspended: boolean;
   invite_used: boolean;
   invite_code: string | null;
+  invite_note: string | null;
 };
 
 export default function AdminUsersPage() {
@@ -212,6 +213,9 @@ export default function AdminUsersPage() {
                 招待コード: {u.invite_used ? "使用済み" : "未使用"}
                 {u.invite_code ? `（${u.invite_code}）` : ""}
               </p>
+              {u.invite_note?.trim() ? (
+                <p className="text-xs muted-text">共有先メモ: {u.invite_note}</p>
+              ) : null}
               <p className="text-xs muted-text">登録日: {new Date(u.created_at).toLocaleString("ja-JP")}</p>
               <div className="grid grid-cols-2 gap-2">
                 <Link href={`/admin/users/${u.id}`} className="secondary-btn !h-11">
