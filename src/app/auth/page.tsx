@@ -40,8 +40,7 @@ export default function AuthPage() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
-  const [agreedTerms, setAgreedTerms] = useState(false);
-  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
+  const [agreedLegal, setAgreedLegal] = useState(false);
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [isSignupSubmitting, setIsSignupSubmitting] = useState(false);
   const [loginMessage, setLoginMessage] = useState("");
@@ -60,8 +59,7 @@ export default function AuthPage() {
     signupEmail.trim().length > 0 &&
     signupPassword.length > 0 &&
     signupPasswordConfirm.length > 0 &&
-    agreedTerms &&
-    agreedPrivacy &&
+    agreedLegal &&
     !isSignupSubmitting;
 
   useEffect(() => {
@@ -80,6 +78,7 @@ export default function AuthPage() {
         email?: string;
         password?: string;
         passwordConfirm?: string;
+        agreedLegal?: boolean;
         agreedTerms?: boolean;
         agreedPrivacy?: boolean;
       };
@@ -88,8 +87,16 @@ export default function AuthPage() {
       setSignupEmail(parsed.email ?? "");
       setSignupPassword(parsed.password ?? "");
       setSignupPasswordConfirm(parsed.passwordConfirm ?? "");
-      setAgreedTerms(Boolean(parsed.agreedTerms));
-      setAgreedPrivacy(Boolean(parsed.agreedPrivacy));
+      const legacyBoth =
+        typeof parsed.agreedTerms === "boolean" &&
+        typeof parsed.agreedPrivacy === "boolean" &&
+        parsed.agreedTerms &&
+        parsed.agreedPrivacy;
+      if (typeof parsed.agreedLegal === "boolean") {
+        setAgreedLegal(parsed.agreedLegal);
+      } else {
+        setAgreedLegal(legacyBoth);
+      }
     } catch {
       // ignore invalid stored data
     }
@@ -108,8 +115,7 @@ export default function AuthPage() {
         email: signupEmail,
         password: signupPassword,
         passwordConfirm: signupPasswordConfirm,
-        agreedTerms,
-        agreedPrivacy,
+        agreedLegal,
       }),
     [
       signupInviteCode,
@@ -117,8 +123,7 @@ export default function AuthPage() {
       signupEmail,
       signupPassword,
       signupPasswordConfirm,
-      agreedTerms,
-      agreedPrivacy,
+      agreedLegal,
     ]
   );
 
@@ -251,9 +256,9 @@ export default function AuthPage() {
       return;
     }
 
-    if (!agreedTerms || !agreedPrivacy) {
+    if (!agreedLegal) {
       setSignupSuccessEmail(null);
-      setSignupMessage("利用規約とプライバシーポリシーへの同意が必要です。");
+      setSignupMessage("利用規約・プライバシーポリシーに同意してください。");
       return;
     }
 
@@ -510,42 +515,36 @@ export default function AuthPage() {
                   required
                 />
               </label>
-              <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#d8e7ef] bg-[#f7fbfe] px-3 py-3.5 text-[15px] leading-relaxed text-[#47687c] sm:text-sm">
                 <input
                   type="checkbox"
-                  className="mt-1"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#b8d4e8] text-[#2f6786] accent-[#2f6786]"
+                  checked={agreedLegal}
+                  onChange={(e) => setAgreedLegal(e.target.checked)}
                 />
-                <span>
+                <span className="min-w-0 pt-0.5">
                   <Link
                     href="/terms"
-                    className="underline underline-offset-3"
+                    className="font-medium text-[#2f5f79] underline decoration-[#9fcde5] underline-offset-[3px]"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     利用規約
                   </Link>
-                  に同意して進む
-                </span>
-              </label>
-              <label className="inline-flex items-start gap-2 text-sm text-[#47687c]">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={agreedPrivacy}
-                  onChange={(e) => setAgreedPrivacy(e.target.checked)}
-                />
-                <span>
+                  <span className="text-[#5b7a8f]" aria-hidden="true">
+                    ・
+                  </span>
                   <Link
                     href="/privacy"
-                    className="underline underline-offset-3"
+                    className="font-medium text-[#2f5f79] underline decoration-[#9fcde5] underline-offset-[3px]"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     プライバシーポリシー
                   </Link>
-                  に同意して進む
+                  <span className="text-[#47687c]">に同意する</span>
                 </span>
               </label>
               {signupMessage ? <p className="text-sm text-rose-700">{signupMessage}</p> : null}
