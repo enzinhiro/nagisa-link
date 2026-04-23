@@ -154,7 +154,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     <div
       className={
         isChatDetailPage
-          ? "h-dvh overflow-hidden pt-[calc(3.5rem+1px)]"
+          ? "flex h-dvh max-h-dvh flex-col overflow-hidden pt-[calc(3.5rem+1px)] pb-[calc(5rem+env(safe-area-inset-bottom,0px))]"
           : "min-h-dvh pb-20 pt-[calc(3.5rem+1px)]"
       }
     >
@@ -228,31 +228,33 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      {isChatDetailPage ? <div className="h-full overflow-hidden">{children}</div> : children}
-      {isChatDetailPage ? null : (
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-[#e3edf3] bg-[#fffdfa]/96 backdrop-blur">
-          <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={`relative flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs ${
-                  tab.active
-                    ? "text-[#2f5f79] bg-[#ecf8ff] shadow-[inset_0_0_0_1px_rgba(156,206,231,0.35)]"
-                    : "text-[#6b8393]"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {"badge" in tab && (tab.badge ?? 0) > 0 ? (
-                  <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
-                    {tab.badge}
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-          </div>
-        </nav>
+      {isChatDetailPage ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      ) : (
+        children
       )}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#e3edf3] bg-[#fffdfa]/96 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
+        <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`relative flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs ${
+                tab.active
+                  ? "text-[#2f5f79] bg-[#ecf8ff] shadow-[inset_0_0_0_1px_rgba(156,206,231,0.35)]"
+                  : "text-[#6b8393]"
+              }`}
+            >
+              <span>{tab.label}</span>
+              {"badge" in tab && (tab.badge ?? 0) > 0 ? (
+                <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
+                  {tab.badge}
+                </span>
+              ) : null}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

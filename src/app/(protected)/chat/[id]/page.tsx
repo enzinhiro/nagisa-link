@@ -500,8 +500,8 @@ export default function ChatDetailPage() {
   })();
 
   return (
-    <div className="mock-page h-full overflow-hidden !p-0">
-      <main className="mx-auto flex h-full w-full max-w-[440px] flex-col gap-3 overflow-hidden px-[14px] pt-[14px] pb-[max(env(safe-area-inset-bottom),8px)]">
+    <div className="mock-page flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden !min-h-0 !p-0">
+      <main className="mx-auto flex h-full min-h-0 w-full max-w-[440px] flex-col gap-3 overflow-hidden px-[14px] pt-3">
 
         {loading ? (
           <section className="soft-card">
@@ -636,7 +636,7 @@ export default function ChatDetailPage() {
               </div>
             </section>
 
-            <section className="shrink-0 pb-[max(env(safe-area-inset-bottom),4px)]">
+            <section className="shrink-0">
               <div className="soft-card flex flex-col gap-3">
                   {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
                   {isExpired ? (
