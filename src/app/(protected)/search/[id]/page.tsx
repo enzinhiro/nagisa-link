@@ -10,6 +10,7 @@ type ProfileDetail = {
   id: string;
   nickname: string;
   area: string;
+  connection_achievement_count: number;
   child_age_group: string;
   child_gender: string | null;
   child_interest_tags: string[];
@@ -57,7 +58,7 @@ export default function SearchDetailPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
+          "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
         )
         .eq("id", profileId)
         .eq("profile_completed", true)
@@ -122,6 +123,7 @@ export default function SearchDetailPage() {
   };
 
   const isOwnProfile = currentUserId !== null && profile !== null && currentUserId === profile.id;
+  const achievementCount = Number(profile?.connection_achievement_count ?? 0);
 
   return (
     <div className="mock-page">
@@ -151,12 +153,19 @@ export default function SearchDetailPage() {
         {!loading && !message && profile && (
           <>
             <section className="soft-card flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-[#dff2ff] border border-[#cde5f2]" />
-                <div>
-                  <h1 className="hero-title text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
-                  <p className="muted-text text-sm">{profile.area}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="h-12 w-12 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
+                  <div className="min-w-0">
+                    <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
+                    <p className="text-sm muted-text">{profile.area}</p>
+                  </div>
                 </div>
+                {achievementCount > 0 ? (
+                  <span className="shrink-0 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[11px] text-[#8c6375] sm:text-xs">
+                    つながり実績 {achievementCount}
+                  </span>
+                ) : null}
               </div>
             </section>
 
