@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { isAdminEmail } from "../../../lib/admin-access";
 
 type AdminUserRow = {
   id: string;
@@ -15,9 +17,8 @@ type AdminUserRow = {
   created_at: string;
 };
 
-const ADMIN_EMAIL = "enzin-office@gmail.com";
-
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -33,14 +34,12 @@ export default function AdminUsersPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setMessage("ログイン状態を確認できませんでした。");
-      setLoading(false);
+      router.replace("/auth");
       return;
     }
 
-    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
-      setMessage("この画面は管理者のみ利用できます。");
-      setLoading(false);
+    if (!isAdminEmail(user.email)) {
+      router.replace("/");
       return;
     }
 
@@ -61,7 +60,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [router]);
 
   const handleToggleSuspend = async (target: AdminUserRow) => {
     setFeedbackMessage("");
@@ -133,11 +132,17 @@ export default function AdminUsersPage() {
                 <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(u.nickname)}</h3>
                 <div className="flex flex-col items-end gap-1.5">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${u.profile_completed ? "pill-blue" : "bg-[#eef4f8] text-[#6f8796]"}`}
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
+                      u.profile_completed ? "pill-blue" : "bg-[#eef4f8] text-[#6f8796]"
+                    }`}
                   >
                     {u.profile_completed ? "登録済み" : "未完了"}
                   </span>
-                  <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${u.is_suspended ? "pill-pink" : "pill-blue"}`}>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
+                      u.is_suspended ? "pill-pink" : "pill-blue"
+                    }`}
+                  >
                     {u.is_suspended ? "停止中" : "利用中"}
                   </span>
                 </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { isAdminEmail } from "../../../lib/admin-access";
 
 type InviteRow = {
   id: string;
@@ -13,9 +15,8 @@ type InviteRow = {
   note: string | null;
 };
 
-const ADMIN_EMAIL = "enzin-office@gmail.com";
-
 export default function AdminInvitesPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -34,14 +35,12 @@ export default function AdminInvitesPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setMessage("ログイン状態を確認できませんでした。");
-      setLoading(false);
+      router.replace("/auth");
       return;
     }
 
-    if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
-      setMessage("この画面は管理者のみ利用できます。");
-      setLoading(false);
+    if (!isAdminEmail(user.email)) {
+      router.replace("/");
       return;
     }
 
@@ -65,7 +64,7 @@ export default function AdminInvitesPage() {
 
   useEffect(() => {
     fetchInvites();
-  }, []);
+  }, [router]);
 
   const handleCreateInvite = async () => {
     setCreating(true);
@@ -122,11 +121,11 @@ export default function AdminInvitesPage() {
         {!loading && !message ? (
           <section className="soft-card flex flex-col gap-3.5">
             <div className="flex items-end justify-between gap-2">
-              <h2 className="section-title">新規発行</h2>
+              <h2 className="section-title">招待コードを発行</h2>
               <p className="section-note">必要なときに1件ずつ発行します</p>
             </div>
             <label className="flex flex-col gap-1.5">
-              <span className="label-text">共有先メモ（任意）</span>
+                <span className="label-text">共有先メモ（任意）</span>
               <input
                 className="mock-input !h-11"
                 value={createNote}
@@ -135,7 +134,7 @@ export default function AdminInvitesPage() {
               />
             </label>
             <button type="button" className="primary-btn !h-11" disabled={creating} onClick={handleCreateInvite}>
-              {creating ? "発行中..." : "新しいコードを発行"}
+              {creating ? "発行中..." : "招待コードを発行"}
             </button>
           </section>
         ) : null}
@@ -161,6 +160,12 @@ export default function AdminInvitesPage() {
         {!loading && !message && invites.length === 0 ? (
           <section className="soft-card">
             <p className="muted-text text-sm">まだ招待コードはありません。上のボタンから発行できます。</p>
+          </section>
+        ) : null}
+
+        {!loading && !message && invites.length > 0 ? (
+          <section className="soft-card">
+            <h2 className="section-title">発行済みコード一覧</h2>
           </section>
         ) : null}
 

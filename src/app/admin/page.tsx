@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-
-const ADMIN_EMAIL = "enzin-office@gmail.com";
+import { isAdminEmail } from "../../lib/admin-access";
 
 export default function AdminHomePage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reportCount, setReportCount] = useState<number | null>(null);
@@ -23,14 +24,12 @@ export default function AdminHomePage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setMessage("ログイン状態を確認できませんでした。");
-        setLoading(false);
+        router.replace("/auth");
         return;
       }
 
-      if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
-        setMessage("この画面は管理者のみ利用できます。");
-        setLoading(false);
+      if (!isAdminEmail(user.email)) {
+        router.replace("/");
         return;
       }
 
@@ -57,15 +56,15 @@ export default function AdminHomePage() {
     };
 
     fetchAdminSummary();
-  }, []);
+  }, [router]);
 
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
-          <h1 className="hero-title text-2xl font-semibold">運営メニュー</h1>
-          <p className="muted-text text-sm">必要な管理画面へ、ここからすぐ移動できます。</p>
+          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理</p>
+          <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
+          <p className="muted-text text-sm">運営用メニュー</p>
         </header>
 
         {loading ? (
@@ -104,7 +103,7 @@ export default function AdminHomePage() {
               <h2 className="section-title">招待コード管理</h2>
               <p className="muted-text text-sm">招待コードを発行・確認します。</p>
               <p className="text-sm text-[#365f78]">登録コード数: {inviteCount ?? 0}件</p>
-              <Link href="/admin/invites" className="secondary-btn !h-10">
+              <Link href="/admin/invite-codes" className="secondary-btn !h-10">
                 招待コード管理へ
               </Link>
             </article>

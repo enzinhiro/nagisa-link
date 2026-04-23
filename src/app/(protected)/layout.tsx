@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { APP_HEADER_LOGO_PATH, SERVICE_NAME } from "../../lib/brand";
+import { isAdminEmail } from "../../lib/admin-access";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
 
@@ -14,6 +15,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
   const [talkBadgeCount, setTalkBadgeCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         router.replace("/auth");
         return;
       }
+
+      setIsAdminUser(isAdminEmail(user.email));
 
       if (user.email) {
         await supabase.rpc("link_invite_code_user", {
@@ -188,6 +192,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 >
                   ルール
                 </Link>
+                {isAdminUser ? (
+                  <Link
+                    href="/admin"
+                    className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+                  >
+                    管理画面
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#365f78] hover:bg-[#f2f9ff]"

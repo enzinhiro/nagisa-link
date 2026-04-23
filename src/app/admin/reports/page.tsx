@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { isAdminEmail } from "../../../lib/admin-access";
 
 type ReportRow = {
   id: string;
@@ -20,8 +22,6 @@ type ProfileMapRow = {
   nickname: string;
 };
 
-const ADMIN_EMAIL = "enzin-office@gmail.com";
-
 const REASON_LABELS: Record<ReportRow["reason"], string> = {
   uncomfortable: "不快な言動",
   solicitation: "勧誘のように感じた",
@@ -31,6 +31,7 @@ const REASON_LABELS: Record<ReportRow["reason"], string> = {
 };
 
 export default function AdminReportsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -46,14 +47,12 @@ export default function AdminReportsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setMessage("ログイン状態を確認できませんでした。");
-        setLoading(false);
+        router.replace("/auth");
         return;
       }
 
-      if ((user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
-        setMessage("この画面は管理者のみ利用できます。");
-        setLoading(false);
+      if (!isAdminEmail(user.email)) {
+        router.replace("/");
         return;
       }
 
@@ -94,7 +93,7 @@ export default function AdminReportsPage() {
     };
 
     fetchReports();
-  }, []);
+  }, [router]);
 
   return (
     <div className="mock-page">
