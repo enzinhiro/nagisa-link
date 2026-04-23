@@ -20,6 +20,10 @@ type ProfileDetail = {
   intro: string;
 };
 
+type RawProfileDetail = Omit<ProfileDetail, "connection_achievement_count"> & {
+  connection_achievement_count: number | string | null;
+};
+
 export default function SearchDetailPage() {
   const params = useParams<{ id: string }>();
   const profileId = params.id;
@@ -83,8 +87,14 @@ export default function SearchDetailPage() {
         console.warn("[search/[id]] wants lookup failed:", wantSelectError);
       }
 
+      const rawProfile = data as RawProfileDetail;
+      const normalizedProfile: ProfileDetail = {
+        ...rawProfile,
+        connection_achievement_count: Number(rawProfile.connection_achievement_count ?? 0),
+      };
+
       setHasPendingWant(Boolean(existingWant) && !wantSelectError);
-      setProfile(data as ProfileDetail);
+      setProfile(normalizedProfile);
       setLoading(false);
     };
 
