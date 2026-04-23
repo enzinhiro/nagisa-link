@@ -23,6 +23,8 @@ export default function AdminInvitesPage() {
   const [creating, setCreating] = useState(false);
   const [createNote, setCreateNote] = useState("");
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "unused" | "used">("all");
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [invites, setInvites] = useState<InviteRow[]>([]);
 
@@ -51,7 +53,10 @@ export default function AdminInvitesPage() {
       return;
     }
 
-    const rows = (data ?? []) as InviteRow[];
+    const rows = ((data ?? []) as InviteRow[]).sort((a, b) => {
+      if (a.is_used !== b.is_used) return a.is_used ? 1 : -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
     setInvites(rows);
     setNoteDrafts(
       rows.reduce<Record<string, string>>((acc, row) => {
@@ -70,7 +75,7 @@ export default function AdminInvitesPage() {
     setCreating(true);
     setFeedbackMessage("");
 
-    const { error } = await supabase.rpc("admin_create_invite_code", {
+    const { data, error } = await supabase.rpc("admin_create_invite_code", {
       input_note: createNote,
     });
 
@@ -81,7 +86,10 @@ export default function AdminInvitesPage() {
     }
 
     setCreateNote("");
-    setFeedbackMessage("招待コードを発行しました。");
+    const issuedCode = ((data ?? [])[0] as { code?: string } | undefined)?.code;
+    setFeedbackMessage(
+      issuedCode ? `招待コードを発行しました。${issuedCode}` : "招待コードを発行しました。"
+    );
     await fetchInvites();
   };
 
@@ -103,6 +111,25 @@ export default function AdminInvitesPage() {
     setFeedbackMessage("メモを保存しました。");
     await fetchInvites();
   };
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setFeedbackMessage("コピーしました。");
+      setTimeout(() => {
+        setCopiedCode((prev) => (prev === code ? null : prev));
+      }, 1600);
+    } catch {
+      setFeedbackMessage("コピーに失敗しました。");
+    }
+  };
+
+  const visibleInvites = invites.filter((invite) => {
+    if (statusFilter === "unused") return !invite.is_used;
+    if (statusFilter === "used") return invite.is_used;
+    return true;
+  });
 
   return (
     <div className="mock-page">
@@ -164,22 +191,45 @@ export default function AdminInvitesPage() {
         ) : null}
 
         {!loading && !message && invites.length > 0 ? (
-          <section className="soft-card">
-            <h2 className="section-title">発行済みコード一覧</h2>
+          <section className="soft-card flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="section-title">発行済みコード一覧</h2>
+              <select
+                className="mock-select !h-9 !w-auto min-w-[120px]"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | "unused" | "used")}
+              >
+                <option value="all">すべて</option>
+                <option value="unused">未使用のみ</option>
+                <option value="used">使用済みのみ</option>
+              </select>
+            </div>
+            <p className="section-note">未使用を先に表示しています。</p>
           </section>
         ) : null}
 
         {!loading &&
           !message &&
-          invites.map((invite) => (
+          visibleInvites.map((invite) => (
             <article key={invite.id} className="soft-card flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold leading-6 text-[#2f5f79] break-all">{invite.code}</p>
-                <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}
-                >
-                  {invite.is_used ? "使用済み" : "未使用"}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="break-all text-sm font-semibold leading-6 text-[#2f5f79]">{invite.code}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${invite.is_used ? "pill-pink" : "pill-blue"}`}
+                  >
+                    {invite.is_used ? "使用済み" : "未使用"}
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary-btn !h-9 !w-auto px-3 text-xs"
+                    onClick={() => handleCopyCode(invite.code)}
+                  >
+                    {copiedCode === invite.code ? "コピーしました" : "コピー"}
+                  </button>
+                </div>
               </div>
               <p className="text-xs muted-text">発行日: {new Date(invite.created_at).toLocaleString("ja-JP")}</p>
               <p className="text-sm text-[#365f78]">使用者メール: {invite.used_by_email ?? "未使用"}</p>
@@ -207,6 +257,12 @@ export default function AdminInvitesPage() {
               </button>
             </article>
           ))}
+
+        {!loading && !message && invites.length > 0 && visibleInvites.length === 0 ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">該当するコードはありません。</p>
+          </section>
+        ) : null}
       </main>
     </div>
   );
