@@ -14,6 +14,7 @@ type AdminUserDetailRow = {
   email: string | null;
   area: string;
   created_at: string;
+  profile_completed: boolean;
   is_suspended: boolean;
   invite_used: boolean;
   invite_code: string | null;
@@ -157,6 +158,12 @@ export default function AdminUserDetailPage() {
             <div className="soft-card-subtle">
               <p className="label-text mb-1">状態</p>
               <p className="text-sm text-[#365f78]">{userDetail.is_suspended ? "停止中" : "利用中"}</p>
+            </div>
+            <div className="soft-card-subtle">
+              <p className="label-text mb-1">プロフィール入力状況</p>
+              <p className="text-sm text-[#365f78]">
+                {userDetail.profile_completed ? "プロフィール完了済み" : "プロフィール未完了"}
+              </p>
             </div>
             <div className="soft-card-subtle">
               <p className="label-text mb-1">招待コード情報</p>

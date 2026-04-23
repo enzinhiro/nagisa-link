@@ -14,6 +14,7 @@ type AdminUserRow = {
   email: string | null;
   area: string;
   created_at: string;
+  profile_completed: boolean;
   is_suspended: boolean;
   invite_used: boolean;
   invite_code: string | null;
@@ -200,13 +201,18 @@ export default function AdminUsersPage() {
                   <p className="text-xs text-[#5b798d]">本名: {u.real_name?.trim() ? u.real_name : "未登録"}</p>
                   <p className="truncate text-xs text-[#5b798d]">メール: {u.email ?? "未登録"}</p>
                 </div>
-                <span
-                  className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs ${
-                    u.is_suspended ? "pill-pink" : "pill-blue"
-                  }`}
-                >
-                  {u.is_suspended ? "停止中" : "利用中"}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
+                      u.is_suspended ? "pill-pink" : "pill-blue"
+                    }`}
+                  >
+                    {u.is_suspended ? "停止中" : "利用中"}
+                  </span>
+                  <span className="text-[11px] text-[#6f8796]">
+                    {u.profile_completed ? "プロフィール完了" : "プロフィール未完了"}
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-[#365f78]">地域: {u.area || "未設定"}</p>
               <p className="text-sm text-[#365f78]">

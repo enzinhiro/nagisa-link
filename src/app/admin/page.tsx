@@ -15,6 +15,11 @@ export default function AdminHomePage() {
   const [activeUserCount, setActiveUserCount] = useState<number | null>(null);
   const [suspendedCount, setSuspendedCount] = useState<number | null>(null);
   const [unusedInviteCount, setUnusedInviteCount] = useState<number | null>(null);
+  const [profileCompletedCount, setProfileCompletedCount] = useState<number | null>(null);
+  const [profileIncompleteCount, setProfileIncompleteCount] = useState<number | null>(null);
+  const [activeChatCount, setActiveChatCount] = useState<number | null>(null);
+  const [pendingWantsCount, setPendingWantsCount] = useState<number | null>(null);
+  const [metricsNote, setMetricsNote] = useState("");
 
   useEffect(() => {
     const fetchAdminSummary = async () => {
@@ -39,12 +44,23 @@ export default function AdminHomePage() {
         { count: unhandledReportsTotal, error: reportsError },
         { count: activeTotal, error: activeError },
         { count: suspendedTotal, error: suspendedError },
+        { count: profileCompletedTotal, error: profileCompletedError },
+        { count: profileIncompleteTotal, error: profileIncompleteError },
+        { count: activeChatsTotal, error: activeChatsError },
+        { count: pendingWantsTotal, error: pendingWantsError },
         { data: inviteRows, error: invitesError },
       ] =
         await Promise.all([
           supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "unhandled"),
           supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_suspended", false),
           supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_suspended", true),
+          supabase.from("profiles").select("id", { count: "exact", head: true }).eq("profile_completed", true),
+          supabase.from("profiles").select("id", { count: "exact", head: true }).eq("profile_completed", false),
+          supabase
+            .from("chats")
+            .select("id", { count: "exact", head: true })
+            .gt("expires_at", new Date().toISOString()),
+          supabase.from("wants").select("id", { count: "exact", head: true }).eq("status", "pending"),
           supabase.rpc("admin_list_invite_codes"),
         ]);
 
@@ -54,10 +70,23 @@ export default function AdminHomePage() {
         const unusedCount = ((inviteRows ?? []) as Array<{ is_used?: boolean; is_active?: boolean }>).filter(
           (row) => row.is_used !== true && row.is_active !== false
         ).length;
+        const unavailable: string[] = [];
+        if (profileCompletedError || profileIncompleteError) unavailable.push("プロフィール完了状況");
+        if (activeChatsError) unavailable.push("進行中チャット数");
+        if (pendingWantsError) unavailable.push("返答待ち件数");
         setUnhandledReportCount(unhandledReportsTotal ?? 0);
         setActiveUserCount(activeTotal ?? 0);
         setSuspendedCount(suspendedTotal ?? 0);
         setUnusedInviteCount(unusedCount);
+        setProfileCompletedCount(profileCompletedError ? null : (profileCompletedTotal ?? 0));
+        setProfileIncompleteCount(profileIncompleteError ? null : (profileIncompleteTotal ?? 0));
+        setActiveChatCount(activeChatsError ? null : (activeChatsTotal ?? 0));
+        setPendingWantsCount(pendingWantsError ? null : (pendingWantsTotal ?? 0));
+        setMetricsNote(
+          unavailable.length > 0
+            ? `一部の件数は取得できませんでした（${unavailable.join(" / ")}）。`
+            : ""
+        );
       }
 
       setLoading(false);
@@ -107,6 +136,29 @@ export default function AdminHomePage() {
                 <p className="text-xs muted-text">未対応の通報</p>
                 <p className="text-2xl font-semibold text-[#7f4f65]">{unhandledReportCount ?? 0}</p>
               </Link>
+            </section>
+
+            <section className="soft-card flex flex-col gap-2.5">
+              <h2 className="section-title">身内テスト状況（簡易）</h2>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="soft-card-subtle">
+                  <p className="text-xs muted-text">プロフィール完了済み</p>
+                  <p className="text-xl font-semibold text-[#2f5f79]">{profileCompletedCount ?? "—"}</p>
+                </div>
+                <div className="soft-card-subtle">
+                  <p className="text-xs muted-text">プロフィール未完了</p>
+                  <p className="text-xl font-semibold text-[#7f4f65]">{profileIncompleteCount ?? "—"}</p>
+                </div>
+                <div className="soft-card-subtle">
+                  <p className="text-xs muted-text">進行中チャット数</p>
+                  <p className="text-xl font-semibold text-[#2f5f79]">{activeChatCount ?? "—"}</p>
+                </div>
+                <div className="soft-card-subtle">
+                  <p className="text-xs muted-text">返答待ちの話したい件数</p>
+                  <p className="text-xl font-semibold text-[#7f4f65]">{pendingWantsCount ?? "—"}</p>
+                </div>
+              </div>
+              {metricsNote ? <p className="text-xs muted-text">{metricsNote}</p> : null}
             </section>
 
             <section className="soft-card flex flex-col gap-2.5">
