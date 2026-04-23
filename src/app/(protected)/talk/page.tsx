@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../lib/account-status";
+import { ProfileAvatar } from "../../../components/profile-avatar";
 import {
   chatByOtherUserMap,
   pendingReceivedOffers,
@@ -26,6 +27,7 @@ type ProfileRow = {
   want_to_connect: string;
   connection_achievement_count: number;
   profile_completed: boolean;
+  avatar_seed: number | null;
 };
 
 type TalkCard = {
@@ -35,6 +37,7 @@ type TalkCard = {
   area: string;
   wantToConnect: string;
   connectionAchievementCount: number;
+  avatarSeed: number | null;
   label: string;
   expiresAt?: string;
 };
@@ -141,7 +144,7 @@ export default function TalkPage() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed")
+      .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed,avatar_seed")
       .in("id", profileIds)
       .eq("profile_completed", true);
 
@@ -166,6 +169,7 @@ export default function TalkPage() {
         area: p.area,
         wantToConnect: p.want_to_connect,
         connectionAchievementCount: p.connection_achievement_count ?? 0,
+        avatarSeed: p.avatar_seed,
         label,
         expiresAt,
       };
@@ -181,6 +185,7 @@ export default function TalkPage() {
           area: "",
           wantToConnect: "一致しました。下のボタンからチャットへ進めます。",
           connectionAchievementCount: 0,
+          avatarSeed: null,
           label: "一致",
         };
       })
@@ -270,9 +275,17 @@ export default function TalkPage() {
   const renderCard = (card: TalkCard, section: "matched" | "received" | "sent" | "ended") => (
     <article key={`${section}-${card.otherUserId}`} className="soft-card flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h3 className="font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
-          <p className="text-xs muted-text">{card.area}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <ProfileAvatar
+            userId={card.otherUserId}
+            avatarSeed={card.avatarSeed}
+            nickname={card.nickname}
+            className="h-10 w-10"
+          />
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
+            <p className="text-xs muted-text">{card.area}</p>
+          </div>
         </div>
         <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">{card.label}</span>
       </div>

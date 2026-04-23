@@ -5,10 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { ProfileAvatar } from "../../../components/profile-avatar";
 
 type SearchProfileCard = {
   id: string;
   nickname: string;
+  avatar_seed: number | null;
   area: string;
   connection_achievement_count: number;
   child_age_group: string;
@@ -191,7 +193,7 @@ export default function SearchPage() {
       let query = supabase
         .from("profiles")
         .select(
-          "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+          "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
         )
         .eq("profile_completed", true)
         .neq("id", user.id);
@@ -236,7 +238,7 @@ export default function SearchPage() {
         let relaxedQuery = supabase
           .from("profiles")
           .select(
-            "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+            "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
           .eq("profile_completed", true)
           .neq("id", user.id);
@@ -467,9 +469,17 @@ export default function SearchPage() {
                     return (
                     <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="min-w-0 flex-1 truncate font-semibold text-[#2f5f79]">
-                          {toMamaDisplayName(card.nickname)}
-                        </h3>
+                        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                          <ProfileAvatar
+                            userId={card.id}
+                            avatarSeed={card.avatar_seed}
+                            nickname={card.nickname}
+                            className="h-9 w-9"
+                          />
+                          <h3 className="min-w-0 flex-1 truncate font-semibold text-[#2f5f79]">
+                            {toMamaDisplayName(card.nickname)}
+                          </h3>
+                        </div>
                         {achievementCount > 0 ? (
                           <span className="shrink-0 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[11px] text-[#8c6375]">
                             つながり実績 {achievementCount}
@@ -514,9 +524,17 @@ export default function SearchPage() {
               return (
               <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-snug text-[#2f5f79]">
-                    {toMamaDisplayName(card.nickname)}
-                  </h3>
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <ProfileAvatar
+                      userId={card.id}
+                      avatarSeed={card.avatar_seed}
+                      nickname={card.nickname}
+                      className="h-10 w-10"
+                    />
+                    <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-snug text-[#2f5f79]">
+                      {toMamaDisplayName(card.nickname)}
+                    </h3>
+                  </div>
                   {achievementCount > 0 ? (
                     <span className="shrink-0 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[11px] text-[#8c6375]">
                       つながり実績 {achievementCount}

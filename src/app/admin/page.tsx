@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { isAdminEmail } from "../../lib/admin-access";
 import { AdminSectionNav } from "./_components/admin-section-nav";
+import { AdminBottomNav } from "./_components/admin-bottom-nav";
 
 export default function AdminHomePage() {
   const router = useRouter();
@@ -97,12 +98,11 @@ export default function AdminHomePage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
+      <main className="mock-shell screen-stack pb-24">
+        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
           <AdminSectionNav current="home" />
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理</p>
           <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
-          <p className="muted-text text-sm">運営用メニュー / 現在の状況</p>
+          <p className="muted-text text-xs">運営用メニュー / 現在の状況</p>
         </header>
 
         {loading ? (
@@ -160,28 +160,10 @@ export default function AdminHomePage() {
               </div>
               {metricsNote ? <p className="text-xs muted-text">{metricsNote}</p> : null}
             </section>
-
-            <section className="soft-card flex flex-col gap-2.5">
-              <h2 className="section-title">管理メニュー</h2>
-              <div className="grid grid-cols-1 gap-2.5">
-                <Link href="/admin/invite-codes" className="secondary-btn !h-10">
-                  招待コード管理
-                </Link>
-                <Link href="/admin/users" className="secondary-btn !h-10">
-                  ユーザー一覧
-                </Link>
-                <Link href="/admin/reports" className="secondary-btn !h-10">
-                  通報管理
-                </Link>
-              </div>
-            </section>
           </>
         ) : null}
-
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          ホームに戻る
-        </Link>
       </main>
+      <AdminBottomNav />
     </div>
   );
 }

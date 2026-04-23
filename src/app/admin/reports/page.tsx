@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { isAdminEmail } from "../../../lib/admin-access";
 import { AdminSectionNav } from "../_components/admin-section-nav";
+import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type ReportRow = {
   id: string;
@@ -131,13 +132,12 @@ export default function AdminReportsPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3.5">
+      <main className="mock-shell screen-stack pb-24">
+        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
           <AdminSectionNav current="reports" />
-          <div className="flex flex-col gap-2">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+          <div className="flex flex-col gap-1">
             <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
-            <p className="muted-text text-sm">新しい順に通報内容を確認できます。</p>
+            <p className="muted-text text-xs">新しい順に通報内容を確認できます。</p>
           </div>
         </header>
 
@@ -245,11 +245,8 @@ export default function AdminReportsPage() {
             <p className="muted-text text-sm">条件に一致する通報はありません。フィルタや検索条件を変更してください。</p>
           </section>
         ) : null}
-
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          ホームに戻る
-        </Link>
       </main>
+      <AdminBottomNav />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
+import { ProfileAvatar } from "../../../../components/profile-avatar";
 
 type ChatRow = {
   id: string;
@@ -17,6 +18,7 @@ type ProfileRow = {
   id: string;
   nickname: string;
   area: string;
+  avatar_seed: number | null;
 };
 
 type MessageRow = {
@@ -94,7 +96,7 @@ export default function ChatDetailPage() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id,nickname,area")
+      .select("id,nickname,area,avatar_seed")
       .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
       .maybeSingle();
@@ -331,7 +333,12 @@ export default function ChatDetailPage() {
             ) : null}
 
             <section className="soft-card flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
+              <ProfileAvatar
+                userId={otherProfile.id}
+                avatarSeed={otherProfile.avatar_seed}
+                nickname={otherProfile.nickname}
+                className="h-11 w-11"
+              />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <h1 className="hero-title truncate text-lg font-semibold">
                   {toMamaDisplayName(otherProfile.nickname)}

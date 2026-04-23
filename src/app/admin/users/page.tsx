@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { isAdminEmail } from "../../../lib/admin-access";
 import { AdminSectionNav } from "../_components/admin-section-nav";
+import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type AdminUserRow = {
   id: string;
@@ -110,13 +111,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3.5">
+      <main className="mock-shell screen-stack pb-24">
+        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
           <AdminSectionNav current="users" />
-          <div className="flex flex-col gap-2">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+          <div className="flex flex-col gap-1">
             <h1 className="hero-title text-2xl font-semibold">ユーザー一覧</h1>
-            <p className="muted-text text-sm">利用状況を確認し、停止・解除を行えます。</p>
+            <p className="muted-text text-xs">利用状況の確認と停止・解除ができます。</p>
           </div>
         </header>
 
@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-[#5b798d]">状態</span>
                 <select
-                  className="mock-select !h-10"
+                  className="mock-select admin-select !h-11 py-0"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
                 >
@@ -165,7 +165,7 @@ export default function AdminUsersPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-[#5b798d]">招待コード</span>
                 <select
-                  className="mock-select !h-10"
+                  className="mock-select admin-select !h-11 py-0"
                   value={inviteFilter}
                   onChange={(e) => setInviteFilter(e.target.value as "all" | "used" | "unused")}
                 >
@@ -238,11 +238,8 @@ export default function AdminUsersPage() {
               </div>
             </article>
           ))}
-
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          ホームに戻る
-        </Link>
       </main>
+      <AdminBottomNav />
     </div>
   );
 }

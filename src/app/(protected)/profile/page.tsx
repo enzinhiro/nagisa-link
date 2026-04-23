@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { ProfileAvatar } from "../../../components/profile-avatar";
 
 type ProfileRow = {
+  id: string;
   nickname: string;
   area: string;
   child_age_group: string;
@@ -17,6 +19,7 @@ type ProfileRow = {
   intro: string;
   connection_achievement_count: number;
   profile_completed: boolean;
+  avatar_seed: number | null;
 };
 
 export default function MyProfilePage() {
@@ -43,7 +46,7 @@ export default function MyProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,connection_achievement_count,profile_completed"
+          "id,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,connection_achievement_count,profile_completed,avatar_seed"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -102,7 +105,7 @@ export default function MyProfilePage() {
             <section className="soft-card flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="h-12 w-12 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
+                  <ProfileAvatar userId={profile.id} avatarSeed={profile.avatar_seed} nickname={profile.nickname} />
                   <div className="min-w-0">
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
                     <p className="text-sm muted-text">{profile.area}</p>

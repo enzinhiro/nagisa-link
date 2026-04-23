@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
+import { ProfileAvatar } from "../../../../components/profile-avatar";
 
 type ProfileDetail = {
   id: string;
@@ -19,6 +20,7 @@ type ProfileDetail = {
   connection_preference: string;
   meeting_range: string;
   intro: string;
+  avatar_seed: number | null;
 };
 
 type RawProfileDetail = Omit<ProfileDetail, "connection_achievement_count"> & {
@@ -63,7 +65,7 @@ export default function SearchDetailPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
+          "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,avatar_seed"
         )
         .eq("id", profileId)
         .eq("profile_completed", true)
@@ -175,7 +177,7 @@ export default function SearchDetailPage() {
             <section className="soft-card flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="h-12 w-12 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
+                  <ProfileAvatar userId={profile.id} avatarSeed={profile.avatar_seed} nickname={profile.nickname} />
                   <div className="min-w-0">
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
                     <p className="text-sm muted-text">{profile.area}</p>

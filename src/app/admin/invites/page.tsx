@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { isAdminEmail } from "../../../lib/admin-access";
 import { AdminSectionNav } from "../_components/admin-section-nav";
+import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type InviteRow = {
   id: string;
@@ -38,6 +39,7 @@ export default function AdminInvitesPage() {
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "unused" | "used" | "disabled">("all");
+  const [searchText, setSearchText] = useState("");
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [invites, setInvites] = useState<InviteRow[]>([]);
 
@@ -146,6 +148,11 @@ export default function AdminInvitesPage() {
 
   const visibleInvites = invites.filter((invite) => {
     const status = resolveInviteStatus(invite);
+    const keyword = searchText.trim().toLowerCase();
+    if (keyword) {
+      const haystack = [invite.code, invite.used_by_email ?? "", invite.note ?? ""].join(" ").toLowerCase();
+      if (!haystack.includes(keyword)) return false;
+    }
     if (statusFilter === "unused") return status === "unused";
     if (statusFilter === "used") return status === "used";
     if (statusFilter === "disabled") return status === "disabled";
@@ -172,13 +179,12 @@ export default function AdminInvitesPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3.5">
+      <main className="mock-shell screen-stack pb-24">
+        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
           <AdminSectionNav current="invite-codes" />
-          <div className="flex flex-col gap-2">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
+          <div className="flex flex-col gap-1">
             <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
-            <p className="muted-text text-sm">発行・利用状況・共有先メモをここで確認できます。</p>
+            <p className="muted-text text-xs">発行・利用状況・共有先メモを確認できます。</p>
           </div>
         </header>
 
@@ -232,7 +238,7 @@ export default function AdminInvitesPage() {
             <div className="flex items-center justify-between gap-2">
               <h2 className="section-title">発行済みコード一覧</h2>
               <select
-                className="mock-select !h-9 !w-auto min-w-[120px]"
+                className="mock-select admin-select !h-11 !w-auto min-w-[124px] py-0"
                 value={statusFilter}
                 onChange={(e) =>
                   setStatusFilter(e.target.value as "all" | "unused" | "used" | "disabled")
@@ -244,6 +250,16 @@ export default function AdminInvitesPage() {
                 <option value="disabled">無効のみ</option>
               </select>
             </div>
+            <label className="flex flex-col gap-1.5">
+              <span className="label-text">検索（コード / 使用者メール / 共有先メモ）</span>
+              <input
+                className="mock-input !h-11"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="キーワードで検索"
+              />
+            </label>
+            <p className="text-xs muted-text">表示件数: {visibleInvites.length}件</p>
             <p className="section-note">未使用 → 無効 → 使用済み の順で表示しています。</p>
           </section>
         ) : null}
@@ -338,6 +354,7 @@ export default function AdminInvitesPage() {
           </section>
         ) : null}
       </main>
+      <AdminBottomNav />
     </div>
   );
 }

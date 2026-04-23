@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { ProfileAvatar } from "../../../components/profile-avatar";
 
 type ChatRow = {
   id: string;
@@ -17,6 +18,7 @@ type ProfileRow = {
   id: string;
   nickname: string;
   area: string;
+  avatar_seed: number | null;
 };
 
 type ChatCard = {
@@ -24,6 +26,8 @@ type ChatCard = {
   otherUserId: string;
   otherDisplayName: string;
   otherArea: string;
+  otherNickname: string;
+  otherAvatarSeed: number | null;
   expiresAt: string;
   isFallback: boolean;
 };
@@ -78,7 +82,7 @@ export default function ChatIndexPage() {
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id,nickname,area")
+        .select("id,nickname,area,avatar_seed")
         .in("id", otherIds);
 
       const profileMap = new Map<string, ProfileRow>();
@@ -95,6 +99,8 @@ export default function ChatIndexPage() {
             otherUserId,
             otherDisplayName: "このユーザーは現在表示できません",
             otherArea: "-",
+            otherNickname: "相手",
+            otherAvatarSeed: null,
             expiresAt: chat.expires_at,
             isFallback: true,
           };
@@ -104,6 +110,8 @@ export default function ChatIndexPage() {
           otherUserId,
           otherDisplayName: toMamaDisplayName(otherProfile.nickname),
           otherArea: otherProfile.area,
+          otherNickname: otherProfile.nickname,
+          otherAvatarSeed: otherProfile.avatar_seed,
           expiresAt: chat.expires_at,
           isFallback: false,
         };
@@ -129,9 +137,17 @@ export default function ChatIndexPage() {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
     return (
       <article key={`${type}-${card.id}`} className="soft-card flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
-          <h3 className="font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
-          <p className="text-xs muted-text">地域: {card.otherArea}</p>
+        <div className="flex items-center gap-3">
+          <ProfileAvatar
+            userId={card.otherUserId}
+            avatarSeed={card.otherAvatarSeed}
+            nickname={card.otherNickname}
+            className="h-10 w-10"
+          />
+          <div className="min-w-0 flex flex-1 flex-col gap-1.5">
+            <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
+            <p className="text-xs muted-text">地域: {card.otherArea}</p>
+          </div>
           <span className="inline-flex w-fit rounded-full px-2.5 py-1 text-xs pill-blue">
             {type === "active" ? `残り${remainingHour}時間` : "終了済み"}
           </span>

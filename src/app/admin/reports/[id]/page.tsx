@@ -156,7 +156,6 @@ export default function AdminReportDetailPage() {
         <header className="soft-card flex flex-col gap-3.5">
           <AdminSectionNav current="reports" breadcrumb="管理画面 / 通報管理 / 詳細" />
           <div className="flex flex-col gap-2">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
             <h1 className="hero-title text-2xl font-semibold">通報詳細</h1>
             <p className="muted-text text-sm">内容を上から順に確認できます。</p>
           </div>

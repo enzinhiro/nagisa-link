@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
 import { canPerformUserWriteAction } from "../../../lib/account-status";
+import { generateAvatarSeed } from "../../../lib/profile/avatar";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
 const CHILD_AGE_GROUPS = [
@@ -75,6 +76,7 @@ export default function ProfileOnboardingPage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [avatarSeed, setAvatarSeed] = useState<number | null>(null);
 
   const [realName, setRealName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -108,7 +110,7 @@ export default function ProfileOnboardingPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "real_name,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,profile_completed"
+          "real_name,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,profile_completed,avatar_seed"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -125,6 +127,7 @@ export default function ProfileOnboardingPage() {
       setIsEditingProfile(data?.profile_completed === true);
 
       if (data) {
+        setAvatarSeed(Number.isInteger(data.avatar_seed) ? Number(data.avatar_seed) : null);
         setRealName((data.real_name ?? authRealName) || "");
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");
@@ -233,6 +236,7 @@ export default function ProfileOnboardingPage() {
     }
 
     setIsSubmitting(true);
+    const nextAvatarSeed = avatarSeed ?? generateAvatarSeed();
 
     const {
       data: { user },
@@ -260,6 +264,7 @@ export default function ProfileOnboardingPage() {
         meeting_range: meetingRange,
         intro: intro.trim(),
         profile_completed: true,
+        avatar_seed: nextAvatarSeed,
       },
       { onConflict: "id" }
     );
@@ -272,6 +277,7 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
+    setAvatarSeed(nextAvatarSeed);
     router.push(isEditingProfile ? "/profile" : "/search");
   };
 

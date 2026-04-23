@@ -106,7 +106,6 @@ export default function AdminUserDetailPage() {
         <header className="soft-card flex flex-col gap-3.5">
           <AdminSectionNav current="users" breadcrumb="管理画面 / ユーザー一覧 / 詳細" />
           <div className="flex flex-col gap-2">
-            <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">管理者</p>
             <h1 className="hero-title text-2xl font-semibold">ユーザー詳細</h1>
             <p className="muted-text text-sm">ユーザー情報の確認と利用状態の変更ができます。</p>
           </div>
