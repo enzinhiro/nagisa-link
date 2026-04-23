@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
 
         {!loading && !message && users.length === 0 ? (
           <section className="soft-card">
-            <p className="muted-text text-sm">まだ表示できるユーザー情報がありません。</p>
+            <p className="muted-text text-sm">まだユーザー情報がありません。登録があるとここに表示されます。</p>
           </section>
         ) : null}
 
@@ -217,7 +217,7 @@ export default function AdminUsersPage() {
                 <p className="text-xs muted-text">共有先メモ: {u.invite_note}</p>
               ) : null}
               <p className="text-xs muted-text">登録日: {new Date(u.created_at).toLocaleString("ja-JP")}</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Link href={`/admin/users/${u.id}`} className="secondary-btn !h-11">
                   詳細を見る
                 </Link>

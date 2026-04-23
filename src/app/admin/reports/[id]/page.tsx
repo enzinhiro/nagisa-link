@@ -220,7 +220,7 @@ export default function AdminReportDetailPage() {
                 <p className="label-text mb-1">chat_id</p>
                 <p className="text-xs muted-text break-all">{report.chat_id}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <button
                   type="button"
                   className="secondary-btn !h-10"

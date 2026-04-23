@@ -518,7 +518,7 @@ export default function ProfileOnboardingPage() {
             <p className="text-sm muted-text leading-6">最後に内容を確認して完了してください。</p>
             {message && <p className="text-sm text-rose-700">{message}</p>}
             <button className="primary-btn" type="submit" disabled={!isSubmitReady}>
-              {isSubmitting ? "保存中..." : isEditingProfile ? "変更を保存する" : "プロフィールを完了してホームへ"}
+              {isSubmitting ? "保存中..." : isEditingProfile ? "変更を保存する" : "プロフィールを完了してさがすへ"}
             </button>
             {!isSubmitting && missingRequiredLabels.length > 0 ? (
               <p className="text-xs muted-text">
