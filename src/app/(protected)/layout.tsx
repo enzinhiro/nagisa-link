@@ -172,6 +172,11 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             </Link>
           </div>
           <div className="relative">
+            {isAdminUser ? (
+              <span className="absolute -left-12 top-1/2 -translate-y-1/2 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[10px] text-[#8c6375]">
+                管理者
+              </span>
+            ) : null}
             <button
               type="button"
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
@@ -195,12 +200,15 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                   ルール
                 </Link>
                 {isAdminUser ? (
-                  <Link
-                    href="/admin"
-                    className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
-                  >
-                    管理画面
-                  </Link>
+                  <div className="mt-1 border-t border-[#edf4f8] pt-1.5">
+                    <p className="px-3 py-1 text-[11px] text-[#7b93a2]">運営アカウント</p>
+                    <Link
+                      href="/admin"
+                      className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
+                    >
+                      運営メニュー
+                    </Link>
+                  </div>
                 ) : null}
                 <button
                   type="button"
