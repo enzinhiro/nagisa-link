@@ -245,7 +245,7 @@ export default function ChatDetailPage() {
   }, [chatId]);
 
   useEffect(() => {
-    if (!chatId || message || !otherProfile) return;
+    if (!chatId || !currentUserId) return;
 
     const channel = supabase
       .channel(`messages:chat:${chatId}`)
@@ -296,7 +296,7 @@ export default function ChatDetailPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, currentUserId, message, otherProfile, refreshChatExpiry, refreshMessages]);
+  }, [chatId, currentUserId, refreshChatExpiry, refreshMessages]);
 
   useEffect(() => {
     if (!initialScrolledRef.current) {
