@@ -35,6 +35,21 @@ type PendingOptimisticMessage = {
   createdAtMs: number;
 };
 
+function areMessagesSame(a: MessageRow[], b: MessageRow[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (
+      a[i].id !== b[i].id ||
+      a[i].created_at !== b[i].created_at ||
+      a[i].sender_user_id !== b[i].sender_user_id ||
+      a[i].body !== b[i].body
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function mergeMessages(base: MessageRow[], incoming: MessageRow[]): MessageRow[] {
   const map = new Map<string, MessageRow>();
   for (const row of base) map.set(row.id, row);
@@ -72,9 +87,37 @@ export default function ChatDetailPage() {
   const forceScrollOnceRef = useRef(false);
   const initialScrolledRef = useRef(false);
   const pendingOptimisticRef = useRef<PendingOptimisticMessage[]>([]);
+  const [realtimeStatus, setRealtimeStatus] = useState<string>("idle");
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior });
+    }
     bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
+  const scheduleScrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    requestAnimationFrame(() => {
+      scrollToBottom(behavior);
+      window.setTimeout(() => scrollToBottom(behavior), 0);
+    });
+  }, [scrollToBottom]);
+
+  const logRealtime = useCallback((label: string, extra?: unknown) => {
+    if (process.env.NODE_ENV === "production") return;
+    if (extra !== undefined) {
+      console.info(`[chat realtime] ${label}`, extra);
+      return;
+    }
+    console.info(`[chat realtime] ${label}`);
+  }, []);
+
+  const isNearBottom = useCallback((): boolean => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return distanceToBottom < 96;
   }, []);
 
   const refreshMessages = useCallback(async () => {
@@ -85,7 +128,11 @@ export default function ChatDetailPage() {
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true });
     if (error) return;
-    setMessages((prev) => mergeMessages(prev, (data ?? []) as MessageRow[]));
+    setMessages((prev) => {
+      const next = mergeMessages(prev, (data ?? []) as MessageRow[]);
+      if (areMessagesSame(prev, next)) return prev;
+      return next;
+    });
   }, [chatId]);
 
   const refreshChatExpiry = useCallback(async () => {
@@ -117,6 +164,10 @@ export default function ChatDetailPage() {
   }, [chatId, currentUserId, messages]);
 
   const fetchChatDetail = async () => {
+    initialScrolledRef.current = false;
+    shouldAutoScrollRef.current = true;
+    forceScrollOnceRef.current = false;
+    pendingOptimisticRef.current = [];
     setLoading(true);
     setMessage("");
     setOtherProfile(null);
@@ -200,6 +251,7 @@ export default function ChatDetailPage() {
 
     setMessages((messageRows ?? []) as MessageRow[]);
     forceScrollOnceRef.current = true;
+    shouldAutoScrollRef.current = true;
     setLoading(false);
   };
 
@@ -259,6 +311,8 @@ export default function ChatDetailPage() {
         },
         (payload) => {
           const row = payload.new as MessageRow;
+          const wasNearBottom = isNearBottom();
+          logRealtime("INSERT received", { id: row.id, sender: row.sender_user_id, chatId });
           setMessages((prev) => {
             let cleaned = prev;
             if (row.sender_user_id === currentUserId) {
@@ -276,12 +330,14 @@ export default function ChatDetailPage() {
             if (cleaned.some((m) => m.id === row.id)) return cleaned;
             return mergeMessages(cleaned, [row]);
           });
-          if (row.sender_user_id === currentUserId) {
+          if (row.sender_user_id === currentUserId || wasNearBottom) {
             forceScrollOnceRef.current = true;
           }
         }
       )
       .subscribe((status) => {
+        setRealtimeStatus(status);
+        logRealtime(`status=${status}`);
         if (status === "SUBSCRIBED") {
           void refreshMessages();
           void refreshChatExpiry();
@@ -296,19 +352,19 @@ export default function ChatDetailPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, currentUserId, refreshChatExpiry, refreshMessages]);
+  }, [chatId, currentUserId, isNearBottom, logRealtime, refreshChatExpiry, refreshMessages]);
 
   useEffect(() => {
-    if (!initialScrolledRef.current) {
+    if (!loading && messages.length > 0 && !initialScrolledRef.current) {
       initialScrolledRef.current = true;
-      scrollToBottom("auto");
+      scheduleScrollToBottom("auto");
       return;
     }
     if (forceScrollOnceRef.current || shouldAutoScrollRef.current) {
-      scrollToBottom("smooth");
+      scheduleScrollToBottom("auto");
       forceScrollOnceRef.current = false;
     }
-  }, [messages, scrollToBottom]);
+  }, [loading, messages, scheduleScrollToBottom]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -329,6 +385,16 @@ export default function ChatDetailPage() {
       window.removeEventListener("online", onOnline);
     };
   }, [refreshChatExpiry, refreshMessages]);
+
+  useEffect(() => {
+    if (!chatId) return;
+    const intervalMs = realtimeStatus === "SUBSCRIBED" ? 12000 : 4000;
+    const timer = window.setInterval(() => {
+      void refreshMessages();
+      void refreshChatExpiry();
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [chatId, realtimeStatus, refreshChatExpiry, refreshMessages]);
 
   useEffect(() => {
     markLatestAsReadIfVisible();

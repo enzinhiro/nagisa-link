@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
@@ -69,8 +69,8 @@ export default function TalkPage() {
     [matchedCards.length, receivedCards.length, sentCards.length, endedCards.length]
   );
 
-  const fetchTalks = async () => {
-    setLoading(true);
+  const fetchTalks = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setMessage("");
 
     const {
@@ -219,13 +219,49 @@ export default function TalkPage() {
       .sort((a, b) => new Date(b.expiresAt ?? 0).getTime() - new Date(a.expiresAt ?? 0).getTime());
     setEndedCards(ended);
     setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchTalks();
   }, []);
 
-  const handleResponse = async (wantId: string | undefined, nextStatus: "matched" | "declined") => {
+  useEffect(() => {
+    void fetchTalks();
+  }, [fetchTalks]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel(`talk-sync:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wants" },
+        (payload) => {
+          const row = payload.new ?? payload.old;
+          const fromUser = String((row as { from_user?: string } | null)?.from_user ?? "");
+          const toUser = String((row as { to_user?: string } | null)?.to_user ?? "");
+          if (fromUser !== currentUserId && toUser !== currentUserId) return;
+          void fetchTalks(false);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chats" },
+        (payload) => {
+          const row = payload.new ?? payload.old;
+          const userA = String((row as { user_a_id?: string } | null)?.user_a_id ?? "");
+          const userB = String((row as { user_b_id?: string } | null)?.user_b_id ?? "");
+          if (userA !== currentUserId && userB !== currentUserId) return;
+          void fetchTalks(false);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, fetchTalks]);
+
+  const handleResponse = async (
+    wantId: string | undefined,
+    otherUserId: string,
+    nextStatus: "matched" | "declined"
+  ) => {
     if (!wantId || !currentUserId) return;
     setUpdatingWantId(wantId);
     setFeedbackMessage("");
@@ -253,8 +289,13 @@ export default function TalkPage() {
       return;
     }
 
-    setFeedbackMessage(nextStatus === "matched" ? "承諾しました。" : "今回は見送りました。");
-    await fetchTalks();
+    if (nextStatus === "matched") {
+      setFeedbackMessage("承諾しました。チャットへ移動します...");
+      await handleCreateOrOpenChat(otherUserId);
+      return;
+    }
+    setFeedbackMessage("今回は見送りました。");
+    await fetchTalks(false);
   };
 
   const handleCreateOrOpenChat = async (otherUserId: string) => {
@@ -324,7 +365,7 @@ export default function TalkPage() {
             type="button"
             className="primary-btn !h-11"
             disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, "matched")}
+            onClick={() => handleResponse(card.wantId, card.otherUserId, "matched")}
           >
             話してみたい
           </button>
@@ -332,7 +373,7 @@ export default function TalkPage() {
             type="button"
             className="secondary-btn !h-11"
             disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, "declined")}
+            onClick={() => handleResponse(card.wantId, card.otherUserId, "declined")}
           >
             今回は見送る
           </button>
