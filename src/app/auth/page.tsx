@@ -561,9 +561,6 @@ export default function AuthPage() {
           )}
         </section>
 
-        <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">
-          トップに戻る
-        </Link>
       </main>
     </div>
   );

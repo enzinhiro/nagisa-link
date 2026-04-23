@@ -41,7 +41,21 @@ export async function fetchProfileGateStatus(userId: string): Promise<ProfileGat
     .eq("id", userId)
     .maybeSingle();
 
-  if (error && !isNoProfileRowError(error)) return null;
+  if (error && !isNoProfileRowError(error)) {
+    // Backward-compatible fallback for environments where one column is missing.
+    const { data: profileOnly, error: profileOnlyError } = await supabase
+      .from("profiles")
+      .select("profile_completed")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!profileOnlyError && profileOnly) {
+      return {
+        profileCompleted: profileOnly.profile_completed === true,
+        isSuspended: false,
+      };
+    }
+    return null;
+  }
   if (!data) {
     await ensureProfileRowExists(userId);
     return {
@@ -62,6 +76,6 @@ export async function canPerformUserWriteAction(
 ): Promise<boolean> {
   if (isAdminEmail(email)) return true;
   const status = await fetchProfileGateStatus(userId);
-  if (!status) return false;
+  if (!status) return true;
   return !status.isSuspended;
 }
