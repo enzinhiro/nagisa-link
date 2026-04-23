@@ -30,6 +30,12 @@ type MessageRow = {
   body: string;
 };
 
+type PendingOptimisticMessage = {
+  tempId: string;
+  body: string;
+  createdAtMs: number;
+};
+
 function mergeMessages(base: MessageRow[], incoming: MessageRow[]): MessageRow[] {
   const map = new Map<string, MessageRow>();
   for (const row of base) map.set(row.id, row);
@@ -65,6 +71,7 @@ export default function ChatDetailPage() {
   const shouldAutoScrollRef = useRef(true);
   const forceScrollOnceRef = useRef(false);
   const initialScrolledRef = useRef(false);
+  const pendingOptimisticRef = useRef<PendingOptimisticMessage[]>([]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     bottomRef.current?.scrollIntoView({ behavior, block: "end" });
@@ -95,6 +102,19 @@ export default function ChatDetailPage() {
     setExpiresAt(nextExpiresAt);
     setIsExpired(new Date(nextExpiresAt).getTime() <= Date.now());
   }, [chatId, currentUserId]);
+
+  const markLatestAsReadIfVisible = useCallback(() => {
+    if (!currentUserId || !chatId || messages.length === 0) return;
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    const container = messagesContainerRef.current;
+    if (container) {
+      const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (distanceToBottom >= 96) return;
+    }
+    const latest = messages[messages.length - 1];
+    if (!latest?.created_at) return;
+    setChatLastReadAt(currentUserId, chatId, latest.created_at);
+  }, [chatId, currentUserId, messages]);
 
   const fetchChatDetail = async () => {
     setLoading(true);
@@ -246,14 +266,19 @@ export default function ChatDetailPage() {
         (payload) => {
           const row = payload.new as MessageRow;
           setMessages((prev) => {
-            const cleaned = prev.filter(
-              (m) =>
-                !(
-                  m.id.startsWith("tmp-") &&
-                  m.sender_user_id === row.sender_user_id &&
-                  m.body === row.body
-                )
-            );
+            let cleaned = prev;
+            if (row.sender_user_id === currentUserId) {
+              const nowMs = Date.now();
+              const idx = pendingOptimisticRef.current.findIndex(
+                (pending) =>
+                  pending.body === row.body && Math.abs(nowMs - pending.createdAtMs) <= 10_000
+              );
+              if (idx >= 0) {
+                const matched = pendingOptimisticRef.current[idx];
+                pendingOptimisticRef.current.splice(idx, 1);
+                cleaned = prev.filter((m) => m.id !== matched.tempId);
+              }
+            }
             if (cleaned.some((m) => m.id === row.id)) return cleaned;
             return mergeMessages(cleaned, [row]);
           });
@@ -264,6 +289,11 @@ export default function ChatDetailPage() {
       )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
+          void refreshMessages();
+          void refreshChatExpiry();
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           void refreshMessages();
           void refreshChatExpiry();
         }
@@ -287,13 +317,6 @@ export default function ChatDetailPage() {
   }, [messages, scrollToBottom]);
 
   useEffect(() => {
-    if (!currentUserId || !chatId || messages.length === 0) return;
-    const last = messages[messages.length - 1];
-    if (!last?.created_at) return;
-    setChatLastReadAt(currentUserId, chatId, last.created_at);
-  }, [chatId, currentUserId, messages]);
-
-  useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
       void refreshMessages();
@@ -312,6 +335,10 @@ export default function ChatDetailPage() {
       window.removeEventListener("online", onOnline);
     };
   }, [refreshChatExpiry, refreshMessages]);
+
+  useEffect(() => {
+    markLatestAsReadIfVisible();
+  }, [markLatestAsReadIfVisible]);
 
   const handleSend = async () => {
     if (!chatId || !currentUserId) return;
@@ -367,6 +394,7 @@ export default function ChatDetailPage() {
       sender_user_id: currentUserId,
       body: trimmed,
     };
+    pendingOptimisticRef.current.push({ tempId, body: trimmed, createdAtMs: Date.now() });
     setMessages((prev) => mergeMessages(prev, [optimisticRow]));
     setInputBody("");
     forceScrollOnceRef.current = true;
@@ -385,11 +413,13 @@ export default function ChatDetailPage() {
 
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      pendingOptimisticRef.current = pendingOptimisticRef.current.filter((p) => p.tempId !== tempId);
       setInputBody(trimmed);
       setFeedbackMessage("送信に失敗しました。時間をおいて再度お試しください。");
       return;
     }
 
+    pendingOptimisticRef.current = pendingOptimisticRef.current.filter((p) => p.tempId !== tempId);
     setMessages((prev) => {
       const withoutTemp = prev.filter((m) => m.id !== tempId);
       return mergeMessages(withoutTemp, [insertedRow as MessageRow]);
@@ -498,6 +528,9 @@ export default function ChatDetailPage() {
                   const el = event.currentTarget;
                   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
                   shouldAutoScrollRef.current = distanceToBottom < 96;
+                  if (shouldAutoScrollRef.current) {
+                    markLatestAsReadIfVisible();
+                  }
                 }}
               >
                 {messages.length === 0 ? (
