@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 
 type SearchProfileCard = {
   id: string;
@@ -205,7 +206,28 @@ export default function SearchPage() {
       if (queryFilters.tags.length > 0) query = query.overlaps("child_interest_tags", queryFilters.tags);
       query = query.order("created_at", { ascending: false }).limit(40);
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+      if (error && isMissingProfileColumnError(error)) {
+        let fallbackQuery = supabase
+          .from("profiles")
+          .select(
+            "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+          )
+          .eq("profile_completed", true)
+          .neq("id", user.id);
+        if (queryFilters.area) fallbackQuery = fallbackQuery.eq("area", queryFilters.area);
+        if (queryFilters.age) fallbackQuery = fallbackQuery.eq("child_age_group", queryFilters.age);
+        if (queryFilters.connection) fallbackQuery = fallbackQuery.eq("connection_preference", queryFilters.connection);
+        if (queryFilters.meeting) fallbackQuery = fallbackQuery.eq("meeting_range", queryFilters.meeting);
+        if (queryFilters.tags.length > 0) fallbackQuery = fallbackQuery.overlaps("child_interest_tags", queryFilters.tags);
+        const fallbackResult = await fallbackQuery.order("created_at", { ascending: false }).limit(40);
+        error = fallbackResult.error;
+        if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
+          data = fallbackResult.data.map((row) => ({ ...row, avatar_seed: null })) as SearchProfileCard[];
+        } else {
+          data = null;
+        }
+      }
 
       if (error) {
         setMessage("一覧の取得に失敗しました。時間をおいて再度お試しください。");
@@ -248,7 +270,26 @@ export default function SearchPage() {
         if (queryFilters.connection) relaxedQuery = relaxedQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) relaxedQuery = relaxedQuery.eq("meeting_range", queryFilters.meeting);
 
-        const { data: relaxedData } = await relaxedQuery.order("created_at", { ascending: false }).limit(10);
+        let { data: relaxedData, error: relaxedError } = await relaxedQuery
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (relaxedError && isMissingProfileColumnError(relaxedError)) {
+          let relaxedFallback = supabase
+            .from("profiles")
+            .select(
+              "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+            )
+            .eq("profile_completed", true)
+            .neq("id", user.id);
+          if (queryFilters.area) relaxedFallback = relaxedFallback.eq("area", queryFilters.area);
+          if (queryFilters.age) relaxedFallback = relaxedFallback.eq("child_age_group", queryFilters.age);
+          if (queryFilters.connection) relaxedFallback = relaxedFallback.eq("connection_preference", queryFilters.connection);
+          if (queryFilters.meeting) relaxedFallback = relaxedFallback.eq("meeting_range", queryFilters.meeting);
+          const fallbackRes = await relaxedFallback.order("created_at", { ascending: false }).limit(10);
+          relaxedData = Array.isArray(fallbackRes.data)
+            ? (fallbackRes.data.map((row) => ({ ...row, avatar_seed: null })) as SearchProfileCard[])
+            : null;
+        }
         const relaxedFetched = ((relaxedData ?? []) as SearchProfileCard[]).filter((card) => {
           if (!normalizedKeyword) return true;
           const tagsText = (card.child_interest_tags ?? []).join(" ").toLowerCase();

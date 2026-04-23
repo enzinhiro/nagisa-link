@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 
 type ChatRow = {
   id: string;
@@ -80,10 +81,19 @@ export default function ChatIndexPage() {
         )
       );
 
-      const { data: profilesData } = await supabase
+      let { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id,nickname,area,avatar_seed")
         .in("id", otherIds);
+      if (profilesError && isMissingProfileColumnError(profilesError)) {
+        const fallback = await supabase
+          .from("profiles")
+          .select("id,nickname,area")
+          .in("id", otherIds);
+        profilesData = Array.isArray(fallback.data)
+          ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
+          : fallback.data;
+      }
 
       const profileMap = new Map<string, ProfileRow>();
       for (const p of (profilesData ?? []) as ProfileRow[]) {

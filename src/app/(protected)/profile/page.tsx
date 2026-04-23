@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 
 type ProfileRow = {
   id: string;
@@ -43,13 +44,25 @@ export default function MyProfilePage() {
         return;
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("profiles")
         .select(
           "id,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,connection_achievement_count,profile_completed,avatar_seed"
         )
         .eq("id", user.id)
         .maybeSingle();
+
+      if (error && isMissingProfileColumnError(error)) {
+        const fallback = await supabase
+          .from("profiles")
+          .select(
+            "id,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,connection_achievement_count,profile_completed"
+          )
+          .eq("id", user.id)
+          .maybeSingle();
+        data = fallback.data ? { ...fallback.data, avatar_seed: null } : fallback.data;
+        error = fallback.error;
+      }
 
       if (error) {
         setMessage("プロフィールの読み込みに失敗しました。");

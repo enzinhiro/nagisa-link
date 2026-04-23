@@ -6,6 +6,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../lib/account-status";
 import { ProfileAvatar } from "../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 import {
   chatByOtherUserMap,
   pendingReceivedOffers,
@@ -142,11 +143,23 @@ export default function TalkPage() {
       return;
     }
 
-    const { data: profilesData, error: profilesError } = await supabase
+    let { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
       .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed,avatar_seed")
       .in("id", profileIds)
       .eq("profile_completed", true);
+
+    if (profilesError && isMissingProfileColumnError(profilesError)) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed")
+        .in("id", profileIds)
+        .eq("profile_completed", true);
+      profilesData = Array.isArray(fallback.data)
+        ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
+        : fallback.data;
+      profilesError = fallback.error;
+    }
 
     if (profilesError) {
       setMessage("相手プロフィールの取得に失敗しました。");

@@ -7,6 +7,7 @@ import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
 
 type ProfileDetail = {
   id: string;
@@ -62,7 +63,7 @@ export default function SearchDetailPage() {
         return;
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("profiles")
         .select(
           "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,avatar_seed"
@@ -71,6 +72,20 @@ export default function SearchDetailPage() {
         .eq("profile_completed", true)
         .neq("id", user.id)
         .maybeSingle();
+
+      if (error && isMissingProfileColumnError(error)) {
+        const fallback = await supabase
+          .from("profiles")
+          .select(
+            "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
+          )
+          .eq("id", profileId)
+          .eq("profile_completed", true)
+          .neq("id", user.id)
+          .maybeSingle();
+        data = fallback.data ? { ...fallback.data, avatar_seed: null } : fallback.data;
+        error = fallback.error;
+      }
 
       if (error || !data) {
         setMessage("お探しのプロフィールは見つかりませんでした。");

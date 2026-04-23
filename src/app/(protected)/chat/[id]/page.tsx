@@ -6,6 +6,7 @@ import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
+import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
 
 type ChatRow = {
   id: string;
@@ -139,12 +140,23 @@ export default function ChatDetailPage() {
     const otherUserIdFromChat = chatRow.user_a_id === user.id ? chatRow.user_b_id : chatRow.user_a_id;
     setOtherUserId(otherUserIdFromChat);
 
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id,nickname,area,avatar_seed")
       .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
       .maybeSingle();
+
+    if (profileError && isMissingProfileColumnError(profileError)) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id,nickname,area")
+        .eq("id", otherUserIdFromChat)
+        .eq("profile_completed", true)
+        .maybeSingle();
+      profile = fallback.data ? { ...fallback.data, avatar_seed: null } : null;
+      profileError = fallback.error;
+    }
 
     if (profileError || !profile) {
       setMessage("このユーザーは現在表示できません。");
