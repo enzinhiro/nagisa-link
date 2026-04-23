@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
+import { canPerformUserWriteAction } from "../../../lib/account-status";
 import {
   chatByOtherUserMap,
   pendingReceivedOffers,
@@ -211,6 +212,15 @@ export default function TalkPage() {
     setUpdatingWantId(wantId);
     setFeedbackMessage("");
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+      setUpdatingWantId(null);
+      setFeedbackMessage("ご利用停止中のため、この操作はできません。");
+      return;
+    }
+
     const respondedAt = new Date().toISOString();
     const { error } = await supabase
       .from("wants")
@@ -230,8 +240,18 @@ export default function TalkPage() {
   };
 
   const handleCreateOrOpenChat = async (otherUserId: string) => {
+    if (!currentUserId) return;
     setFeedbackMessage("");
     setCreatingChatUserId(otherUserId);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+      setCreatingChatUserId(null);
+      setFeedbackMessage("ご利用停止中のため、この操作はできません。");
+      return;
+    }
 
     const { data: chatId, error } = await supabase.rpc("create_or_get_chat_with_user", {
       target_user_id: otherUserId,

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
+import { canPerformUserWriteAction } from "../../../../lib/account-status";
 
 type ProfileDetail = {
   id: string;
@@ -106,6 +107,15 @@ export default function SearchDetailPage() {
 
     setTalkMessage("");
     setIsSendingWant(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+      setIsSendingWant(false);
+      setTalkMessage("ご利用停止中のため、この操作はできません。");
+      return;
+    }
 
     const { error } = await supabase.from("wants").insert({
       from_user: currentUserId,

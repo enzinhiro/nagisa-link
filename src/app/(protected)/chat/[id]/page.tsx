@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
+import { canPerformUserWriteAction } from "../../../../lib/account-status";
 
 type ChatRow = {
   id: string;
@@ -134,6 +135,15 @@ export default function ChatDetailPage() {
     setFeedbackMessage("");
     setIsReportSubmitting(true);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+      setIsReportSubmitting(false);
+      setFeedbackMessage("ご利用停止中のため、この操作はできません。");
+      return;
+    }
+
     const { error } = await supabase.from("reports").insert({
       chat_id: chatId,
       reporter_user_id: currentUserId,
@@ -212,6 +222,15 @@ export default function ChatDetailPage() {
     }
 
     setIsSending(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(currentUserId, user.email))) {
+      setIsSending(false);
+      setFeedbackMessage("ご利用停止中のため、この操作はできません。");
+      return;
+    }
 
     const { data: chatRow, error: chatCheckError } = await supabase
       .from("chats")

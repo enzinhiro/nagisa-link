@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
+import { canPerformUserWriteAction } from "../../../lib/account-status";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
 const CHILD_AGE_GROUPS = [
@@ -214,6 +215,15 @@ export default function ProfileOnboardingPage() {
     }
 
     setIsSubmitting(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await canPerformUserWriteAction(userId, user.email))) {
+      setIsSubmitting(false);
+      setMessage("現在このアカウントではこの操作は行えません。");
+      return;
+    }
 
     const { error } = await supabase.from("profiles").upsert(
       {
