@@ -148,7 +148,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-dvh pb-20 pt-14">
+    <div className="min-h-dvh pb-20 pt-[calc(3.5rem+1px)]">
       <header className="fixed left-0 right-0 top-0 z-30 h-14 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
         <div className="mx-auto flex h-full w-full max-w-[460px] items-center justify-between px-3">
           <div className="flex items-center flex-none shrink-0 min-w-fit">
