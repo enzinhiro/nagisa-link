@@ -120,26 +120,41 @@ export default function Home() {
           ) : (
             <ul className="flex flex-col gap-2.5 text-sm text-[#365f78]">
               {incomingPendingCount > 0 ? (
-                <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#fff5f8] px-3 py-2.5 border border-[#f5dfe6]">
-                  <span>届いたオファーが {incomingPendingCount} 件あります</span>
-                  <Link href="/talk" className="shrink-0 text-xs font-medium text-[#3f7aa0] underline underline-offset-2">
-                    確認する
+                <li>
+                  <Link
+                    href="/talk"
+                    className="flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#f5dfe6] bg-[#fff5f8] px-3 py-2.5"
+                  >
+                    <span>届いたオファーが {incomingPendingCount} 件あります</span>
+                    <span className="inline-flex h-8 min-w-[68px] items-center justify-center rounded-full border border-[#d8e9f4] bg-white px-3 text-xs font-semibold text-[#3f7aa0]">
+                      確認
+                    </span>
                   </Link>
                 </li>
               ) : null}
               {matchedLiveCount > 0 ? (
-                <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f0f9ff] px-3 py-2.5 border border-[#d8e9f4]">
-                  <span>一致が {matchedLiveCount} 件あります</span>
-                  <Link href="/talk" className="shrink-0 text-xs font-medium text-[#3f7aa0] underline underline-offset-2">
-                    見る
+                <li>
+                  <Link
+                    href="/talk"
+                    className="flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#d8e9f4] bg-[#f0f9ff] px-3 py-2.5"
+                  >
+                    <span>一致が {matchedLiveCount} 件あります</span>
+                    <span className="inline-flex h-8 min-w-[68px] items-center justify-center rounded-full border border-[#d8e9f4] bg-white px-3 text-xs font-semibold text-[#3f7aa0]">
+                      見る
+                    </span>
                   </Link>
                 </li>
               ) : null}
               {activeChatCount > 0 ? (
-                <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f7fbfe] px-3 py-2.5 border border-[#d8e7ef]">
-                  <span>進行中のチャットが {activeChatCount} 件あります</span>
-                  <Link href="/chat" className="shrink-0 text-xs font-medium text-[#3f7aa0] underline underline-offset-2">
-                    開く
+                <li>
+                  <Link
+                    href="/chat"
+                    className="flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#d8e7ef] bg-[#f7fbfe] px-3 py-2.5"
+                  >
+                    <span>進行中のチャットが {activeChatCount} 件あります</span>
+                    <span className="inline-flex h-8 min-w-[68px] items-center justify-center rounded-full border border-[#d8e9f4] bg-white px-3 text-xs font-semibold text-[#3f7aa0]">
+                      開く
+                    </span>
                   </Link>
                 </li>
               ) : null}

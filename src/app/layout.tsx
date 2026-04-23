@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SERVICE_NAME } from "../lib/brand";
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
     title: SERVICE_NAME,
     description: `${SERVICE_NAME} 公式アプリ`,
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

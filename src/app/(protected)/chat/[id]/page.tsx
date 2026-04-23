@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
@@ -259,22 +258,6 @@ export default function ChatDetailPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <Link href="/chat" className="text-sm muted-text underline underline-offset-3">
-              チャット一覧に戻る
-            </Link>
-            <button
-              type="button"
-              className="secondary-btn !h-9 !w-auto px-3"
-              onClick={() => setIsReportOpen((v) => !v)}
-              disabled={!otherUserId || !currentUserId}
-            >
-              運営に知らせる
-            </button>
-          </div>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">チャット</p>
-        </header>
 
         {loading ? (
           <section className="soft-card">
@@ -330,9 +313,11 @@ export default function ChatDetailPage() {
 
             <section className="soft-card flex items-center gap-3">
               <div className="h-11 w-11 rounded-full border border-[#cde5f2] bg-[#dff2ff]" />
-              <div className="flex flex-col gap-0.5">
-                <h1 className="hero-title text-lg font-semibold">{toMamaDisplayName(otherProfile.nickname)}</h1>
-                <p className="text-xs muted-text">{otherProfile.area}</p>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <h1 className="hero-title truncate text-lg font-semibold">
+                  {toMamaDisplayName(otherProfile.nickname)}
+                </h1>
+                <p className="truncate text-xs muted-text">{otherProfile.area}</p>
                 <p className="text-xs muted-text">
                   {remainingHours === null
                     ? ""
@@ -341,21 +326,18 @@ export default function ChatDetailPage() {
                       : "このチャットは終了しました"}
                 </p>
               </div>
+              <button
+                type="button"
+                className="secondary-btn !h-9 !w-auto px-3"
+                onClick={() => setIsReportOpen((v) => !v)}
+                disabled={!otherUserId || !currentUserId}
+              >
+                運営に知らせる
+              </button>
             </section>
 
-            <section className="soft-card-subtle">
-              <p className="text-xs leading-5 text-[#486f86]">
-                このやり取りは期間限定です。URL送信はできません。必要な場合のみ運営が確認することがあります。個人情報の共有は慎重に進めましょう。
-              </p>
-            </section>
-
-            <section className="soft-card flex flex-col gap-3">
-              <div className="soft-card-subtle">
-                <p className="text-sm text-[#365f78] leading-6">
-                  まずはここからやり取りできます。安心できる範囲で短いメッセージから始めましょう。
-                </p>
-              </div>
-              <div className="flex flex-col gap-3">
+            <section className="soft-card flex min-h-[52dvh] flex-col gap-3">
+              <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
                 {messages.length === 0 ? (
                   <div className="rounded-2xl border border-[#d8e7ef] bg-white px-4 py-3">
                     <p className="text-sm muted-text">まだメッセージはありません。最初の一言を送ってみましょう。</p>
@@ -393,7 +375,7 @@ export default function ChatDetailPage() {
               </div>
             </section>
 
-            <section className="soft-card flex flex-col gap-3">
+            <section className="soft-card sticky bottom-[74px] z-10 flex flex-col gap-3">
               {feedbackMessage ? <p className="text-sm text-rose-700">{feedbackMessage}</p> : null}
               {isExpired ? (
                 <p className="text-sm muted-text">このチャットは終了しました。</p>
