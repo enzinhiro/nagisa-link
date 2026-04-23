@@ -180,12 +180,9 @@ export default function AdminInvitesPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack pb-24">
-        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
+        <header className="soft-card flex flex-col gap-1 !py-2.5">
           <AdminSectionNav current="invite-codes" />
-          <div className="flex flex-col gap-1">
-            <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
-            <p className="muted-text text-xs">発行・利用状況・共有先メモを確認できます。</p>
-          </div>
+          <h1 className="hero-title text-2xl font-semibold">招待コード管理</h1>
         </header>
 
         {!loading && !message ? (

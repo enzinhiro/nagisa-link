@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
@@ -28,6 +28,17 @@ type MessageRow = {
   body: string;
 };
 
+function mergeMessages(base: MessageRow[], incoming: MessageRow[]): MessageRow[] {
+  const map = new Map<string, MessageRow>();
+  for (const row of base) map.set(row.id, row);
+  for (const row of incoming) map.set(row.id, row);
+  return Array.from(map.values()).sort((a, b) => {
+    const timeDiff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 export default function ChatDetailPage() {
   const params = useParams<{ id: string }>();
   const chatId = params.id;
@@ -48,6 +59,40 @@ export default function ChatDetailPage() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const forceScrollOnceRef = useRef(false);
+  const initialScrolledRef = useRef(false);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
+  const refreshMessages = useCallback(async () => {
+    if (!chatId) return;
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id,created_at,sender_user_id,body")
+      .eq("chat_id", chatId)
+      .order("created_at", { ascending: true });
+    if (error) return;
+    setMessages((prev) => mergeMessages(prev, (data ?? []) as MessageRow[]));
+  }, [chatId]);
+
+  const refreshChatExpiry = useCallback(async () => {
+    if (!chatId || !currentUserId) return;
+    const { data } = await supabase
+      .from("chats")
+      .select("expires_at,user_a_id,user_b_id")
+      .eq("id", chatId)
+      .or(`user_a_id.eq.${currentUserId},user_b_id.eq.${currentUserId}`)
+      .maybeSingle();
+    if (!data) return;
+    const nextExpiresAt = String(data.expires_at ?? "");
+    if (!nextExpiresAt) return;
+    setExpiresAt(nextExpiresAt);
+    setIsExpired(new Date(nextExpiresAt).getTime() <= Date.now());
+  }, [chatId, currentUserId]);
 
   const fetchChatDetail = async () => {
     setLoading(true);
@@ -124,6 +169,7 @@ export default function ChatDetailPage() {
     }
 
     setMessages((messageRows ?? []) as MessageRow[]);
+    forceScrollOnceRef.current = true;
     setLoading(false);
   };
 
@@ -187,23 +233,65 @@ export default function ChatDetailPage() {
         (payload) => {
           const row = payload.new as MessageRow;
           setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev;
-            return [...prev, row].sort(
-              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            const cleaned = prev.filter(
+              (m) =>
+                !(
+                  m.id.startsWith("tmp-") &&
+                  m.sender_user_id === row.sender_user_id &&
+                  m.body === row.body
+                )
             );
+            if (cleaned.some((m) => m.id === row.id)) return cleaned;
+            return mergeMessages(cleaned, [row]);
           });
+          if (row.sender_user_id === currentUserId) {
+            forceScrollOnceRef.current = true;
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void refreshMessages();
+          void refreshChatExpiry();
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, message, otherProfile]);
+  }, [chatId, currentUserId, message, otherProfile, refreshChatExpiry, refreshMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+    if (!initialScrolledRef.current) {
+      initialScrolledRef.current = true;
+      scrollToBottom("auto");
+      return;
+    }
+    if (forceScrollOnceRef.current || shouldAutoScrollRef.current) {
+      scrollToBottom("smooth");
+      forceScrollOnceRef.current = false;
+    }
+  }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshMessages();
+      void refreshChatExpiry();
+    };
+    const onOnline = () => {
+      void refreshMessages();
+      void refreshChatExpiry();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("online", onOnline);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [refreshChatExpiry, refreshMessages]);
 
   const handleSend = async () => {
     if (!chatId || !currentUserId) return;
@@ -252,21 +340,41 @@ export default function ChatDetailPage() {
       return;
     }
 
-    const { error } = await supabase.from("messages").insert({
-      chat_id: chatId,
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticRow: MessageRow = {
+      id: tempId,
+      created_at: new Date().toISOString(),
       sender_user_id: currentUserId,
       body: trimmed,
-    });
+    };
+    setMessages((prev) => mergeMessages(prev, [optimisticRow]));
+    setInputBody("");
+    forceScrollOnceRef.current = true;
+
+    const { data: insertedRow, error } = await supabase
+      .from("messages")
+      .insert({
+        chat_id: chatId,
+        sender_user_id: currentUserId,
+        body: trimmed,
+      })
+      .select("id,created_at,sender_user_id,body")
+      .single();
 
     setIsSending(false);
 
     if (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setInputBody(trimmed);
       setFeedbackMessage("送信に失敗しました。時間をおいて再度お試しください。");
       return;
     }
 
-    setInputBody("");
-    await fetchChatDetail();
+    setMessages((prev) => {
+      const withoutTemp = prev.filter((m) => m.id !== tempId);
+      return mergeMessages(withoutTemp, [insertedRow as MessageRow]);
+    });
+    void refreshMessages();
   };
 
   const remainingHours = (() => {
@@ -363,7 +471,15 @@ export default function ChatDetailPage() {
             </section>
 
             <section className="soft-card flex min-h-[52dvh] flex-col gap-3">
-              <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+              <div
+                ref={messagesContainerRef}
+                className="flex flex-1 flex-col gap-3 overflow-y-auto"
+                onScroll={(event) => {
+                  const el = event.currentTarget;
+                  const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+                  shouldAutoScrollRef.current = distanceToBottom < 96;
+                }}
+              >
                 {messages.length === 0 ? (
                   <div className="rounded-2xl border border-[#d8e7ef] bg-white px-4 py-3">
                     <p className="text-sm muted-text">まだメッセージはありません。最初の一言を送ってみましょう。</p>

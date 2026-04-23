@@ -99,10 +99,9 @@ export default function AdminHomePage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack pb-24">
-        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
+        <header className="soft-card flex flex-col gap-1 !py-2.5">
           <AdminSectionNav current="home" />
           <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
-          <p className="muted-text text-xs">運営用メニュー / 現在の状況</p>
         </header>
 
         {loading ? (

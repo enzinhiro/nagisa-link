@@ -133,12 +133,9 @@ export default function AdminReportsPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack pb-24">
-        <header className="soft-card flex flex-col gap-1.5 !py-3.5">
+        <header className="soft-card flex flex-col gap-1 !py-2.5">
           <AdminSectionNav current="reports" />
-          <div className="flex flex-col gap-1">
-            <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
-            <p className="muted-text text-xs">新しい順に通報内容を確認できます。</p>
-          </div>
+          <h1 className="hero-title text-2xl font-semibold">通報一覧</h1>
         </header>
 
         {loading ? (

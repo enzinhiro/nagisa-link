@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
@@ -38,9 +38,9 @@ export default function ChatIndexPage() {
   const [activeChats, setActiveChats] = useState<ChatCard[]>([]);
   const [endedChats, setEndedChats] = useState<ChatCard[]>([]);
 
-  useEffect(() => {
-    const fetchChats = async () => {
-      setLoading(true);
+  const fetchChats = useCallback(
+    async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       setMessage("");
 
       const {
@@ -128,10 +128,24 @@ export default function ChatIndexPage() {
       setActiveChats(active);
       setEndedChats(ended);
       setLoading(false);
-    };
+    },
+    []
+  );
 
-    fetchChats();
-  }, []);
+  useEffect(() => {
+    void fetchChats();
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void fetchChats(false);
+    };
+    const onFocus = () => void fetchChats(false);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchChats]);
 
   const renderCard = (card: ChatCard, type: "active" | "ended") => {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
