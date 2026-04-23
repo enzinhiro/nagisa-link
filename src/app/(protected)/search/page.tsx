@@ -10,6 +10,7 @@ type SearchProfileCard = {
   id: string;
   nickname: string;
   area: string;
+  connection_achievement_count: number;
   child_age_group: string;
   child_interest_tags: string[];
   want_to_connect: string;
@@ -190,7 +191,7 @@ export default function SearchPage() {
       let query = supabase
         .from("profiles")
         .select(
-          "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+          "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
         )
         .eq("profile_completed", true)
         .neq("id", user.id);
@@ -235,7 +236,7 @@ export default function SearchPage() {
         let relaxedQuery = supabase
           .from("profiles")
           .select(
-            "id,nickname,area,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+            "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
           .eq("profile_completed", true)
           .neq("id", user.id);
@@ -461,15 +462,23 @@ export default function SearchPage() {
               {relaxedCards.length > 0 && (
                 <div className="mt-3 flex flex-col gap-2.5">
                   <p className="section-note">タグ条件を外した候補</p>
-                  {relaxedCards.map((card) => (
+                  {relaxedCards.map((card) => {
+                    const achievementCount = Number(card.connection_achievement_count ?? 0);
+                    return (
                     <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
-                        <div className="text-right text-xs muted-text shrink-0">
-                          <p>{card.area}</p>
-                          <p>{card.child_age_group}</p>
-                        </div>
+                        <h3 className="min-w-0 flex-1 truncate font-semibold text-[#2f5f79]">
+                          {toMamaDisplayName(card.nickname)}
+                        </h3>
+                        {achievementCount > 0 ? (
+                          <span className="shrink-0 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[11px] text-[#8c6375]">
+                            つながり実績 {achievementCount}
+                          </span>
+                        ) : null}
                       </div>
+                      <p className="text-xs text-[#6f8796]">
+                        {card.area} ・ {card.child_age_group}
+                      </p>
                       <p
                         className="text-sm text-[#365f78] leading-snug"
                         style={{
@@ -492,22 +501,31 @@ export default function SearchPage() {
                         詳細を見る
                       </Link>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
           {!loading &&
             !message &&
-            cards.map((card) => (
-              <article key={card.id} className="soft-card flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-semibold leading-snug text-[#2f5f79] text-lg">{toMamaDisplayName(card.nickname)}</h3>
-                  <div className="text-right text-xs text-[#5a7a8f] shrink-0 space-y-0.5">
-                    <p className="font-medium text-[#365f78]">{card.area}</p>
-                    <p>{card.child_age_group}</p>
-                  </div>
+            cards.map((card) => {
+              const achievementCount = Number(card.connection_achievement_count ?? 0);
+              return (
+              <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-snug text-[#2f5f79]">
+                    {toMamaDisplayName(card.nickname)}
+                  </h3>
+                  {achievementCount > 0 ? (
+                    <span className="shrink-0 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[11px] text-[#8c6375]">
+                      つながり実績 {achievementCount}
+                    </span>
+                  ) : null}
                 </div>
+                <p className="text-xs text-[#6f8796]">
+                  {card.area} ・ {card.child_age_group}
+                </p>
                 <p
                   className="text-sm leading-relaxed text-[#365f78]"
                   style={{
@@ -530,7 +548,8 @@ export default function SearchPage() {
                   詳細を見る
                 </Link>
               </article>
-            ))}
+              );
+            })}
         </section>
       </main>
     </div>
