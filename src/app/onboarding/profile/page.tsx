@@ -160,6 +160,24 @@ export default function ProfileOnboardingPage() {
 
   const selectedTagCount = childInterestTags.length;
   const isTagLimitReached = selectedTagCount >= 5;
+  const effectiveConnectionPreference =
+    connectionPreference === "その他（自由入力）"
+      ? customConnectionPreference.trim()
+      : connectionPreference.trim();
+  const requiredChecks: Array<{ label: string; ok: boolean }> = [
+    { label: "本名", ok: realName.trim().length > 0 },
+    { label: "ニックネーム", ok: nickname.trim().length > 0 },
+    { label: "お住まいのエリア", ok: area.trim().length > 0 },
+    { label: "お子さんの年齢帯", ok: childAgeGroup.trim().length > 0 },
+    { label: "お子さんの性別", ok: childGender.trim().length > 0 },
+    { label: "お子さんの好きなこと", ok: childInterestTags.length >= 1 && childInterestTags.length <= 5 },
+    { label: "今つながりたいこと", ok: wantToConnect.trim().length > 0 },
+    { label: "つながり方の希望", ok: effectiveConnectionPreference.length > 0 },
+    { label: "会いやすい範囲", ok: meetingRange.trim().length > 0 },
+    { label: "ひとこと紹介", ok: intro.trim().length > 0 },
+  ];
+  const missingRequiredLabels = requiredChecks.filter((item) => !item.ok).map((item) => item.label);
+  const isSubmitReady = missingRequiredLabels.length === 0 && !isSubmitting;
   const toggleInterestTag = (tag: string) => {
     setChildInterestTags((prev) => {
       if (prev.includes(tag)) {
@@ -282,16 +300,26 @@ export default function ProfileOnboardingPage() {
           <p className="muted-text text-sm leading-6">
             {isEditingProfile ? "内容を更新して保存できます。" : "3つのステップで入力できます。"}
           </p>
+          {!isEditingProfile ? (
+            <div className="soft-card-subtle">
+              <p className="text-sm leading-6 text-[#406984]">
+                あと少しで利用開始できます。プロフィールを完了すると、さがす・話したい・チャットが使えるようになります。
+              </p>
+            </div>
+          ) : null}
         </header>
 
         <form className="screen-stack gap-3.5" onSubmit={handleSubmit}>
+          <section className="soft-card">
+            <p className="text-xs muted-text">「必須」がついた項目は入力が必要です。</p>
+          </section>
           <section className="soft-card flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <span className="step-chip">STEP 1 / 3</span>
               <h2 className="section-title">基本情報</h2>
             </div>
             <label>
-              <span className="label-text">本名（管理用）</span>
+              <span className="label-text">本名（管理用・必須）</span>
               <input
                 className="mock-input"
                 type="text"
@@ -303,7 +331,7 @@ export default function ProfileOnboardingPage() {
               <p className="mt-2 text-xs muted-text">本名は他の利用者には表示されません。</p>
             </label>
             <label>
-              <span className="label-text">ニックネーム</span>
+              <span className="label-text">ニックネーム（必須）</span>
               <input
                 className="mock-input"
                 type="text"
@@ -314,7 +342,7 @@ export default function ProfileOnboardingPage() {
               />
             </label>
             <label>
-              <span className="label-text">お住まいのエリア</span>
+              <span className="label-text">お住まいのエリア（必須）</span>
               <select
                 className="mock-select"
                 value={area}
@@ -339,7 +367,7 @@ export default function ProfileOnboardingPage() {
               <h2 className="section-title">お子さんについて</h2>
             </div>
             <label>
-              <span className="label-text">お子さんの年齢帯</span>
+              <span className="label-text">お子さんの年齢帯（必須）</span>
               <select
                 className="mock-select"
                 value={childAgeGroup}
@@ -357,7 +385,7 @@ export default function ProfileOnboardingPage() {
               </select>
             </label>
             <label>
-              <span className="label-text">お子さんの性別</span>
+              <span className="label-text">お子さんの性別（必須）</span>
               <select
                 className="mock-select"
                 value={childGender}
@@ -375,7 +403,7 @@ export default function ProfileOnboardingPage() {
               </select>
             </label>
             <label>
-              <span className="label-text">お子さんの好きなこと</span>
+              <span className="label-text">お子さんの好きなこと（必須）</span>
               <p className="section-note mb-2">{selectedTagCount} / 5個選択中</p>
               <div className="flex flex-wrap gap-2.5">
                 {CHILD_INTEREST_TAGS.map((tag) => {
@@ -409,7 +437,7 @@ export default function ProfileOnboardingPage() {
               <h2 className="section-title">つながり方の希望</h2>
             </div>
             <label>
-              <span className="label-text">今つながりたいこと</span>
+              <span className="label-text">今つながりたいこと（必須）</span>
               <textarea
                 className="mock-textarea"
                 placeholder="例: 少しチャットでお話ししたいです。"
@@ -419,7 +447,7 @@ export default function ProfileOnboardingPage() {
               />
             </label>
             <label>
-              <span className="label-text">つながり方の希望</span>
+              <span className="label-text">つながり方の希望（必須）</span>
               <select
                 className="mock-select"
                 value={connectionPreference}
@@ -444,7 +472,7 @@ export default function ProfileOnboardingPage() {
             </label>
             {connectionPreference === "その他（自由入力）" ? (
               <label>
-                <span className="label-text">つながり方の希望（自由入力）</span>
+                <span className="label-text">つながり方の希望（自由入力・必須）</span>
                 <input
                   className="mock-input"
                   placeholder="例: まずは短いチャットから始めたいです"
@@ -457,7 +485,7 @@ export default function ProfileOnboardingPage() {
               </label>
             ) : null}
             <label>
-              <span className="label-text">会いやすい範囲</span>
+              <span className="label-text">会いやすい範囲（必須）</span>
               <select
                 className="mock-select"
                 value={meetingRange}
@@ -475,7 +503,7 @@ export default function ProfileOnboardingPage() {
               </select>
             </label>
             <label>
-              <span className="label-text">ひとこと紹介</span>
+              <span className="label-text">ひとこと紹介（必須）</span>
               <textarea
                 className="mock-textarea"
                 placeholder="例: 無理のない範囲でゆるくつながれたらうれしいです"
@@ -489,9 +517,15 @@ export default function ProfileOnboardingPage() {
           <section className="soft-card flex flex-col gap-2.5">
             <p className="text-sm muted-text leading-6">最後に内容を確認して完了してください。</p>
             {message && <p className="text-sm text-rose-700">{message}</p>}
-            <button className="primary-btn" type="submit" disabled={isSubmitting}>
+            <button className="primary-btn" type="submit" disabled={!isSubmitReady}>
               {isSubmitting ? "保存中..." : isEditingProfile ? "変更を保存する" : "プロフィールを完了してホームへ"}
             </button>
+            {!isSubmitting && missingRequiredLabels.length > 0 ? (
+              <p className="text-xs muted-text">
+                保存するには必須項目の入力が必要です（未入力: {missingRequiredLabels.slice(0, 2).join("、")}
+                {missingRequiredLabels.length > 2 ? " など" : ""}）。
+              </p>
+            ) : null}
             <Link className="text-center text-sm muted-text underline underline-offset-3" href="/auth">
               認証ページに戻る
             </Link>
