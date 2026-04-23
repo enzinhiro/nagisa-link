@@ -50,8 +50,8 @@ export default function AdminHomePage() {
       if (reportsError || activeError || suspendedError || invitesError) {
         setMessage("件数の取得に失敗しました。時間をおいて再度お試しください。");
       } else {
-        const unusedCount = ((inviteRows ?? []) as Array<{ is_used?: boolean }>).filter(
-          (row) => row.is_used !== true
+        const unusedCount = ((inviteRows ?? []) as Array<{ is_used?: boolean; is_active?: boolean }>).filter(
+          (row) => row.is_used !== true && row.is_active !== false
         ).length;
         setUnhandledReportCount(unhandledReportsTotal ?? 0);
         setActiveUserCount(activeTotal ?? 0);

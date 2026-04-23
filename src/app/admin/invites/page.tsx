@@ -16,6 +16,14 @@ type InviteRow = {
   note: string | null;
 };
 
+type InviteStatus = "unused" | "used" | "disabled";
+
+function resolveInviteStatus(invite: InviteRow): InviteStatus {
+  if (invite.is_used) return "used";
+  if (!invite.is_active) return "disabled";
+  return "unused";
+}
+
 export default function AdminInvitesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -24,6 +32,7 @@ export default function AdminInvitesPage() {
   const [creating, setCreating] = useState(false);
   const [createNote, setCreateNote] = useState("");
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "unused" | "used" | "disabled">("all");
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
@@ -56,9 +65,10 @@ export default function AdminInvitesPage() {
 
     const rows = ((data ?? []) as InviteRow[]).sort((a, b) => {
       const rank = (row: InviteRow) => {
-        if (!row.is_active) return 2;
-        if (row.is_used) return 1;
-        return 0;
+        const status = resolveInviteStatus(row);
+        if (status === "unused") return 0;
+        if (status === "disabled") return 1;
+        return 2;
       };
       if (rank(a) !== rank(b)) return rank(a) - rank(b);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -132,24 +142,29 @@ export default function AdminInvitesPage() {
   };
 
   const visibleInvites = invites.filter((invite) => {
-    if (statusFilter === "unused") return !invite.is_used && invite.is_active;
-    if (statusFilter === "used") return invite.is_used;
-    if (statusFilter === "disabled") return !invite.is_active;
+    const status = resolveInviteStatus(invite);
+    if (statusFilter === "unused") return status === "unused";
+    if (statusFilter === "used") return status === "used";
+    if (statusFilter === "disabled") return status === "disabled";
     return true;
   });
 
   const handleToggleActive = async (invite: InviteRow) => {
+    setUpdatingStatusId(invite.id);
     setFeedbackMessage("");
     const { data, error } = await supabase.rpc("admin_set_invite_code_active", {
       input_invite_id: invite.id,
       input_is_active: !invite.is_active,
     });
+    setUpdatingStatusId(null);
     if (error || !data) {
-      setFeedbackMessage("状態の更新に失敗しました。");
+      setFeedbackMessage("状態の更新に失敗しました。時間をおいて再度お試しください。");
       return;
     }
+    setInvites((prev) =>
+      prev.map((row) => (row.id === invite.id ? { ...row, is_active: !invite.is_active } : row))
+    );
     setFeedbackMessage(invite.is_active ? "招待コードを無効化しました。" : "招待コードを有効化しました。");
-    await fetchInvites();
   };
 
   return (
@@ -228,7 +243,7 @@ export default function AdminInvitesPage() {
                 <option value="disabled">無効のみ</option>
               </select>
             </div>
-            <p className="section-note">未使用 → 使用済み → 無効 の順で表示しています。</p>
+            <p className="section-note">未使用 → 無効 → 使用済み の順で表示しています。</p>
           </section>
         ) : null}
 
@@ -236,6 +251,11 @@ export default function AdminInvitesPage() {
           !message &&
           visibleInvites.map((invite) => (
             <article key={invite.id} className="soft-card flex flex-col gap-3">
+              {(() => {
+                const status = resolveInviteStatus(invite);
+                const isUpdatingStatus = updatingStatusId === invite.id;
+                return (
+                  <>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="break-all text-sm font-semibold leading-6 text-[#2f5f79]">{invite.code}</p>
@@ -243,10 +263,14 @@ export default function AdminInvitesPage() {
                 <div className="flex shrink-0 items-center gap-2">
                   <span
                     className={`inline-flex rounded-full px-2.5 py-1 text-xs ${
-                      !invite.is_active ? "bg-[#eef4f8] text-[#6f8796]" : invite.is_used ? "pill-pink" : "pill-blue"
+                      status === "disabled"
+                        ? "bg-[#eef4f8] text-[#6f8796]"
+                        : status === "used"
+                          ? "pill-pink"
+                          : "pill-blue"
                     }`}
                   >
-                    {!invite.is_active ? "無効" : invite.is_used ? "使用済み" : "未使用"}
+                    {status === "disabled" ? "無効" : status === "used" ? "使用済み" : "未使用"}
                   </span>
                   <button
                     type="button"
@@ -276,16 +300,26 @@ export default function AdminInvitesPage() {
               <button
                 type="button"
                 className="secondary-btn !h-11"
-                disabled={savingNoteId === invite.id}
+                disabled={savingNoteId === invite.id || isUpdatingStatus}
                 onClick={() => handleSaveNote(invite.id)}
               >
                 {savingNoteId === invite.id ? "保存中..." : "メモを保存"}
               </button>
-              {!invite.is_used ? (
-                <button type="button" className="secondary-btn !h-11" onClick={() => handleToggleActive(invite)}>
-                  {invite.is_active ? "無効化" : "有効化"}
+              {status === "used" ? (
+                <p className="text-xs muted-text">使用済みのコードは状態変更できません。</p>
+              ) : (
+                <button
+                  type="button"
+                  className="secondary-btn !h-11"
+                  disabled={isUpdatingStatus || savingNoteId === invite.id}
+                  onClick={() => handleToggleActive(invite)}
+                >
+                  {isUpdatingStatus ? "更新中..." : status === "unused" ? "無効化" : "有効化"}
                 </button>
-              ) : null}
+              )}
+                  </>
+                );
+              })()}
             </article>
           ))}
 
