@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: SERVICE_NAME,
   description: `${SERVICE_NAME} 公式アプリ`,
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png" }],
+  },
   openGraph: {
     title: SERVICE_NAME,
     description: `${SERVICE_NAME} 公式アプリ`,

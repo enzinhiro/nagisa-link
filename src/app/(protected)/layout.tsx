@@ -9,6 +9,8 @@ import { isAdminEmail } from "../../lib/admin-access";
 import { fetchProfileGateStatus } from "../../lib/account-status";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
+const APP_HEADER_BASE_HEIGHT = "3.5rem";
+const APP_HEADER_TOTAL_HEIGHT = `calc(${APP_HEADER_BASE_HEIGHT} + env(safe-area-inset-top, 0px))`;
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -201,12 +203,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     <div
       className={
         isChatDetailPage
-          ? "flex h-dvh max-h-dvh flex-col overflow-hidden pt-[calc(3.5rem+1px)] pb-[calc(5rem+env(safe-area-inset-bottom,0px))]"
-          : "min-h-dvh pb-20 pt-[calc(3.5rem+1px)]"
+          ? "flex h-dvh max-h-dvh flex-col overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom,0px))]"
+          : "min-h-dvh pb-20"
       }
+      style={{ paddingTop: `calc(${APP_HEADER_TOTAL_HEIGHT} + 1px)` }}
     >
-      <header className="fixed left-0 right-0 top-0 z-30 h-14 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur">
-        <div className="mx-auto flex h-full w-full max-w-[460px] items-center justify-between px-3">
+      <header
+        className="fixed left-0 right-0 top-0 z-50 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur"
+        style={{ height: APP_HEADER_TOTAL_HEIGHT, paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div className="mx-auto flex h-14 w-full max-w-[460px] items-center justify-between px-3">
           <div className="flex min-w-0 flex-1 items-center pr-2">
             <Link
               href="/"
