@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { isAdminEmail } from "../../../lib/admin-access";
 import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type AdminUserRow = {
@@ -22,7 +20,6 @@ type AdminUserRow = {
 };
 
 export default function AdminUsersPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -35,20 +32,6 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.replace("/auth");
-      return;
-    }
-
-    if (!isAdminEmail(user.email)) {
-      router.replace("/");
-      return;
-    }
 
     const { data, error } = await supabase.rpc("admin_list_users");
 
@@ -64,7 +47,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [router]);
+  }, []);
 
   const handleToggleSuspend = async (target: AdminUserRow) => {
     setFeedbackMessage("");

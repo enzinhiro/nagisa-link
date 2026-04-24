@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
-import { isAdminEmail } from "../../../../lib/admin-access";
 import { AdminSectionNav } from "../../_components/admin-section-nav";
 
 type AdminUserDetailRow = {
@@ -25,7 +24,6 @@ type AdminUserDetailRow = {
 };
 
 export default function AdminUserDetailPage() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const userId = params.id;
 
@@ -38,20 +36,6 @@ export default function AdminUserDetailPage() {
   const fetchUserDetail = async () => {
     setLoading(true);
     setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.replace("/auth");
-      return;
-    }
-
-    if (!isAdminEmail(user.email)) {
-      router.replace("/");
-      return;
-    }
 
     const { data, error } = await supabase.rpc("admin_get_user_detail", {
       input_user_id: userId,
@@ -76,7 +60,7 @@ export default function AdminUserDetailPage() {
 
   useEffect(() => {
     fetchUserDetail();
-  }, [router, userId]);
+  }, [userId]);
 
   const handleToggleSuspend = async () => {
     if (!userDetail) return;

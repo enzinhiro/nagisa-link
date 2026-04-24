@@ -56,3 +56,15 @@
 - Non-participants cannot read foreign chat/message data.
 - Non-admin users cannot access admin data even by direct URL.
 - No sensitive data appears in console logs.
+
+## 100名βテスト前チェック
+- **Admin直打ち耐性**
+  - `A/B` で `/admin`, `/admin/users`, `/admin/reports`, `/admin/reports/<id>`, `/admin/invite-codes` を直打ちし、管理画面が描画されないこと。
+- **Admin正常動作**
+  - `C` で同URLが正常表示され、一覧・詳細・ステータス更新ができること。
+- **管理情報漏洩なし**
+  - `A/B` で本名・メール・招待コード使用メール・管理メモがUI/ネットワークレスポンスに出ないこと。
+- **チャット非参加者耐性**
+  - 他人の `chat_id` 直打ちで本文/相手情報が取得されないこと。
+- **公開プロフィール境界**
+  - 一般画面は `public_profiles` の安全列のみを参照し、`profiles` 本体は本人編集/管理用途のみであること。

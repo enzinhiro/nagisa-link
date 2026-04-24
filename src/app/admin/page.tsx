@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { isAdminEmail } from "../../lib/admin-access";
 import { AdminBottomNav } from "./_components/admin-bottom-nav";
 
 export default function AdminHomePage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [unhandledReportCount, setUnhandledReportCount] = useState<number | null>(null);
@@ -25,20 +22,6 @@ export default function AdminHomePage() {
     const fetchAdminSummary = async () => {
       setLoading(true);
       setMessage("");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/auth");
-        return;
-      }
-
-      if (!isAdminEmail(user.email)) {
-        router.replace("/");
-        return;
-      }
 
       const [
         { count: unhandledReportsTotal, error: reportsError },
@@ -93,7 +76,7 @@ export default function AdminHomePage() {
     };
 
     fetchAdminSummary();
-  }, [router]);
+  }, []);
 
   return (
     <div className="mock-page">

@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
-import { isAdminEmail } from "../../../lib/admin-access";
 import { AdminBottomNav } from "../_components/admin-bottom-nav";
 
 type ReportRow = {
@@ -45,7 +43,6 @@ const STATUS_BADGE_CLASS: Record<ReportRow["status"], string> = {
 };
 
 export default function AdminReportsPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -57,20 +54,6 @@ export default function AdminReportsPage() {
     const fetchReports = async () => {
       setLoading(true);
       setMessage("");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/auth");
-        return;
-      }
-
-      if (!isAdminEmail(user.email)) {
-        router.replace("/");
-        return;
-      }
 
       const { data, error } = await supabase
         .from("reports")
@@ -109,7 +92,7 @@ export default function AdminReportsPage() {
     };
 
     fetchReports();
-  }, [router]);
+  }, []);
 
   const visibleReports = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();

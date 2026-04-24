@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../../lib/profile/displayName";
-import { isAdminEmail } from "../../../../lib/admin-access";
 import { AdminSectionNav } from "../../_components/admin-section-nav";
 
 type ReportRow = {
@@ -46,7 +45,6 @@ const STATUS_LABELS: Record<ReportRow["status"], string> = {
 };
 
 export default function AdminReportDetailPage() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const reportId = params.id;
 
@@ -62,20 +60,6 @@ export default function AdminReportDetailPage() {
     const fetchDetail = async () => {
       setLoading(true);
       setMessage("");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/auth");
-        return;
-      }
-
-      if (!isAdminEmail(user.email)) {
-        router.replace("/");
-        return;
-      }
 
       const { data: reportData, error: reportError } = await supabase
         .from("reports")
@@ -126,7 +110,7 @@ export default function AdminReportDetailPage() {
     };
 
     fetchDetail();
-  }, [reportId, router]);
+  }, [reportId]);
 
   const handleUpdateStatus = async (nextStatus: ReportRow["status"]) => {
     if (!report) return;
