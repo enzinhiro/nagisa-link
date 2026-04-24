@@ -8,6 +8,7 @@ import { toMamaDisplayName } from "../../../../lib/profile/displayName";
 import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
+import { getVisibleConnectionAchievementCounts } from "../../../../lib/profile/connection-achievements";
 
 type ProfileDetail = {
   id: string;
@@ -106,9 +107,10 @@ export default function SearchDetailPage() {
       }
 
       const rawProfile = data as RawProfileDetail;
+      const visibleCounts = await getVisibleConnectionAchievementCounts([rawProfile.id]);
       const normalizedProfile: ProfileDetail = {
         ...rawProfile,
-        connection_achievement_count: Number(rawProfile.connection_achievement_count ?? 0),
+        connection_achievement_count: visibleCounts.get(rawProfile.id) ?? 0,
       };
 
       setHasPendingWant(Boolean(existingWant) && !wantSelectError);

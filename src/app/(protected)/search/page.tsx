@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabase/client";
 import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
+import { getVisibleConnectionAchievementCounts } from "../../../lib/profile/connection-achievements";
 
 type SearchProfileCard = {
   id: string;
@@ -254,7 +255,12 @@ export default function SearchPage() {
       });
 
       const limited = sorted.slice(0, 10);
-      setCards(limited);
+      const limitedCounts = await getVisibleConnectionAchievementCounts(limited.map((card) => card.id));
+      const limitedWithVisibleCounts = limited.map((card) => ({
+        ...card,
+        connection_achievement_count: limitedCounts.get(card.id) ?? 0,
+      }));
+      setCards(limitedWithVisibleCounts);
 
       if (limited.length === 0 && queryFilters.tags.length > 0) {
         let relaxedQuery = supabase
@@ -299,7 +305,15 @@ export default function SearchPage() {
             tagsText.includes(normalizedKeyword)
           );
         });
-        setRelaxedCards(relaxedFetched.slice(0, 3));
+        const relaxedLimited = relaxedFetched.slice(0, 3);
+        const relaxedCounts = await getVisibleConnectionAchievementCounts(
+          relaxedLimited.map((card) => card.id)
+        );
+        const relaxedWithVisibleCounts = relaxedLimited.map((card) => ({
+          ...card,
+          connection_achievement_count: relaxedCounts.get(card.id) ?? 0,
+        }));
+        setRelaxedCards(relaxedWithVisibleCounts);
       }
 
       setLoading(false);
