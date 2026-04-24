@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { useMemo, useState } from "react";
-import { resolveAvatarImagePath } from "../lib/profile/avatar";
+import { useMemo } from "react";
+import { getAvatarInitial, getAvatarVisualStyle } from "../lib/profile/avatar-display";
 
 type ProfileAvatarProps = {
   userId: string;
@@ -12,29 +11,48 @@ type ProfileAvatarProps = {
 };
 
 export function ProfileAvatar({ userId, avatarSeed, nickname, className = "h-12 w-12" }: ProfileAvatarProps) {
-  const [hasImageError, setHasImageError] = useState(false);
-  const src = useMemo(() => resolveAvatarImagePath(avatarSeed, userId), [avatarSeed, userId]);
-  const fallbackText = (nickname?.trim().slice(0, 1) || "M").toUpperCase();
+  const initial = useMemo(() => getAvatarInitial(nickname), [nickname]);
+  const visual = useMemo(() => getAvatarVisualStyle(avatarSeed, userId), [avatarSeed, userId]);
+  const pattern = visual.pattern;
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded-full border border-[#cde5f2] bg-[#dff2ff] ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border ${className}`}
+      style={{
+        borderColor: visual.palette.border,
+        background: `linear-gradient(145deg, ${visual.palette.backgroundA} 0%, ${visual.palette.backgroundB} 100%)`,
+      }}
       aria-hidden="true"
     >
-      {!hasImageError ? (
-        <Image
-          src={src}
-          alt=""
-          fill
-          sizes="48px"
-          className="object-cover"
-          onError={() => setHasImageError(true)}
+      <span
+        className="pointer-events-none absolute -left-[18%] -top-[10%] h-[52%] w-[52%] rounded-full"
+        style={{
+          backgroundColor: visual.palette.accent,
+          opacity: pattern === 0 ? 0.34 : pattern === 1 ? 0.26 : 0.2,
+          filter: "blur(0.5px)",
+        }}
+      />
+      <span
+        className={`pointer-events-none absolute ${
+          pattern === 1 ? "-right-[8%] bottom-[6%] h-[30%] w-[58%] rounded-[999px]" : "-right-[12%] bottom-[4%] h-[42%] w-[42%] rounded-full"
+        }`}
+        style={{
+          backgroundColor: visual.palette.accent,
+          opacity: pattern === 2 ? 0.3 : 0.2,
+        }}
+      />
+      {pattern === 2 ? (
+        <span
+          className="pointer-events-none absolute left-[22%] top-[16%] h-[26%] w-[54%] rounded-[999px]"
+          style={{ backgroundColor: visual.palette.accent, opacity: 0.18 }}
         />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#3f6680]">
-          {fallbackText}
-        </div>
-      )}
+      ) : null}
+      <span
+        className="relative select-none text-[0.82rem] font-semibold leading-none"
+        style={{ color: visual.palette.text }}
+      >
+        {initial}
+      </span>
     </div>
   );
 }
