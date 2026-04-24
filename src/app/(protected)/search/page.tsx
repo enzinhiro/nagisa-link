@@ -180,6 +180,7 @@ function hasVariantGroupMatch(normalizedKeyword: string, normalizedText: string)
 
 function hasGameGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
   if (!normalizedKeyword || !normalizedText) return false;
+  const gameCategoryTerms = ["ゲーム", "げーむ", "game"].map((term) => normalizeSearchText(term));
 
   const keywordHitsGameCategory = NORMALIZED_GAME_CATEGORY_GROUP.some((term) =>
     normalizedKeyword.includes(term)
@@ -191,7 +192,10 @@ function hasGameGroupMatch(normalizedKeyword: string, normalizedText: string): b
   return GAME_TITLE_GROUPS.some((titleGroup) => {
     const keywordHitsTitle = titleGroup.some((term) => normalizedKeyword.includes(term));
     if (!keywordHitsTitle) return false;
-    return titleGroup.some((term) => normalizedText.includes(term));
+    const titleHit = titleGroup.some((term) => normalizedText.includes(term));
+    if (titleHit) return true;
+    // Title query should also match generic game-category users.
+    return gameCategoryTerms.some((term) => normalizedText.includes(term));
   });
 }
 
