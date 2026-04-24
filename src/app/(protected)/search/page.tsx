@@ -89,6 +89,28 @@ function chipPreview(text: string, max = 18) {
   return `${t.slice(0, max)}…`;
 }
 
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s　]+/g, "");
+}
+
+function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
+  const keyword = normalizeSearchText(rawKeyword);
+  if (!keyword) return true;
+  const displayName = toMamaDisplayName(card.nickname);
+  const candidateTexts = [
+    card.nickname,
+    displayName,
+    card.area,
+    card.child_age_group,
+    card.want_to_connect,
+    card.connection_preference,
+    card.meeting_range,
+    card.intro ?? "",
+    (card.child_interest_tags ?? []).join(" "),
+  ];
+  return candidateTexts.some((text) => normalizeSearchText(text).includes(keyword));
+}
+
 const AREA_OPTIONS = ["逗子市", "葉山町", "横須賀市"];
 const AGE_OPTIONS = ["未就学", "小学校低学年", "小学校高学年", "中学生", "高校生", "18歳以上"];
 const CONNECTION_OPTIONS = [
@@ -152,7 +174,10 @@ export default function SearchPage() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }, [queryFilters, router, pathname, searchParams]);
 
-  const normalizedKeyword = useMemo(() => queryFilters.keyword.trim().toLowerCase(), [queryFilters.keyword]);
+  const normalizedKeyword = useMemo(
+    () => normalizeSearchText(queryFilters.keyword),
+    [queryFilters.keyword]
+  );
 
   const runSearch = useCallback(() => {
     pendingScrollRef.current = true;
@@ -236,13 +261,7 @@ export default function SearchPage() {
       }
 
       const fetched = ((data ?? []) as SearchProfileCard[]).filter((card) => {
-        if (!normalizedKeyword) return true;
-        const tagsText = (card.child_interest_tags ?? []).join(" ").toLowerCase();
-        return (
-          card.want_to_connect.toLowerCase().includes(normalizedKeyword) ||
-          (card.intro ?? "").toLowerCase().includes(normalizedKeyword) ||
-          tagsText.includes(normalizedKeyword)
-        );
+        return matchesKeyword(card, normalizedKeyword);
       });
 
       const sorted = fetched.sort((a, b) => {
@@ -293,13 +312,7 @@ export default function SearchPage() {
             : null;
         }
         const relaxedFetched = ((relaxedData ?? []) as SearchProfileCard[]).filter((card) => {
-          if (!normalizedKeyword) return true;
-          const tagsText = (card.child_interest_tags ?? []).join(" ").toLowerCase();
-          return (
-            card.want_to_connect.toLowerCase().includes(normalizedKeyword) ||
-            (card.intro ?? "").toLowerCase().includes(normalizedKeyword) ||
-            tagsText.includes(normalizedKeyword)
-          );
+          return matchesKeyword(card, normalizedKeyword);
         });
         const relaxedLimited = relaxedFetched.slice(0, 3);
         const relaxedCounts = await getVisibleConnectionAchievementCounts(
