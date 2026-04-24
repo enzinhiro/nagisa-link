@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
@@ -165,15 +164,6 @@ export default function SearchDetailPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-4">
-          <Link href="/search" className="text-sm muted-text underline underline-offset-3">
-            さがす一覧に戻る
-          </Link>
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">
-            プロフィール詳細
-          </p>
-        </header>
-
         {loading && (
           <section className="soft-card">
             <p className="muted-text text-sm">プロフィールを読み込んでいます...</p>
@@ -207,7 +197,6 @@ export default function SearchDetailPage() {
             </section>
 
             <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title">プロフィール内容</h2>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">お子さんの年齢帯</p>
                 <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
@@ -218,10 +207,6 @@ export default function SearchDetailPage() {
                   <p className="text-sm text-[#365f78]">{profile.child_gender}</p>
                 </div>
               ) : null}
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">今つながりたいこと</p>
-                <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
-              </div>
               {profile.child_interest_tags.length > 0 ? (
                 <div className="soft-card-subtle">
                   <p className="label-text mb-2">お子さんの好きなこと</p>
@@ -234,6 +219,10 @@ export default function SearchDetailPage() {
                   </div>
                 </div>
               ) : null}
+              <div className="soft-card-subtle">
+                <p className="label-text mb-1">今つながりたいこと</p>
+                <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
+              </div>
               <div className="soft-card-subtle">
                 <p className="label-text mb-1">つながり方の希望</p>
                 <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
