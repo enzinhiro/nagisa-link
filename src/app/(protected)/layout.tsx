@@ -25,6 +25,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [debugProfileCompleted, setDebugProfileCompleted] = useState<boolean | null>(null);
   const [debugIsSuspended, setDebugIsSuspended] = useState<boolean | null>(null);
   const [debugLastBranch, setDebugLastBranch] = useState("guard:init");
+  const [inviteExitMessage, setInviteExitMessage] = useState<string | null>(null);
   const isChatDetailPage = pathname.startsWith("/chat/") && pathname !== "/chat";
   const guardRunningRef = useRef(false);
   const guardCompletedUserIdRef = useRef<string | null>(null);
@@ -115,18 +116,22 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             setDebugLastBranch("guard:invite-rpc-error");
             console.warn("[protected-guard] has_consumed_invite failed", inviteError);
           } else if (!hasConsumedInvite) {
-            setDebugLastBranch("guard:invite-not-consumed");
+            setDebugLastBranch("protected:invite-not-consumed-signout-start");
             guardLog("branch:invite-not-consumed", { pathname, userId: user.id });
             if (inviteSignoutHandledUserIdRef.current !== user.id) {
               inviteSignoutHandledUserIdRef.current = user.id;
-              await supabase.auth.signOut({ scope: "local" });
+              setInviteExitMessage("ログアウト処理中です…");
+              await supabase.auth.signOut();
             }
-            guardLog("router.replace", {
+            setDebugLastBranch("protected:invite-not-consumed-hard-replace");
+            guardLog("window.location.replace", {
               pathname,
               to: "/auth?reason=invite_required",
               branch: "invite-not-consumed-signout",
             });
-            router.replace("/auth?reason=invite_required");
+            if (typeof window !== "undefined") {
+              window.location.replace("/auth?reason=invite_required");
+            }
             shouldStayLoading = true;
             return;
           }
@@ -216,7 +221,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       <div className="mock-page">
         <main className="mock-shell screen-stack">
           <section className="soft-card">
-            <p className="muted-text text-sm">読み込み中です...</p>
+            <p className="muted-text text-sm">{inviteExitMessage ?? "読み込み中です..."}</p>
           </section>
         </main>
         <aside className="fixed left-2 top-2 z-[100] rounded bg-black/85 px-2 py-1 text-xs text-white">

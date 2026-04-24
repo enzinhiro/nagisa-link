@@ -47,6 +47,7 @@ export default function AuthPage() {
   const sessionCheckRunningRef = useRef(false);
   const redirectingRef = useRef(false);
   const redirectFallbackTimerRef = useRef<number | null>(null);
+  const inviteRequiredSignoutDoneRef = useRef(false);
   const authLog = (...args: unknown[]) => {
     if (!ENABLE_TEMP_PROD_AUTH_LOGS) return;
     console.log("[auth-page]", ...args);
@@ -245,7 +246,11 @@ export default function AuthPage() {
         }
         if (isInviteRequired) {
           setDebugLastBranch("auth:invite-required-signout");
-          await supabase.auth.signOut({ scope: "local" });
+          if (!inviteRequiredSignoutDoneRef.current) {
+            inviteRequiredSignoutDoneRef.current = true;
+            await supabase.auth.signOut();
+          }
+          setDebugLastBranch("auth:invite-required-show-form");
           return;
         }
         const validUserId = await validateCurrentSessionUser();
@@ -293,7 +298,7 @@ export default function AuthPage() {
         return;
       }
       if (isInviteRequired) {
-        setDebugLastBranch("auth:change-invite-required");
+        setDebugLastBranch("auth:invite-required-show-form");
         return;
       }
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
