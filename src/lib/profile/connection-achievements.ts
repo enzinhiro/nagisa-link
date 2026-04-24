@@ -11,7 +11,7 @@ function toCsv(ids: string[]): string {
 
 /**
  * Public-facing count:
- * count only pairs where both profiles currently exist and profile_completed=true.
+ * count only pairs where both profiles are currently visible in public_profiles.
  */
 export async function getVisibleConnectionAchievementCounts(
   userIds: string[]
@@ -40,10 +40,9 @@ export async function getVisibleConnectionAchievementCounts(
   );
 
   const { data: visibleProfiles, error: profileError } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id")
-    .in("id", involvedIds)
-    .eq("profile_completed", true);
+    .in("id", involvedIds);
 
   if (profileError) {
     console.warn("[connection-achievements] visible profile lookup failed", profileError);

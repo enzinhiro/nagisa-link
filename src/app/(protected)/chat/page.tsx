@@ -98,12 +98,12 @@ export default function ChatIndexPage() {
       const chatIds = chats.map((c) => c.id);
 
       let { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("id,nickname,avatar_seed")
         .in("id", otherIds);
       if (profilesError && isMissingProfileColumnError(profilesError)) {
         const fallback = await supabase
-          .from("profiles")
+          .from("public_profiles")
           .select("id,nickname")
           .in("id", otherIds);
         profilesData = Array.isArray(fallback.data)

@@ -65,23 +65,21 @@ export default function SearchDetailPage() {
       }
 
       let { data, error } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select(
           "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,avatar_seed"
         )
         .eq("id", profileId)
-        .eq("profile_completed", true)
         .neq("id", user.id)
         .maybeSingle();
 
       if (error && isMissingProfileColumnError(error)) {
         const fallback = await supabase
-          .from("profiles")
+          .from("public_profiles")
           .select(
             "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro"
           )
           .eq("id", profileId)
-          .eq("profile_completed", true)
           .neq("id", user.id)
           .maybeSingle();
         data = fallback.data ? { ...fallback.data, avatar_seed: null } : fallback.data;

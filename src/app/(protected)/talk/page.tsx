@@ -27,7 +27,6 @@ type ProfileRow = {
   area: string;
   want_to_connect: string;
   connection_achievement_count: number;
-  profile_completed: boolean;
   avatar_seed: number | null;
 };
 
@@ -144,17 +143,15 @@ export default function TalkPage() {
     }
 
     let { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed,avatar_seed")
-      .in("id", profileIds)
-      .eq("profile_completed", true);
+      .from("public_profiles")
+      .select("id,nickname,area,want_to_connect,connection_achievement_count,avatar_seed")
+      .in("id", profileIds);
 
     if (profilesError && isMissingProfileColumnError(profilesError)) {
       const fallback = await supabase
-        .from("profiles")
-        .select("id,nickname,area,want_to_connect,connection_achievement_count,profile_completed")
-        .in("id", profileIds)
-        .eq("profile_completed", true);
+        .from("public_profiles")
+        .select("id,nickname,area,want_to_connect,connection_achievement_count")
+        .in("id", profileIds);
       profilesData = Array.isArray(fallback.data)
         ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
         : fallback.data;

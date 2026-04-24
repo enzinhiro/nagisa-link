@@ -193,11 +193,10 @@ export default function SearchPage() {
       }
 
       let query = supabase
-        .from("profiles")
+        .from("public_profiles")
         .select(
           "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
         )
-        .eq("profile_completed", true)
         .neq("id", user.id);
 
       if (queryFilters.area) query = query.eq("area", queryFilters.area);
@@ -210,11 +209,10 @@ export default function SearchPage() {
       let { data, error } = await query;
       if (error && isMissingProfileColumnError(error)) {
         let fallbackQuery = supabase
-          .from("profiles")
+          .from("public_profiles")
           .select(
             "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
-          .eq("profile_completed", true)
           .neq("id", user.id);
         if (queryFilters.area) fallbackQuery = fallbackQuery.eq("area", queryFilters.area);
         if (queryFilters.age) fallbackQuery = fallbackQuery.eq("child_age_group", queryFilters.age);
@@ -264,11 +262,10 @@ export default function SearchPage() {
 
       if (limited.length === 0 && queryFilters.tags.length > 0) {
         let relaxedQuery = supabase
-          .from("profiles")
+          .from("public_profiles")
           .select(
             "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
-          .eq("profile_completed", true)
           .neq("id", user.id);
 
         if (queryFilters.area) relaxedQuery = relaxedQuery.eq("area", queryFilters.area);
@@ -281,11 +278,10 @@ export default function SearchPage() {
           .limit(10);
         if (relaxedError && isMissingProfileColumnError(relaxedError)) {
           let relaxedFallback = supabase
-            .from("profiles")
+            .from("public_profiles")
             .select(
               "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
             )
-            .eq("profile_completed", true)
             .neq("id", user.id);
           if (queryFilters.area) relaxedFallback = relaxedFallback.eq("area", queryFilters.area);
           if (queryFilters.age) relaxedFallback = relaxedFallback.eq("child_age_group", queryFilters.age);

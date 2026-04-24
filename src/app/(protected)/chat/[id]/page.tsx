@@ -212,11 +212,10 @@ export default function ChatDetailPage() {
     setOtherUserId(otherUserIdFromChat);
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       // Avoid schema-dependent column errors on chat open.
       .select("id,nickname")
       .eq("id", otherUserIdFromChat)
-      .eq("profile_completed", true)
       .maybeSingle();
 
     if (profileError || !profile) {
