@@ -6,7 +6,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
-import { fetchProfileGateStatus } from "../../lib/account-status";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
@@ -20,16 +19,6 @@ function formatSignUpErrorMessage(message: string): string {
     return "短時間に送信が集中しています。少し時間をおいてから、もう一度お試しください。";
   }
   return message;
-}
-
-async function resolveAuthProfileDestination(
-  userId: string
-): Promise<"/" | "/onboarding/profile" | "/suspended"> {
-  const status = await fetchProfileGateStatus(userId);
-  if (!status) return "/onboarding/profile";
-  if (status.isSuspended) return "/suspended";
-  if (status.profileCompleted) return "/";
-  return "/onboarding/profile";
 }
 
 export default function AuthPage() {
@@ -173,10 +162,10 @@ export default function AuthPage() {
     const redirectIfAuthed = async (userId: string) => {
       if (redirectingRef.current) return;
       redirectingRef.current = true;
-      setDebugLastBranch("auth:redirect-by-profile");
+      setDebugLastBranch("auth:redirect-home");
       authLog("set:isRedirecting:true", { pathname, userId });
       setIsRedirecting(true);
-      const dest = await resolveAuthProfileDestination(userId);
+      const dest = "/";
       if (cancelled) {
         redirectingRef.current = false;
         setIsRedirecting(false);
@@ -189,7 +178,7 @@ export default function AuthPage() {
         userId,
         isSessionChecking,
         isRedirecting: true,
-        branch: "authenticated",
+        branch: "authenticated-home",
       });
       router.replace(dest);
     };
@@ -281,8 +270,6 @@ export default function AuthPage() {
         setDebugHasSession(true);
         setDebugUserId(session.user.id);
         setDebugLastBranch(`auth:change-${event.toLowerCase()}`);
-        authLog("set:isSessionChecking:true(auth change)", { pathname, event });
-        setIsSessionChecking(true);
         void (async () => {
           try {
             const validUserId = await validateCurrentSessionUser();
@@ -292,11 +279,10 @@ export default function AuthPage() {
             }
             await redirectIfAuthed(validUserId);
           } finally {
-            if (!cancelled && !redirectingRef.current) {
-              authLog("set:isSessionChecking:false(auth change finally)", { pathname, event });
-              setIsSessionChecking(false);
+            if (!cancelled) {
               authLog("set:isRedirecting:false(auth change finally)", { pathname, event });
               setIsRedirecting(false);
+              redirectingRef.current = false;
             }
           }
         })();
@@ -338,7 +324,7 @@ export default function AuthPage() {
       return;
     }
 
-    const destination = await resolveAuthProfileDestination(user.id);
+    const destination = "/";
     setDebugLastBranch("auth:login-success-redirect-home");
     authLog("router.replace(login success)", {
       pathname,
@@ -476,7 +462,7 @@ export default function AuthPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        {isSessionChecking || isRedirecting ? (
+        {isSessionChecking ? (
           <section className="soft-card">
             <p className="muted-text text-sm">読み込み中です...</p>
           </section>
@@ -539,7 +525,7 @@ export default function AuthPage() {
                 {isSignupSubmitting ? "送信中..." : "確認メールを再送信する"}
               </button>
             </form>
-          ) : isSessionChecking || isRedirecting ? null : (
+          ) : isSessionChecking ? null : (
             <>
               {activeTab === "login" ? (
             <form className="flex flex-col gap-3.5" onSubmit={handleLogin}>
@@ -699,7 +685,7 @@ export default function AuthPage() {
           <p>branch: {debugLastBranch}</p>
         </aside>
       ) : null}
-      {(isSessionChecking || isRedirecting) ? (
+      {isSessionChecking ? (
         <aside className="fixed left-2 top-2 z-[100] rounded bg-black/85 px-2 py-1 text-xs text-white">
           DEBUG AUTH REAL FILE
         </aside>
