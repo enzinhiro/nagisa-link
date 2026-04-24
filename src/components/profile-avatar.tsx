@@ -24,7 +24,7 @@ export function ProfileAvatar({ userId, avatarSeed, nickname, className = "h-12 
       aria-hidden="true"
     >
       <span
-        className="relative select-none text-[0.82rem] font-semibold leading-none"
+        className="relative select-none text-[0.92rem] font-semibold leading-none"
         style={{ color: visual.palette.text }}
       >
         {initial}
