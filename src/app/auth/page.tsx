@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
@@ -46,6 +46,10 @@ export default function AuthPage() {
   const [loginMessage, setLoginMessage] = useState("");
   const [signupMessage, setSignupMessage] = useState("");
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
+  const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const sessionCheckRunningRef = useRef(false);
+  const redirectingRef = useRef(false);
   const isAuthDebugEnabled =
     typeof window !== "undefined" && window.localStorage.getItem(AUTH_DEBUG_KEY) === "1";
   const authDebugLog = (...args: unknown[]) => {
@@ -151,6 +155,9 @@ export default function AuthPage() {
       }
     };
     const redirectIfAuthed = async (userId: string) => {
+      if (redirectingRef.current) return;
+      redirectingRef.current = true;
+      setIsRedirecting(true);
       const dest = await resolveAuthProfileDestination(userId);
       if (cancelled || dest === null) return;
       authDebugLog("redirectIfAuthed", { userId, dest });
@@ -167,23 +174,39 @@ export default function AuthPage() {
       return null;
     };
     const sync = async () => {
+      if (sessionCheckRunningRef.current || redirectingRef.current) return;
+      sessionCheckRunningRef.current = true;
       authDebugLog("sync:start");
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      authDebugLog("sync:session", { hasUser: Boolean(session?.user) });
-      if (!session?.user) return;
-      const validUserId = await validateCurrentSessionUser();
-      if (!validUserId || cancelled) return;
-      await redirectIfAuthed(validUserId);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        authDebugLog("sync:session", { hasUser: Boolean(session?.user) });
+        if (!session?.user) return;
+        const validUserId = await validateCurrentSessionUser();
+        if (!validUserId || cancelled) return;
+        await redirectIfAuthed(validUserId);
+      } finally {
+        sessionCheckRunningRef.current = false;
+        if (!cancelled && !redirectingRef.current) {
+          setIsSessionChecking(false);
+          setIsRedirecting(false);
+        }
+      }
     };
     void sync();
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       authDebugLog("onAuthStateChange", { event, hasUser: Boolean(session?.user) });
-      if (cancelled || !session?.user) return;
+      if (cancelled || redirectingRef.current) return;
+      if (!session?.user) {
+        setIsSessionChecking(false);
+        setIsRedirecting(false);
+        return;
+      }
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        setIsSessionChecking(true);
         void (async () => {
           const validUserId = await validateCurrentSessionUser();
           if (!validUserId || cancelled) return;
@@ -354,6 +377,11 @@ export default function AuthPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
+        {isSessionChecking || isRedirecting ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">読み込み中です...</p>
+          </section>
+        ) : null}
         {!signupSuccessEmail ? (
           <section className="relative overflow-hidden rounded-[22px] border border-[#deecf4] bg-[#f8fdff]">
             <div className="relative h-[46svh] min-h-[300px] max-h-[520px] w-full">
@@ -412,7 +440,7 @@ export default function AuthPage() {
                 {isSignupSubmitting ? "送信中..." : "確認メールを再送信する"}
               </button>
             </form>
-          ) : (
+          ) : isSessionChecking || isRedirecting ? null : (
             <>
               {activeTab === "login" ? (
             <form className="flex flex-col gap-3.5" onSubmit={handleLogin}>
