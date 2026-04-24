@@ -127,7 +127,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
         const { count: pendingInCount, error: pendingCountError } = await supabase
           .from("wants")
-          .select("*", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true })
           .eq("to_user", user.id)
           .eq("status", "pending");
 

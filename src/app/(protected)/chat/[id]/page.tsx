@@ -18,7 +18,6 @@ type ChatRow = {
 type ProfileRow = {
   id: string;
   nickname: string;
-  area: string;
   avatar_seed: number | null;
 };
 
@@ -215,7 +214,7 @@ export default function ChatDetailPage() {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       // Avoid schema-dependent column errors on chat open.
-      .select("id,nickname,area")
+      .select("id,nickname")
       .eq("id", otherUserIdFromChat)
       .eq("profile_completed", true)
       .maybeSingle();
@@ -229,7 +228,6 @@ export default function ChatDetailPage() {
     const profileRow: ProfileRow = {
       id: profile.id,
       nickname: profile.nickname,
-      area: profile.area,
       avatar_seed: null,
     };
     setOtherProfile(profileRow);
@@ -566,7 +564,6 @@ export default function ChatDetailPage() {
                 <h1 className="hero-title truncate text-lg font-semibold">
                   {toMamaDisplayName(otherProfile.nickname)}
                 </h1>
-                <p className="truncate text-xs muted-text">{otherProfile.area}</p>
                 <p className="text-xs muted-text">
                   {remainingHours === null
                     ? ""

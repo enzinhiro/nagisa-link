@@ -19,7 +19,6 @@ type ChatRow = {
 type ProfileRow = {
   id: string;
   nickname: string;
-  area: string;
   avatar_seed: number | null;
 };
 
@@ -33,7 +32,6 @@ type ChatCard = {
   id: string;
   otherUserId: string;
   otherDisplayName: string;
-  otherArea: string;
   otherNickname: string;
   otherAvatarSeed: number | null;
   expiresAt: string;
@@ -101,12 +99,12 @@ export default function ChatIndexPage() {
 
       let { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("id,nickname,area,avatar_seed")
+        .select("id,nickname,avatar_seed")
         .in("id", otherIds);
       if (profilesError && isMissingProfileColumnError(profilesError)) {
         const fallback = await supabase
           .from("profiles")
-          .select("id,nickname,area")
+          .select("id,nickname")
           .in("id", otherIds);
         profilesData = Array.isArray(fallback.data)
           ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
@@ -146,7 +144,6 @@ export default function ChatIndexPage() {
             id: chat.id,
             otherUserId,
             otherDisplayName: "このユーザーは現在表示できません",
-            otherArea: "-",
             otherNickname: "相手",
             otherAvatarSeed: null,
             expiresAt: chat.expires_at,
@@ -158,7 +155,6 @@ export default function ChatIndexPage() {
           id: chat.id,
           otherUserId,
           otherDisplayName: toMamaDisplayName(otherProfile.nickname),
-          otherArea: otherProfile.area,
           otherNickname: otherProfile.nickname,
           otherAvatarSeed: otherProfile.avatar_seed,
           expiresAt: chat.expires_at,
@@ -223,7 +219,6 @@ export default function ChatIndexPage() {
           />
           <div className="min-w-0 flex flex-1 flex-col gap-1.5">
             <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
-            <p className="text-xs muted-text">地域: {card.otherArea}</p>
             {type === "active" && card.hasUnread ? (
               <span className="inline-flex w-fit rounded-full bg-[#fff0f6] px-2 py-0.5 text-[10px] text-[#9a4d6f]">
                 新着
