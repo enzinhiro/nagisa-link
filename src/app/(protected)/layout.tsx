@@ -23,84 +23,105 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const guard = async () => {
-      setProfileGateError(null);
+      let shouldStayLoading = false;
+      try {
+        setProfileGateError(null);
 
-      const {
-        data: { user },
-        error: sessionUserError,
-      } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: sessionUserError,
+        } = await supabase.auth.getUser();
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      const staleStatus = (sessionUserError as { status?: number } | null)?.status;
-      if (sessionUserError && (staleStatus === 401 || staleStatus === 403)) {
-        await supabase.auth.signOut({ scope: "local" });
-        router.replace("/auth");
-        return;
+        const staleStatus = (sessionUserError as { status?: number } | null)?.status;
+        if (sessionUserError && (staleStatus === 401 || staleStatus === 403)) {
+          await supabase.auth.signOut({ scope: "local" });
+          router.replace("/auth");
+          shouldStayLoading = true;
+          return;
+        }
+
+        if (!user) {
+          router.replace("/auth");
+          shouldStayLoading = true;
+          return;
+        }
+
+        setIsAdminUser(isAdminEmail(user.email));
+
+        // Non-blocking best effort: invite linking should not freeze page routing.
+        if (user.email) {
+          void supabase
+            .rpc("link_invite_code_user", {
+              input_email: user.email,
+              input_user_id: user.id,
+            })
+            .then(({ error }) => {
+              if (error) console.warn("[protected-guard] link_invite_code_user failed", error);
+            });
+        }
+
+        if (cancelled) return;
+
+        // If RPC fails temporarily, do not block the whole app on loading.
+        const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
+          "has_consumed_invite",
+          { input_email: user.email ?? "", input_user_id: user.id }
+        );
+        if (inviteError) {
+          console.warn("[protected-guard] has_consumed_invite failed", inviteError);
+        } else if (!hasConsumedInvite) {
+          router.replace("/auth");
+          shouldStayLoading = true;
+          return;
+        }
+
+        if (cancelled) return;
+
+        const status = await fetchProfileGateStatus(user.id);
+        if (cancelled) return;
+
+        if (!status) {
+          router.replace("/onboarding/profile");
+          shouldStayLoading = true;
+          return;
+        }
+
+        // Keep admin recoverable even if accidentally suspended.
+        if (status.isSuspended && !isAdminEmail(user.email)) {
+          router.replace("/suspended");
+          shouldStayLoading = true;
+          return;
+        }
+
+        if (!status.profileCompleted) {
+          router.replace("/onboarding/profile");
+          shouldStayLoading = true;
+          return;
+        }
+
+        const { count: pendingInCount, error: pendingCountError } = await supabase
+          .from("wants")
+          .select("*", { count: "exact", head: true })
+          .eq("to_user", user.id)
+          .eq("status", "pending");
+
+        if (cancelled) return;
+
+        if (!pendingCountError && typeof pendingInCount === "number") {
+          setTalkBadgeCount(pendingInCount);
+        } else {
+          setTalkBadgeCount(0);
+        }
+      } catch (error) {
+        console.error("[protected-guard] unexpected guard error", error);
+        setProfileGateError("画面の読み込みに失敗しました。再読み込みしてください。");
+      } finally {
+        if (!cancelled && !shouldStayLoading) {
+          setIsChecking(false);
+        }
       }
-
-      if (!user) {
-        router.replace("/auth");
-        return;
-      }
-
-      setIsAdminUser(isAdminEmail(user.email));
-
-      if (user.email) {
-        await supabase.rpc("link_invite_code_user", {
-          input_email: user.email,
-          input_user_id: user.id,
-        });
-      }
-
-      if (cancelled) return;
-
-      const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
-        "has_consumed_invite",
-        { input_email: user.email ?? "", input_user_id: user.id }
-      );
-
-      if (inviteError || !hasConsumedInvite) {
-        router.replace("/auth");
-        return;
-      }
-
-      if (cancelled) return;
-
-      const status = await fetchProfileGateStatus(user.id);
-      if (cancelled) return;
-
-      if (!status) {
-        router.replace("/onboarding/profile");
-        return;
-      }
-
-      // Keep admin recoverable even if accidentally suspended.
-      if (status.isSuspended && !isAdminEmail(user.email)) {
-        router.replace("/suspended");
-        return;
-      }
-
-      if (!status.profileCompleted) {
-        router.replace("/onboarding/profile");
-        return;
-      }
-
-      const { count: pendingInCount, error: pendingCountError } = await supabase
-        .from("wants")
-        .select("*", { count: "exact", head: true })
-        .eq("to_user", user.id)
-        .eq("status", "pending");
-
-      if (cancelled) return;
-
-      if (!pendingCountError && typeof pendingInCount === "number") {
-        setTalkBadgeCount(pendingInCount);
-      } else {
-        setTalkBadgeCount(0);
-      }
-
-      setIsChecking(false);
     };
 
     void guard();
