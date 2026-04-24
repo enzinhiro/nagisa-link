@@ -4,6 +4,56 @@
 -- 2) Restore is_active_user() check for profiles_insert_own
 -- 3) Unify profiles admin policies with is_admin_user()
 
+create or replace function public.is_admin_user()
+returns boolean
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  email text;
+begin
+  email := lower(coalesce(auth.jwt() ->> 'email', ''));
+  return email in ('enzin-office@gmail.com', 'enzin.office@gmail.com');
+end;
+$$;
+
+create or replace function public.is_active_user()
+returns boolean
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  me uuid;
+  suspended boolean;
+begin
+  me := auth.uid();
+  if me is null then
+    return false;
+  end if;
+
+  select p.is_suspended
+    into suspended
+  from public.profiles p
+  where p.id = me;
+
+  -- Initial users without a profile row are treated as active.
+  if suspended is null then
+    return true;
+  end if;
+
+  return not suspended;
+end;
+$$;
+
+revoke all on function public.is_admin_user() from public;
+revoke all on function public.is_active_user() from public;
+grant execute on function public.is_admin_user() to authenticated;
+grant execute on function public.is_active_user() to authenticated;
+
 alter table public.reports enable row level security;
 alter table public.profiles enable row level security;
 
