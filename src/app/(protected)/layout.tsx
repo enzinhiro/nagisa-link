@@ -29,6 +29,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const guardRunningRef = useRef(false);
   const guardCompletedUserIdRef = useRef<string | null>(null);
   const inviteCheckedUserIdRef = useRef<string | null>(null);
+  const inviteSignoutHandledUserIdRef = useRef<string | null>(null);
   const guardLog = (...args: unknown[]) => {
     if (!ENABLE_TEMP_PROD_GUARD_LOGS) return;
     console.log("[protected-guard]", ...args);
@@ -116,8 +117,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           } else if (!hasConsumedInvite) {
             setDebugLastBranch("guard:invite-not-consumed");
             guardLog("branch:invite-not-consumed", { pathname, userId: user.id });
-            guardLog("router.replace", { pathname, to: "/auth", branch: "invite-not-consumed" });
-            router.replace("/auth");
+            if (inviteSignoutHandledUserIdRef.current !== user.id) {
+              inviteSignoutHandledUserIdRef.current = user.id;
+              await supabase.auth.signOut({ scope: "local" });
+            }
+            guardLog("router.replace", {
+              pathname,
+              to: "/auth?reason=invite_required",
+              branch: "invite-not-consumed-signout",
+            });
+            router.replace("/auth?reason=invite_required");
             shouldStayLoading = true;
             return;
           }

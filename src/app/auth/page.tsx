@@ -24,6 +24,7 @@ function formatSignUpErrorMessage(message: string): string {
 export default function AuthPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const [isInviteRequired, setIsInviteRequired] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -70,6 +71,12 @@ export default function AuthPage() {
     signupPasswordConfirm.length > 0 &&
     agreedLegal &&
     !isSignupSubmitting;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsInviteRequired(params.get("reason") === "invite_required");
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -236,6 +243,11 @@ export default function AuthPage() {
           setDebugLastBranch("auth:no-session");
           return;
         }
+        if (isInviteRequired) {
+          setDebugLastBranch("auth:invite-required-signout");
+          await supabase.auth.signOut({ scope: "local" });
+          return;
+        }
         const validUserId = await validateCurrentSessionUser();
         if (!validUserId || cancelled) {
           setDebugLastBranch("auth:user-invalid");
@@ -280,6 +292,10 @@ export default function AuthPage() {
         setIsRedirecting(false);
         return;
       }
+      if (isInviteRequired) {
+        setDebugLastBranch("auth:change-invite-required");
+        return;
+      }
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         setDebugHasSession(true);
         setDebugUserId(session.user.id);
@@ -313,7 +329,7 @@ export default function AuthPage() {
       authLog("effect:cleanup", { pathname });
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [isInviteRequired, pathname, router]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -518,6 +534,13 @@ export default function AuthPage() {
         ) : null}
 
         <section className="soft-card flex flex-col gap-5">
+          {isInviteRequired ? (
+            <section className="soft-card-subtle">
+              <p className="text-sm leading-6 text-rose-700">
+                このアカウントは招待コードの確認が完了していません。招待コードを使ってもう一度会員登録してください。
+              </p>
+            </section>
+          ) : null}
           {signupSuccessEmail ? (
             <form
               className="flex flex-col gap-3.5 rounded-[18px] border border-emerald-200/90 bg-gradient-to-b from-emerald-50/65 via-[#f7fbfe]/80 to-transparent p-[14px] shadow-[0_8px_22px_rgba(52,120,90,0.08)] transition-[box-shadow,border-color,background-color] duration-200"
