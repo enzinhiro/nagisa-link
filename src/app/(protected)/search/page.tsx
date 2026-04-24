@@ -93,6 +93,48 @@ function normalizeSearchText(value: string): string {
   return value.trim().toLowerCase().replace(/[\s　]+/g, "");
 }
 
+const KEYWORD_VARIANT_GROUPS: string[][] = [
+  ["漫画", "マンガ", "まんが", "コミック", "comic"],
+  ["アニメ", "あにめ", "anime"],
+  ["ゲーム", "げーむ", "game", "switch", "スイッチ", "任天堂", "ニンテンドー"],
+  ["読書", "どくしょ", "本", "絵本", "小説"],
+  ["サッカー", "さっかー", "フットボール", "football"],
+  ["野球", "やきゅう", "ベースボール", "baseball"],
+  ["バスケ", "バスケット", "バスケットボール", "basketball"],
+  ["ダンス", "だんす", "dance"],
+  ["ピアノ", "ぴあの", "piano"],
+  ["音楽", "おんがく", "music", "歌", "うた", "カラオケ"],
+  ["英語", "えいご", "english"],
+  ["勉強", "べんきょう", "学習", "がくしゅう"],
+  ["工作", "こうさく", "手作り", "ハンドメイド", "クラフト"],
+  ["絵", "お絵かき", "おえかき", "イラスト", "drawing"],
+  ["プログラミング", "ぷろぐらみんぐ", "coding", "コーディング"],
+  ["電車", "でんしゃ", "鉄道", "てつどう"],
+  ["車", "くるま", "自動車", "じどうしゃ"],
+  ["恐竜", "きょうりゅう", "dinosaur"],
+  ["動物", "どうぶつ", "アニマル", "animal"],
+  ["虫", "むし", "昆虫", "こんちゅう"],
+  ["海", "うみ", "海遊び", "釣り", "つり"],
+  ["外遊び", "そとあそび", "公園", "こうえん"],
+  ["運動", "うんどう", "スポーツ", "sports"],
+  ["不登校", "ふとうこう", "学校に行きづらい", "登校しぶり"],
+  ["居場所", "いばしょ", "フリースクール", "放課後デイ", "放デイ"],
+  ["発達", "はったつ", "発達凸凹", "療育", "りょういく"],
+];
+
+const NORMALIZED_KEYWORD_VARIANT_GROUPS = KEYWORD_VARIANT_GROUPS.map((group) =>
+  group.map((term) => normalizeSearchText(term))
+);
+
+function hasVariantGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
+  if (!normalizedKeyword || !normalizedText) return false;
+  return NORMALIZED_KEYWORD_VARIANT_GROUPS.some((group) => {
+    const keywordHitsGroup = group.some((term) => normalizedKeyword.includes(term));
+    if (!keywordHitsGroup) return false;
+    return group.some((term) => normalizedText.includes(term));
+  });
+}
+
 function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
   const keyword = normalizeSearchText(rawKeyword);
   if (!keyword) return true;
@@ -108,7 +150,10 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
     card.intro ?? "",
     (card.child_interest_tags ?? []).join(" "),
   ];
-  return candidateTexts.some((text) => normalizeSearchText(text).includes(keyword));
+  return candidateTexts.some((text) => {
+    const normalizedText = normalizeSearchText(text);
+    return normalizedText.includes(keyword) || hasVariantGroupMatch(keyword, normalizedText);
+  });
 }
 
 const AREA_OPTIONS = ["逗子市", "葉山町", "横須賀市"];
