@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
+import { fetchProfileGateStatus } from "../../lib/account-status";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
@@ -19,6 +20,16 @@ function formatSignUpErrorMessage(message: string): string {
     return "短時間に送信が集中しています。少し時間をおいてから、もう一度お試しください。";
   }
   return message;
+}
+
+async function resolveAuthProfileDestination(
+  userId: string
+): Promise<"/" | "/onboarding/profile" | "/suspended"> {
+  const status = await fetchProfileGateStatus(userId);
+  if (!status) return "/onboarding/profile";
+  if (status.isSuspended) return "/suspended";
+  if (status.profileCompleted) return "/";
+  return "/onboarding/profile";
 }
 
 export default function AuthPage() {
@@ -162,11 +173,15 @@ export default function AuthPage() {
     const redirectIfAuthed = async (userId: string) => {
       if (redirectingRef.current) return;
       redirectingRef.current = true;
-      setDebugLastBranch("auth:redirect-home");
+      setDebugLastBranch("auth:redirect-by-profile");
       authLog("set:isRedirecting:true", { pathname, userId });
       setIsRedirecting(true);
-      const dest = "/";
-      if (cancelled) return;
+      const dest = await resolveAuthProfileDestination(userId);
+      if (cancelled) {
+        redirectingRef.current = false;
+        setIsRedirecting(false);
+        return;
+      }
       authDebugLog("redirectIfAuthed", { userId, dest });
       authLog("router.replace", {
         pathname,
@@ -269,9 +284,21 @@ export default function AuthPage() {
         authLog("set:isSessionChecking:true(auth change)", { pathname, event });
         setIsSessionChecking(true);
         void (async () => {
-          const validUserId = await validateCurrentSessionUser();
-          if (!validUserId || cancelled) return;
-          await redirectIfAuthed(validUserId);
+          try {
+            const validUserId = await validateCurrentSessionUser();
+            if (!validUserId || cancelled) {
+              setDebugLastBranch("auth:change-user-invalid");
+              return;
+            }
+            await redirectIfAuthed(validUserId);
+          } finally {
+            if (!cancelled && !redirectingRef.current) {
+              authLog("set:isSessionChecking:false(auth change finally)", { pathname, event });
+              setIsSessionChecking(false);
+              authLog("set:isRedirecting:false(auth change finally)", { pathname, event });
+              setIsRedirecting(false);
+            }
+          }
         })();
       }
     });
@@ -282,7 +309,7 @@ export default function AuthPage() {
       authLog("effect:cleanup", { pathname });
       subscription.unsubscribe();
     };
-  }, [pathname, router]);
+  }, [router]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -311,7 +338,7 @@ export default function AuthPage() {
       return;
     }
 
-    const destination = "/";
+    const destination = await resolveAuthProfileDestination(user.id);
     setDebugLastBranch("auth:login-success-redirect-home");
     authLog("router.replace(login success)", {
       pathname,
