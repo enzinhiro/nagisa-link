@@ -3,14 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase, SUPABASE_URL_IN_USE } from "../../lib/supabase/client";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
-import { fetchProfileGateStatus } from "../../lib/account-status";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
 const AUTH_TAB_STORAGE_KEY = "nagisa-link-auth-tab";
 const AUTH_DEBUG_KEY = "nagisa-link-auth-debug";
+const ENABLE_TEMP_PROD_AUTH_LOGS = true;
+const ENABLE_TEMP_DEBUG_PANEL = true;
 
 function formatSignUpErrorMessage(message: string): string {
   const normalized = message.trim().toLowerCase();
@@ -20,18 +21,9 @@ function formatSignUpErrorMessage(message: string): string {
   return message;
 }
 
-async function resolveAuthProfileDestination(
-  userId: string
-): Promise<"/" | "/onboarding/profile" | "/suspended"> {
-  const status = await fetchProfileGateStatus(userId);
-  if (!status) return "/onboarding/profile";
-  if (status.isSuspended) return "/suspended";
-  if (status.profileCompleted) return "/";
-  return "/onboarding/profile";
-}
-
 export default function AuthPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -48,8 +40,20 @@ export default function AuthPage() {
   const [signupSuccessEmail, setSignupSuccessEmail] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [debugHasSession, setDebugHasSession] = useState<boolean | null>(null);
+  const [debugUserId, setDebugUserId] = useState<string | null>(null);
+  const [debugLastBranch, setDebugLastBranch] = useState("auth:init");
   const sessionCheckRunningRef = useRef(false);
   const redirectingRef = useRef(false);
+  const authLog = (...args: unknown[]) => {
+    if (!ENABLE_TEMP_PROD_AUTH_LOGS) return;
+    console.log("[auth-page]", ...args);
+  };
+  const warnedAuthRealFileRef = useRef(false);
+  if (!warnedAuthRealFileRef.current) {
+    warnedAuthRealFileRef.current = true;
+    console.warn("DEBUG AUTH REAL FILE: src/app/auth/page.tsx");
+  }
   const isAuthDebugEnabled =
     typeof window !== "undefined" && window.localStorage.getItem(AUTH_DEBUG_KEY) === "1";
   const authDebugLog = (...args: unknown[]) => {
@@ -140,6 +144,7 @@ export default function AuthPage() {
   useEffect(() => {
     let cancelled = false;
     authDebugLog("session effect mounted");
+    authLog("effect:mounted", { pathname, isSessionChecking, isRedirecting });
     let isRecoveringBrokenSession = false;
     const recoverBrokenSession = async () => {
       if (isRecoveringBrokenSession) return;
@@ -157,18 +162,33 @@ export default function AuthPage() {
     const redirectIfAuthed = async (userId: string) => {
       if (redirectingRef.current) return;
       redirectingRef.current = true;
+      setDebugLastBranch("auth:redirect-home");
+      authLog("set:isRedirecting:true", { pathname, userId });
       setIsRedirecting(true);
-      const dest = await resolveAuthProfileDestination(userId);
-      if (cancelled || dest === null) return;
+      const dest = "/";
+      if (cancelled) return;
       authDebugLog("redirectIfAuthed", { userId, dest });
+      authLog("router.replace", {
+        pathname,
+        dest,
+        userId,
+        isSessionChecking,
+        isRedirecting: true,
+        branch: "authenticated",
+      });
       router.replace(dest);
     };
     const validateCurrentSessionUser = async (): Promise<string | null> => {
       const { data, error } = await supabase.auth.getUser();
-      if (!error && data.user) return data.user.id;
+      if (!error && data.user) {
+        setDebugHasSession(true);
+        setDebugUserId(data.user.id);
+        return data.user.id;
+      }
       const status = (error as { status?: number } | null)?.status;
       authDebugLog("validateCurrentSessionUser:error", { status, message: error?.message });
       if (status === 401 || status === 403) {
+        setDebugLastBranch("auth:recover-broken-session");
         await recoverBrokenSession();
       }
       return null;
@@ -176,20 +196,41 @@ export default function AuthPage() {
     const sync = async () => {
       if (sessionCheckRunningRef.current || redirectingRef.current) return;
       sessionCheckRunningRef.current = true;
+      setDebugLastBranch("auth:sync-start");
+      authLog("sync:start", { pathname });
       authDebugLog("sync:start");
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
         authDebugLog("sync:session", { hasUser: Boolean(session?.user) });
-        if (!session?.user) return;
+        authLog("sync:session", {
+          pathname,
+          hasSession: Boolean(session),
+          hasUser: Boolean(session?.user),
+          userId: session?.user?.id ?? null,
+          isSessionChecking,
+          isRedirecting,
+        });
+        setDebugHasSession(Boolean(session));
+        setDebugUserId(session?.user?.id ?? null);
+        if (!session?.user) {
+          setDebugLastBranch("auth:no-session");
+          return;
+        }
         const validUserId = await validateCurrentSessionUser();
-        if (!validUserId || cancelled) return;
+        if (!validUserId || cancelled) {
+          setDebugLastBranch("auth:user-invalid");
+          return;
+        }
         await redirectIfAuthed(validUserId);
       } finally {
         sessionCheckRunningRef.current = false;
         if (!cancelled && !redirectingRef.current) {
+          setDebugLastBranch("auth:sync-finished");
+          authLog("set:isSessionChecking:false(sync finally)", { pathname });
           setIsSessionChecking(false);
+          authLog("set:isRedirecting:false(sync finally)", { pathname });
           setIsRedirecting(false);
         }
       }
@@ -199,13 +240,33 @@ export default function AuthPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       authDebugLog("onAuthStateChange", { event, hasUser: Boolean(session?.user) });
+      if (ENABLE_TEMP_PROD_AUTH_LOGS) {
+        console.log("[auth-change]", {
+          pathname,
+          event,
+          hasSession: Boolean(session),
+          hasUser: Boolean(session?.user),
+          userId: session?.user?.id ?? null,
+          isSessionChecking,
+          isRedirecting,
+        });
+      }
       if (cancelled || redirectingRef.current) return;
       if (!session?.user) {
+        setDebugHasSession(Boolean(session));
+        setDebugUserId(null);
+        setDebugLastBranch("auth:change-no-session");
+        authLog("set:isSessionChecking:false(no session event)", { pathname, event });
         setIsSessionChecking(false);
+        authLog("set:isRedirecting:false(no session event)", { pathname, event });
         setIsRedirecting(false);
         return;
       }
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        setDebugHasSession(true);
+        setDebugUserId(session.user.id);
+        setDebugLastBranch(`auth:change-${event.toLowerCase()}`);
+        authLog("set:isSessionChecking:true(auth change)", { pathname, event });
         setIsSessionChecking(true);
         void (async () => {
           const validUserId = await validateCurrentSessionUser();
@@ -217,9 +278,11 @@ export default function AuthPage() {
     return () => {
       cancelled = true;
       authDebugLog("session effect cleanup");
+      setDebugLastBranch("auth:effect-cleanup");
+      authLog("effect:cleanup", { pathname });
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [pathname, router]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -243,11 +306,20 @@ export default function AuthPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setDebugLastBranch("auth:login-no-user");
       setLoginMessage("ログイン状態を確認できませんでした。");
       return;
     }
 
-    const destination = await resolveAuthProfileDestination(user.id);
+    const destination = "/";
+    setDebugLastBranch("auth:login-success-redirect-home");
+    authLog("router.replace(login success)", {
+      pathname,
+      destination,
+      userId: user.id,
+      isSessionChecking,
+      isRedirecting,
+    });
     router.replace(destination);
   };
 
@@ -589,6 +661,22 @@ export default function AuthPage() {
         </section>
 
       </main>
+      {ENABLE_TEMP_DEBUG_PANEL ? (
+        <aside className="fixed bottom-2 right-2 z-[90] max-w-[88vw] rounded-md bg-black/75 px-2 py-1.5 text-[10px] leading-4 text-white">
+          <p>[auth-page]</p>
+          <p>path: {pathname}</p>
+          <p>session: {String(debugHasSession)}</p>
+          <p>user: {debugUserId ?? "-"}</p>
+          <p>checking: {String(isSessionChecking)}</p>
+          <p>redirecting: {String(isRedirecting)}</p>
+          <p>branch: {debugLastBranch}</p>
+        </aside>
+      ) : null}
+      {(isSessionChecking || isRedirecting) ? (
+        <aside className="fixed left-2 top-2 z-[100] rounded bg-black/85 px-2 py-1 text-xs text-white">
+          DEBUG AUTH REAL FILE
+        </aside>
+      ) : null}
     </div>
   );
 }

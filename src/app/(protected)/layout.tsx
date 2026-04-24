@@ -9,6 +9,8 @@ import { isAdminEmail } from "../../lib/admin-access";
 import { fetchProfileGateStatus } from "../../lib/account-status";
 
 export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as const;
+const ENABLE_TEMP_PROD_GUARD_LOGS = true;
+const ENABLE_TEMP_DEBUG_PANEL = true;
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -18,10 +20,24 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
+  const [debugHasSession, setDebugHasSession] = useState<boolean | null>(null);
+  const [debugUserId, setDebugUserId] = useState<string | null>(null);
+  const [debugProfileCompleted, setDebugProfileCompleted] = useState<boolean | null>(null);
+  const [debugIsSuspended, setDebugIsSuspended] = useState<boolean | null>(null);
+  const [debugLastBranch, setDebugLastBranch] = useState("guard:init");
   const isChatDetailPage = pathname.startsWith("/chat/") && pathname !== "/chat";
   const guardRunningRef = useRef(false);
   const guardCompletedUserIdRef = useRef<string | null>(null);
   const inviteCheckedUserIdRef = useRef<string | null>(null);
+  const guardLog = (...args: unknown[]) => {
+    if (!ENABLE_TEMP_PROD_GUARD_LOGS) return;
+    console.log("[protected-guard]", ...args);
+  };
+  const warnedProtectedRealFileRef = useRef(false);
+  if (!warnedProtectedRealFileRef.current) {
+    warnedProtectedRealFileRef.current = true;
+    console.warn("DEBUG AUTH REAL FILE: src/app/(protected)/layout.tsx");
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -30,32 +46,44 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       guardRunningRef.current = true;
       let shouldStayLoading = false;
       try {
+        setDebugLastBranch("guard:start");
+        guardLog("guard:start", { pathname, isChecking });
         setProfileGateError(null);
 
         const {
           data: { user },
           error: sessionUserError,
         } = await supabase.auth.getUser();
+        setDebugHasSession(Boolean(user));
+        setDebugUserId(user?.id ?? null);
 
         if (cancelled) return;
 
         const staleStatus = (sessionUserError as { status?: number } | null)?.status;
         if (sessionUserError && (staleStatus === 401 || staleStatus === 403)) {
+          setDebugLastBranch("guard:stale-session");
+          guardLog("branch:stale-session", { pathname, status: staleStatus });
           await supabase.auth.signOut({ scope: "local" });
+          guardLog("router.replace", { pathname, to: "/auth", branch: "stale-session" });
           router.replace("/auth");
           shouldStayLoading = true;
           return;
         }
 
         if (!user) {
+          setDebugLastBranch("guard:no-user");
           guardCompletedUserIdRef.current = null;
           inviteCheckedUserIdRef.current = null;
+          guardLog("branch:no-user", { pathname });
+          guardLog("router.replace", { pathname, to: "/auth", branch: "no-user" });
           router.replace("/auth");
           shouldStayLoading = true;
           return;
         }
 
         if (guardCompletedUserIdRef.current === user.id) {
+          setDebugLastBranch("guard:already-completed");
+          guardLog("branch:already-completed", { pathname, userId: user.id });
           setIsChecking(false);
           return;
         }
@@ -83,8 +111,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             { input_email: user.email ?? "", input_user_id: user.id }
           );
           if (inviteError) {
+            setDebugLastBranch("guard:invite-rpc-error");
             console.warn("[protected-guard] has_consumed_invite failed", inviteError);
           } else if (!hasConsumedInvite) {
+            setDebugLastBranch("guard:invite-not-consumed");
+            guardLog("branch:invite-not-consumed", { pathname, userId: user.id });
+            guardLog("router.replace", { pathname, to: "/auth", branch: "invite-not-consumed" });
             router.replace("/auth");
             shouldStayLoading = true;
             return;
@@ -95,9 +127,19 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         const status = await fetchProfileGateStatus(user.id);
+        setDebugProfileCompleted(status?.profileCompleted ?? null);
+        setDebugIsSuspended(status?.isSuspended ?? null);
+        guardLog("profile-status", {
+          pathname,
+          userId: user.id,
+          profileCompleted: status?.profileCompleted ?? null,
+          isSuspended: status?.isSuspended ?? null,
+        });
         if (cancelled) return;
 
         if (!status) {
+          setDebugLastBranch("guard:no-status");
+          guardLog("router.replace", { pathname, to: "/onboarding/profile", branch: "no-status" });
           router.replace("/onboarding/profile");
           shouldStayLoading = true;
           return;
@@ -105,12 +147,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
         // Keep admin recoverable even if accidentally suspended.
         if (status.isSuspended && !isAdminEmail(user.email)) {
+          setDebugLastBranch("guard:suspended");
+          guardLog("router.replace", { pathname, to: "/suspended", branch: "suspended" });
           router.replace("/suspended");
           shouldStayLoading = true;
           return;
         }
 
         if (!status.profileCompleted) {
+          setDebugLastBranch("guard:incomplete-profile");
+          guardLog("router.replace", { pathname, to: "/onboarding/profile", branch: "incomplete-profile" });
           router.replace("/onboarding/profile");
           shouldStayLoading = true;
           return;
@@ -130,12 +176,17 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           setTalkBadgeCount(0);
         }
         guardCompletedUserIdRef.current = user.id;
+        setDebugLastBranch("guard:profile-ok");
+        guardLog("guard:success", { pathname, userId: user.id });
       } catch (error) {
+        setDebugLastBranch("guard:catch-error");
         console.error("[protected-guard] unexpected guard error", error);
         setProfileGateError("画面の読み込みに失敗しました。再読み込みしてください。");
       } finally {
         guardRunningRef.current = false;
         if (!cancelled && !shouldStayLoading) {
+          setDebugLastBranch("guard:set-checking-false");
+          guardLog("set:isChecking:false", { pathname });
           setIsChecking(false);
         }
       }
@@ -159,6 +210,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             <p className="muted-text text-sm">読み込み中です...</p>
           </section>
         </main>
+        <aside className="fixed left-2 top-2 z-[100] rounded bg-black/85 px-2 py-1 text-xs text-white">
+          DEBUG AUTH REAL FILE
+        </aside>
       </div>
     );
   }
@@ -293,6 +347,18 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           ))}
         </div>
       </nav>
+      {ENABLE_TEMP_DEBUG_PANEL ? (
+        <aside className="fixed bottom-20 right-2 z-[95] max-w-[88vw] rounded-md bg-black/75 px-2 py-1.5 text-[10px] leading-4 text-white">
+          <p>[protected-guard]</p>
+          <p>path: {pathname}</p>
+          <p>session: {String(debugHasSession)}</p>
+          <p>user: {debugUserId ?? "-"}</p>
+          <p>isChecking: {String(isChecking)}</p>
+          <p>profileCompleted: {String(debugProfileCompleted)}</p>
+          <p>isSuspended: {String(debugIsSuspended)}</p>
+          <p>branch: {debugLastBranch}</p>
+        </aside>
+      ) : null}
     </div>
   );
 }
