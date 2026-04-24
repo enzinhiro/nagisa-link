@@ -96,7 +96,6 @@ function normalizeSearchText(value: string): string {
 const KEYWORD_VARIANT_GROUPS: string[][] = [
   ["漫画", "マンガ", "まんが", "コミック", "comic"],
   ["アニメ", "あにめ", "anime"],
-  ["ゲーム", "げーむ", "game", "switch", "スイッチ", "任天堂", "ニンテンドー"],
   ["読書", "どくしょ", "本", "絵本", "小説"],
   ["サッカー", "さっかー", "フットボール", "football"],
   ["野球", "やきゅう", "ベースボール", "baseball"],
@@ -126,12 +125,73 @@ const NORMALIZED_KEYWORD_VARIANT_GROUPS = KEYWORD_VARIANT_GROUPS.map((group) =>
   group.map((term) => normalizeSearchText(term))
 );
 
+const GAME_CATEGORY_GROUP = [
+  "ゲーム",
+  "げーむ",
+  "game",
+  "switch",
+  "スイッチ",
+  "任天堂スイッチ",
+  "ニンテンドースイッチ",
+  "nintendo switch",
+  "ニンテンドー",
+  "任天堂",
+  "pc",
+  "パソコン",
+  "ぱそこん",
+  "パソコンゲーム",
+  "コンピューター",
+  "computer",
+];
+
+const GAME_TITLE_GROUPS = [
+  ["マイクラ", "マインクラフト", "マイクラフト", "minecraft", "minecraft education", "マイクラ教育版"],
+  ["フォートナイト", "fortnite", "フォトナ"],
+  ["ロブロックス", "roblox", "ロブロ"],
+  ["バロラント", "valorant", "ヴァロラント", "ヴァロ"],
+  ["ポケモン", "pokémon", "pokemon", "ポケットモンスター"],
+  ["スプラトゥーン", "splatoon", "スプラ"],
+  ["あつ森", "どうぶつの森", "animal crossing"],
+  ["マリオ", "mario", "スーパーマリオ"],
+  ["スマブラ", "大乱闘スマッシュブラザーズ", "smash bros"],
+  ["ゼルダ", "zelda", "ゼルダの伝説"],
+  ["カービィ", "kirby"],
+  ["モンハン", "モンスターハンター", "monster hunter"],
+  ["妖怪ウォッチ", "ようかいウォッチ"],
+  ["太鼓の達人", "太鼓", "taiko"],
+  ["プロセカ", "プロジェクトセカイ", "project sekai"],
+  ["にゃんこ大戦争", "にゃんこ"],
+  ["apex", "エーペックス", "エペ"],
+].map((group) => group.map((term) => normalizeSearchText(term)));
+
+const NORMALIZED_GAME_CATEGORY_GROUP = GAME_CATEGORY_GROUP.map((term) => normalizeSearchText(term));
+const NORMALIZED_ALL_GAME_TERMS = Array.from(
+  new Set(NORMALIZED_GAME_CATEGORY_GROUP.concat(...GAME_TITLE_GROUPS))
+);
+
 function hasVariantGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
   if (!normalizedKeyword || !normalizedText) return false;
   return NORMALIZED_KEYWORD_VARIANT_GROUPS.some((group) => {
     const keywordHitsGroup = group.some((term) => normalizedKeyword.includes(term));
     if (!keywordHitsGroup) return false;
     return group.some((term) => normalizedText.includes(term));
+  });
+}
+
+function hasGameGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
+  if (!normalizedKeyword || !normalizedText) return false;
+
+  const keywordHitsGameCategory = NORMALIZED_GAME_CATEGORY_GROUP.some((term) =>
+    normalizedKeyword.includes(term)
+  );
+  if (keywordHitsGameCategory) {
+    return NORMALIZED_ALL_GAME_TERMS.some((term) => normalizedText.includes(term));
+  }
+
+  return GAME_TITLE_GROUPS.some((titleGroup) => {
+    const keywordHitsTitle = titleGroup.some((term) => normalizedKeyword.includes(term));
+    if (!keywordHitsTitle) return false;
+    return titleGroup.some((term) => normalizedText.includes(term));
   });
 }
 
@@ -152,7 +212,11 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
   ];
   return candidateTexts.some((text) => {
     const normalizedText = normalizeSearchText(text);
-    return normalizedText.includes(keyword) || hasVariantGroupMatch(keyword, normalizedText);
+    return (
+      normalizedText.includes(keyword) ||
+      hasVariantGroupMatch(keyword, normalizedText) ||
+      hasGameGroupMatch(keyword, normalizedText)
+    );
   });
 }
 
