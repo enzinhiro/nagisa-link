@@ -73,7 +73,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 input_user_id: user.id,
               })
               .then(({ error }) => {
-                if (error) console.warn("[protected-guard] link_invite_code_user failed", error);
+                if (error) console.warn("[protected-guard] link_invite_code_user failed");
               });
           }
 
@@ -85,7 +85,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             { input_email: user.email ?? "", input_user_id: user.id }
           );
           if (inviteError) {
-            console.warn("[protected-guard] has_consumed_invite failed", inviteError);
+            console.warn("[protected-guard] has_consumed_invite failed");
           } else if (!hasConsumedInvite) {
             if (inviteSignoutHandledUserIdRef.current !== user.id) {
               inviteSignoutHandledUserIdRef.current = user.id;
@@ -140,7 +140,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         }
         guardCompletedUserIdRef.current = user.id;
       } catch (error) {
-        console.error("[protected-guard] unexpected guard error", error);
+        console.error("[protected-guard] unexpected guard error");
         setProfileGateError("画面の読み込みに失敗しました。再読み込みしてください。");
       } finally {
         guardRunningRef.current = false;

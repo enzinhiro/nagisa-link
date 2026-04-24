@@ -137,7 +137,7 @@ export default function AuthPage() {
       try {
         await supabase.auth.signOut({ scope: "local" });
       } catch (error) {
-        console.error("[auth] failed to clear broken session", error);
+        console.error("[auth] failed to clear broken session");
       } finally {
         isRecoveringBrokenSession = false;
       }
@@ -334,7 +334,7 @@ export default function AuthPage() {
     );
 
     if (validateError) {
-      console.error("validate_invite_code error", validateError);
+      console.error("validate_invite_code error");
       setIsSignupSubmitting(false);
       setSignupSuccessEmail(null);
       setSignupMessage("招待コードの確認に失敗しました。時間をおいてもう一度お試しください。");
@@ -359,7 +359,7 @@ export default function AuthPage() {
     );
 
     if (consumeError) {
-      console.error("consume_invite_code error", consumeError);
+      console.error("consume_invite_code error");
       setIsSignupSubmitting(false);
       setSignupSuccessEmail(null);
       setSignupMessage("招待コードの確認に失敗しました。時間をおいてもう一度お試しください。");
