@@ -45,6 +45,7 @@ export default function AuthPage() {
   const [debugLastBranch, setDebugLastBranch] = useState("auth:init");
   const sessionCheckRunningRef = useRef(false);
   const redirectingRef = useRef(false);
+  const redirectFallbackTimerRef = useRef<number | null>(null);
   const authLog = (...args: unknown[]) => {
     if (!ENABLE_TEMP_PROD_AUTH_LOGS) return;
     console.log("[auth-page]", ...args);
@@ -171,6 +172,8 @@ export default function AuthPage() {
         setIsRedirecting(false);
         return;
       }
+      // Do not keep /auth loading while navigation is in flight.
+      setIsSessionChecking(false);
       authDebugLog("redirectIfAuthed", { userId, dest });
       authLog("router.replace", {
         pathname,
@@ -181,6 +184,17 @@ export default function AuthPage() {
         branch: "authenticated-home",
       });
       router.replace(dest);
+      if (typeof window !== "undefined") {
+        if (redirectFallbackTimerRef.current !== null) {
+          window.clearTimeout(redirectFallbackTimerRef.current);
+        }
+        redirectFallbackTimerRef.current = window.setTimeout(() => {
+          if (window.location.pathname === "/auth") {
+            setDebugLastBranch("auth:redirect-home-fallback");
+            window.location.replace("/");
+          }
+        }, 800);
+      }
     };
     const validateCurrentSessionUser = async (): Promise<string | null> => {
       const { data, error } = await supabase.auth.getUser();
@@ -290,6 +304,10 @@ export default function AuthPage() {
     });
     return () => {
       cancelled = true;
+      if (typeof window !== "undefined" && redirectFallbackTimerRef.current !== null) {
+        window.clearTimeout(redirectFallbackTimerRef.current);
+        redirectFallbackTimerRef.current = null;
+      }
       authDebugLog("session effect cleanup");
       setDebugLastBranch("auth:effect-cleanup");
       authLog("effect:cleanup", { pathname });
