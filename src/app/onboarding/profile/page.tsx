@@ -35,6 +35,16 @@ function isNoRowError(error: PostgrestError | null): boolean {
   return error.code === "PGRST116" || error.message.toLowerCase().includes("0 rows");
 }
 
+function logSupabaseProfileError(context: string, error: PostgrestError | null): void {
+  if (!error) return;
+  console.error(`[onboarding/profile] ${context}`, {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+}
+
 const CHILD_INTEREST_TAGS = [
   "ゲーム",
   "YouTube",
@@ -118,7 +128,7 @@ export default function ProfileOnboardingPage() {
       if (cancelled) return;
 
       if (error && !isNoRowError(error)) {
-        console.error("[onboarding/profile] profiles bootstrap select failed", error);
+        logSupabaseProfileError("profiles bootstrap select failed", error);
         setMessage(PROFILE_BOOTSTRAP_ERROR_UI);
         setIsBooting(false);
         return;
@@ -247,32 +257,57 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: userId,
-        real_name: realName.trim(),
-        nickname: nickname.trim(),
-        area,
-        child_age_group: childAgeGroup,
-        child_gender: childGender,
-        child_interest_tags: childInterestTags,
-        want_to_connect: wantToConnect.trim(),
-        connection_preference:
-          connectionPreference === "その他（自由入力）"
-            ? customConnectionPreference.trim()
-            : connectionPreference,
-        meeting_range: meetingRange,
-        intro: intro.trim(),
-        profile_completed: true,
-        avatar_seed: nextAvatarSeed,
-      },
-      { onConflict: "id" }
-    );
+    const profilePayload = {
+      real_name: realName.trim(),
+      nickname: nickname.trim(),
+      area,
+      child_age_group: childAgeGroup,
+      child_gender: childGender,
+      child_interest_tags: childInterestTags,
+      want_to_connect: wantToConnect.trim(),
+      connection_preference:
+        connectionPreference === "その他（自由入力）"
+          ? customConnectionPreference.trim()
+          : connectionPreference,
+      meeting_range: meetingRange,
+      intro: intro.trim(),
+      profile_completed: true,
+      avatar_seed: nextAvatarSeed,
+    };
+    const profileColumns = Object.keys(profilePayload);
+    console.info("[onboarding/profile] profile payload columns", profileColumns);
+
+    const { data: existingProfile, error: existingProfileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (existingProfileError && !isNoRowError(existingProfileError)) {
+      setIsSubmitting(false);
+      logSupabaseProfileError("profiles save precheck select failed", existingProfileError);
+      setMessage(PROFILE_SAVE_ERROR_UI);
+      return;
+    }
+
+    let saveError: PostgrestError | null = null;
+    if (existingProfile) {
+      const { error } = await supabase
+        .from("profiles")
+        .update(profilePayload)
+        .eq("id", userId);
+      saveError = error;
+    } else {
+      const { error } = await supabase
+        .from("profiles")
+        .insert({ id: userId, ...profilePayload });
+      saveError = error;
+    }
 
     setIsSubmitting(false);
 
-    if (error) {
-      console.error("[onboarding/profile] profiles upsert failed", error);
+    if (saveError) {
+      logSupabaseProfileError("profiles save failed", saveError);
       setMessage(PROFILE_SAVE_ERROR_UI);
       return;
     }
