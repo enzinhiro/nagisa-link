@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
@@ -19,10 +19,15 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
   const isChatDetailPage = pathname.startsWith("/chat/") && pathname !== "/chat";
+  const guardRunningRef = useRef(false);
+  const guardCompletedUserIdRef = useRef<string | null>(null);
+  const inviteCheckedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const guard = async () => {
+      if (guardRunningRef.current) return;
+      guardRunningRef.current = true;
       let shouldStayLoading = false;
       try {
         setProfileGateError(null);
@@ -43,38 +48,48 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         }
 
         if (!user) {
+          guardCompletedUserIdRef.current = null;
+          inviteCheckedUserIdRef.current = null;
           router.replace("/auth");
           shouldStayLoading = true;
+          return;
+        }
+
+        if (guardCompletedUserIdRef.current === user.id) {
+          setIsChecking(false);
           return;
         }
 
         setIsAdminUser(isAdminEmail(user.email));
 
-        // Non-blocking best effort: invite linking should not freeze page routing.
-        if (user.email) {
-          void supabase
-            .rpc("link_invite_code_user", {
-              input_email: user.email,
-              input_user_id: user.id,
-            })
-            .then(({ error }) => {
-              if (error) console.warn("[protected-guard] link_invite_code_user failed", error);
-            });
-        }
+        if (inviteCheckedUserIdRef.current !== user.id) {
+          // Non-blocking best effort: invite linking should not freeze page routing.
+          if (user.email) {
+            void supabase
+              .rpc("link_invite_code_user", {
+                input_email: user.email,
+                input_user_id: user.id,
+              })
+              .then(({ error }) => {
+                if (error) console.warn("[protected-guard] link_invite_code_user failed", error);
+              });
+          }
 
-        if (cancelled) return;
+          if (cancelled) return;
 
-        // If RPC fails temporarily, do not block the whole app on loading.
-        const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
-          "has_consumed_invite",
-          { input_email: user.email ?? "", input_user_id: user.id }
-        );
-        if (inviteError) {
-          console.warn("[protected-guard] has_consumed_invite failed", inviteError);
-        } else if (!hasConsumedInvite) {
-          router.replace("/auth");
-          shouldStayLoading = true;
-          return;
+          // If RPC fails temporarily, do not block the whole app on loading.
+          const { data: hasConsumedInvite, error: inviteError } = await supabase.rpc(
+            "has_consumed_invite",
+            { input_email: user.email ?? "", input_user_id: user.id }
+          );
+          if (inviteError) {
+            console.warn("[protected-guard] has_consumed_invite failed", inviteError);
+          } else if (!hasConsumedInvite) {
+            router.replace("/auth");
+            shouldStayLoading = true;
+            return;
+          }
+          inviteCheckedUserIdRef.current = user.id;
         }
 
         if (cancelled) return;
@@ -114,10 +129,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         } else {
           setTalkBadgeCount(0);
         }
+        guardCompletedUserIdRef.current = user.id;
       } catch (error) {
         console.error("[protected-guard] unexpected guard error", error);
         setProfileGateError("画面の読み込みに失敗しました。再読み込みしてください。");
       } finally {
+        guardRunningRef.current = false;
         if (!cancelled && !shouldStayLoading) {
           setIsChecking(false);
         }
@@ -128,7 +145,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     setIsMenuOpen(false);
