@@ -29,6 +29,7 @@ const PROFILE_SAVE_ERROR_UI =
   "プロフィールの保存に失敗しました。時間をおいてもう一度お試しください。";
 const PROFILE_BOOTSTRAP_ERROR_UI =
   "プロフィール情報の読み込みに失敗しました。時間をおいてもう一度お試しください。";
+const PROFILE_URL_BLOCK_MESSAGE = "プロフィール内にURLや外部リンクは入力できません。";
 
 function isNoRowError(error: PostgrestError | null): boolean {
   if (!error) return false;
@@ -43,6 +44,16 @@ function logSupabaseProfileError(context: string, error: PostgrestError | null):
     details: error.details,
     hint: error.hint,
   });
+}
+
+function containsUrlLikeText(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+
+  // Blocks protocol URLs, www-prefix, and domain-like strings such as example.com or line.me.
+  const urlLikePattern =
+    /(https?:\/\/[^\s]+)|(www\.[^\s]+)|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+\b/i;
+  return urlLikePattern.test(normalized);
 }
 
 const CHILD_INTEREST_TAGS = [
@@ -243,6 +254,17 @@ export default function ProfileOnboardingPage() {
         setMessage("つながり方の希望（自由入力）は60文字以内で入力してください。");
         return;
       }
+    }
+
+    const freeTextValues = [
+      realName.trim(),
+      wantToConnect.trim(),
+      intro.trim(),
+      connectionPreference === "その他（自由入力）" ? customConnectionPreference.trim() : "",
+    ];
+    if (freeTextValues.some(containsUrlLikeText)) {
+      setMessage(PROFILE_URL_BLOCK_MESSAGE);
+      return;
     }
 
     setIsSubmitting(true);
