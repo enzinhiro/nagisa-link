@@ -1,48 +1,45 @@
 import Link from "next/link";
-import { SERVICE_NAME } from "../../lib/brand";
 
 export default function OperatorPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">運営情報</p>
-          <h1 className="hero-title text-2xl font-semibold">運営元</h1>
-          <p className="muted-text text-sm">
-            {SERVICE_NAME} の運営に関する公開情報です。
-          </p>
-        </header>
+        <section className="soft-card flex flex-col gap-3.5 text-sm leading-relaxed text-[#365f78]">
+          <h1 className="text-xl font-semibold leading-snug tracking-tight text-[#2a4a5f]">
+            運営元
+          </h1>
 
-        <section className="soft-card flex flex-col gap-4 text-sm leading-relaxed text-[#365f78]">
-          <div>
-            <p className="label-text mb-1">事業名</p>
-            <p>ENZIN - 縁人 -</p>
-          </div>
-          <div>
-            <p className="label-text mb-1">代表者</p>
-            <p>五十嵐 寛記</p>
-          </div>
-          <div>
-            <p className="label-text mb-1">所在地</p>
-            <p className="whitespace-pre-line">
-              〒104-0061{"\n"}
-              東京都中央区銀座1丁目12番4号 N&E BLD.6F
-            </p>
-          </div>
-          <div>
-            <p className="label-text mb-1">事業内容</p>
-            <p>コミュニティ運営、イベント企画、人材採用支援、アプリ開発支援</p>
-          </div>
-          <div>
-            <p className="label-text mb-1">メールアドレス</p>
-            <p>
-              <a
-                href="mailto:info@enzin-link.jp"
-                className="text-[#3f7aa0] underline underline-offset-2 decoration-[#9fcde5]"
-              >
-                info@enzin-link.jp
-              </a>
-            </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="label-text mb-0.5">事業名</p>
+              <p>ENZIN - 縁人 -</p>
+            </div>
+            <div>
+              <p className="label-text mb-0.5">代表者</p>
+              <p>五十嵐 寛記</p>
+            </div>
+            <div>
+              <p className="label-text mb-0.5">所在地</p>
+              <p className="whitespace-pre-line">
+                〒104-0061{"\n"}
+                東京都中央区銀座1丁目12番4号 N&E BLD.6F
+              </p>
+            </div>
+            <div>
+              <p className="label-text mb-0.5">事業内容</p>
+              <p>コミュニティ運営、イベント企画、採用支援、アプリ開発支援</p>
+            </div>
+            <div>
+              <p className="label-text mb-0.5">お問い合わせ</p>
+              <p>
+                <a
+                  href="mailto:info@enzin-link.jp"
+                  className="text-[#3f7aa0] underline underline-offset-2 decoration-[#9fcde5]"
+                >
+                  info@enzin-link.jp
+                </a>
+              </p>
+            </div>
           </div>
         </section>
 
