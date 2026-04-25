@@ -30,7 +30,7 @@ export default function OperatorPage() {
               <p>コミュニティ運営、イベント企画、採用支援、アプリ開発支援</p>
             </div>
             <div>
-              <p className="label-text mb-0.5">お問い合わせ</p>
+              <p className="label-text mb-0.5">メールアドレス</p>
               <p>
                 <a
                   href="mailto:info@enzin-link.jp"
