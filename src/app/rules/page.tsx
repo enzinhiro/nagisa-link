@@ -10,7 +10,6 @@ export default function RulesPage() {
           <h1 className="text-xl font-semibold leading-snug tracking-tight text-[#2a4a5f]">
             NAGISA Linkの使い方
           </h1>
-          <p className="muted-text text-sm">はじめて使う方に向けた、かんたんな案内です。</p>
 
           <section className="rounded-2xl border border-[#f2d9e7] bg-[#fff7fb] px-4 py-3">
             <h2 className="section-title mb-1.5">安心して使えるための工夫</h2>
