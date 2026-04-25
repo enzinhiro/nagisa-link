@@ -8,11 +8,23 @@ export default function RulesPage() {
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3.5 text-sm leading-relaxed text-[#365f78]">
           <h1 className="text-xl font-semibold leading-snug tracking-tight text-[#2a4a5f]">
-            渚リンクの使い方
+            NAGISA Linkの使い方
           </h1>
           <p className="muted-text text-sm">はじめて使う方に向けた、かんたんな案内です。</p>
 
-          <div className="flex flex-col gap-4">
+          <section className="rounded-2xl border border-[#f2d9e7] bg-[#fff7fb] px-4 py-3">
+            <h2 className="section-title mb-1.5">安心して使えるための工夫</h2>
+            <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+              <li>本名・メールアドレスは利用者には表示されません。</li>
+              <li>プロフィールやチャットにURL・外部リンクは入力できません。</li>
+              <li>画像やファイルの送信はできません。</li>
+              <li>相互に「話したい」になった相手とだけチャットできます。</li>
+              <li>チャットは24時間限定で始まり、最大72時間で終了します。</li>
+              <li>困ったときは、チャット内から運営に知らせることができます。</li>
+            </ul>
+          </section>
+
+          <div className="flex flex-col gap-3.5">
             <div>
               <h2 className="section-title mb-1.5">ホーム</h2>
               <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
@@ -50,7 +62,6 @@ export default function RulesPage() {
               <h2 className="section-title mb-1.5">気をつけること</h2>
               <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
                 <li>チャット内で個人情報を共有する場合は、慎重に進めてください。</li>
-                <li>困ったときは、チャット内の「運営に知らせる」を使ってください。</li>
               </ul>
             </div>
           </div>
