@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { OperatorLink } from "../../components/operator-link";
 import { AUTH_TOP_IMAGE_PATH, SERVICE_NAME } from "../../lib/brand";
 
 const SIGNUP_FORM_STORAGE_KEY = "nagisa-link-signup-form";
@@ -508,6 +509,7 @@ export default function AuthPage() {
               >
                 パスワードを忘れた方はこちら
               </Link>
+              <OperatorLink />
             </form>
           ) : (
             <form className="flex flex-col gap-3.5" onSubmit={handleSignUp}>
@@ -612,6 +614,7 @@ export default function AuthPage() {
               <p className="text-[11px] muted-text">
                 認証メール確認後、ログインしてプロフィール登録へ進んでください。
               </p>
+              <OperatorLink />
             </form>
           )}
             </>
