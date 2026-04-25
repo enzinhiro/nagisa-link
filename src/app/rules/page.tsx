@@ -6,29 +6,20 @@ export default function RulesPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">ルール</p>
-          <h1 className="hero-title text-2xl font-semibold">安心して使うためのご案内</h1>
-        </header>
-
-        <section className="soft-card flex flex-col gap-2.5">
-          <h2 className="section-title">このサービスの使い方で大事なこと</h2>
-          <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
-            <li>個人情報の共有は慎重に進めましょう。</li>
-            <li>チャットではURLや画像は送信できません。</li>
-            <li>チャットは制限時間制で、時間が来ると自動的に終了します。</li>
-            <li>困ったときは、チャット内の「運営に知らせる」をご利用ください。</li>
-          </ul>
-        </section>
-
-        <section className="soft-card flex flex-col gap-2.5">
-          <h2 className="section-title">詳しいルール</h2>
-          <Link href="/terms" className="secondary-btn !h-10">
-            利用規約を見る
-          </Link>
-          <Link href="/privacy" className="secondary-btn !h-10">
-            プライバシーポリシーを見る
-          </Link>
+        <section className="soft-card flex flex-col gap-3.5 text-sm leading-relaxed text-[#365f78]">
+          <h1 className="text-xl font-semibold leading-snug tracking-tight text-[#2a4a5f]">
+            安心して使うためのご案内
+          </h1>
+          <div>
+            <h2 className="section-title mb-2">このサービスの使い方で大事なこと</h2>
+            <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+              <li>気になる相手がいたら「話したい」を送れます。</li>
+              <li>相手も「話したい」を返すと、チャットを始められます。</li>
+              <li>チャットは期間限定です。時間が来ると自動で終了します。</li>
+              <li>個人情報の共有は慎重に進めてください。</li>
+              <li>困ったときは、チャット内の「運営に知らせる」をご利用ください。</li>
+            </ul>
+          </div>
         </section>
 
         <Link href="/" className="text-center text-sm muted-text underline underline-offset-3">

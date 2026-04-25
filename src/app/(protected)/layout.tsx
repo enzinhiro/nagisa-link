@@ -253,7 +253,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                   href="/rules"
                   className="block rounded-xl px-3 py-2 text-sm text-[#365f78] hover:bg-[#f2f9ff]"
                 >
-                  ルール
+                  使い方
                 </Link>
                 {isAdminUser ? (
                   <div className="mt-1 border-t border-[#edf4f8] pt-1.5">
