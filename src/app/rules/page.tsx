@@ -8,17 +8,51 @@ export default function RulesPage() {
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3.5 text-sm leading-relaxed text-[#365f78]">
           <h1 className="text-xl font-semibold leading-snug tracking-tight text-[#2a4a5f]">
-            安心して使うためのご案内
+            渚リンクの使い方
           </h1>
-          <div>
-            <h2 className="section-title mb-2">このサービスの使い方で大事なこと</h2>
-            <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
-              <li>気になる相手がいたら「話したい」を送れます。</li>
-              <li>相手も「話したい」を返すと、チャットを始められます。</li>
-              <li>チャットは期間限定です。時間が来ると自動で終了します。</li>
-              <li>個人情報の共有は慎重に進めてください。</li>
-              <li>困ったときは、チャット内の「運営に知らせる」をご利用ください。</li>
-            </ul>
+          <p className="muted-text text-sm">はじめて使う方に向けた、かんたんな案内です。</p>
+
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="section-title mb-1.5">ホーム</h2>
+              <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+                <li>通知やお知らせが表示されます。</li>
+                <li>新しく届いた「話したい」や、進行中のチャットを確認できます。</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="section-title mb-1.5">さがす</h2>
+              <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+                <li>ママを検索できます。</li>
+                <li>カテゴリ検索、地域検索、フリーワード検索ができます。</li>
+                <li>話してみたいママがいたら、詳細画面から「話したい」ボタンを押してください。</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="section-title mb-1.5">話したい</h2>
+              <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+                <li>自分が送ったリクエストや、相手から届いたリクエストを確認できます。</li>
+                <li>お互いに「話したい」になった相手とは、チャットを始められます。</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="section-title mb-1.5">チャット</h2>
+              <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+                <li>成立すると、24時間限定の1対1チャットが始まります。</li>
+                <li>お互いに合意した場合は、最大72時間まで延長できます。</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="section-title mb-1.5">気をつけること</h2>
+              <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
+                <li>チャット内で個人情報を共有する場合は、慎重に進めてください。</li>
+                <li>困ったときは、チャット内の「運営に知らせる」を使ってください。</li>
+              </ul>
+            </div>
           </div>
         </section>
 
