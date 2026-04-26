@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fcfaf6;
-  --foreground: #274155;
+  --background: #fffaf7;
+  --foreground: #2d4658;
   --surface: #ffffff;
-  --surface-soft: #f7fbfe;
-  --primary-soft: #dff2ff;
-  --primary: #8bc7e8;
-  --primary-deep: #2f6786;
-  --secondary-soft: #feeaf2;
-  --border-soft: #d9e8f1;
-  --border-soft-strong: #c8dde9;
-  --text-muted: #668093;
-  --shadow-soft: 0 10px 26px rgba(72, 119, 146, 0.09);
+  --surface-soft: #fffafd;
+  --primary-soft: #e9f6ff;
+  --primary: #9bcfe9;
+  --primary-deep: #3e6782;
+  --secondary-soft: #fff0f6;
+  --border-soft: #e7dfea;
+  --border-soft-strong: #d7dce7;
+  --text-muted: #708696;
+  --shadow-soft: 0 10px 24px rgba(102, 122, 141, 0.09);
 }
 
 @theme inline {
@@ -44,9 +44,9 @@ a {
   min-height: 100dvh;
   padding: 18px 14px 28px;
   background:
-    radial-gradient(90% 45% at 100% -10%, rgba(159, 218, 247, 0.16), transparent 60%),
-    radial-gradient(80% 35% at -10% 0%, rgba(255, 222, 234, 0.2), transparent 70%),
-    linear-gradient(180deg, #f6fcff 0%, #fcfaf6 48%, #fff9fb 100%);
+    radial-gradient(92% 42% at 100% -8%, rgba(177, 222, 244, 0.15), transparent 62%),
+    radial-gradient(86% 38% at -10% -2%, rgba(255, 225, 237, 0.18), transparent 70%),
+    linear-gradient(180deg, #fffaf7 0%, #fffefe 52%, #f7fbff 100%);
 }
 
 .mock-shell {
@@ -63,15 +63,15 @@ a {
 .soft-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
-  border-radius: 18px;
-  box-shadow: 0 8px 20px rgba(72, 119, 146, 0.07);
+  border-radius: 20px;
+  box-shadow: 0 9px 20px rgba(103, 122, 142, 0.08);
   padding: 16px 14px;
 }
 
 .soft-card-subtle {
   background: var(--surface-soft);
-  border: 1px solid #e5eff5;
-  border-radius: 16px;
+  border: 1px solid #e8e2ee;
+  border-radius: 18px;
   padding: 12px;
 }
 
@@ -88,12 +88,12 @@ a {
 .tab-btn {
   height: 38px;
   border-radius: 9999px;
-  border: 1px solid #d0e3ef;
+  border: 1px solid #e3dce8;
   font-size: 13px;
   font-weight: 600;
   color: #4a6a7f;
   background: #ffffff;
-  box-shadow: 0 1px 0 rgba(76, 129, 158, 0.06);
+  box-shadow: 0 1px 0 rgba(112, 120, 142, 0.06);
   cursor: pointer;
 }
 
@@ -102,10 +102,10 @@ a {
 }
 
 .tab-btn-active {
-  border-color: #95cde8;
-  color: #1f5875;
-  background: linear-gradient(180deg, #daf2ff 0%, #cdeeff 100%);
-  box-shadow: 0 6px 14px rgba(108, 169, 203, 0.18);
+  border-color: #ebcadb;
+  color: #7a4f66;
+  background: linear-gradient(180deg, #fff2f8 0%, #ffeaf3 100%);
+  box-shadow: 0 6px 14px rgba(184, 132, 159, 0.16);
 }
 
 .pill-blue {
@@ -187,8 +187,8 @@ a {
 .mock-input:focus,
 .mock-select:focus,
 .mock-textarea:focus {
-  border-color: #a8d7ef;
-  box-shadow: 0 0 0 4px rgba(184, 224, 246, 0.28);
+  border-color: #e8bfd4;
+  box-shadow: 0 0 0 4px rgba(245, 219, 232, 0.5);
   outline: none;
 }
 
@@ -207,16 +207,16 @@ a {
 }
 
 .primary-btn {
-  border: 1px solid #8fcbe8;
-  background: linear-gradient(180deg, #d9f2ff 0%, #caebff 100%);
-  color: #1f5470;
-  box-shadow: 0 8px 18px rgba(107, 170, 206, 0.22);
+  border: 1px solid #e8bfd4;
+  background: linear-gradient(180deg, #fff0f6 0%, #ffe9f2 100%);
+  color: #7b4e65;
+  box-shadow: 0 8px 16px rgba(185, 139, 164, 0.2);
 }
 
 .secondary-btn {
-  border: 1px solid #d9e8f1;
-  background: #fcfeff;
-  color: #42657a;
+  border: 1px solid #e1dfea;
+  background: #fffefe;
+  color: #536f81;
 }
 
 .primary-btn:hover,

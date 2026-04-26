@@ -12,6 +12,42 @@ export const PROTECTED_APP_PATH_HINTS = ["/", "/search", "/talk", "/chat"] as co
 const APP_HEADER_BASE_HEIGHT = "3.5rem";
 const APP_HEADER_TOTAL_HEIGHT = `calc(${APP_HEADER_BASE_HEIGHT} + env(safe-area-inset-top, 0px))`;
 
+function TabIcon({ kind }: { kind: "home" | "search" | "talk" | "chat" }) {
+  if (kind === "home") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path d="M3 10.8 12 4l9 6.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6.5 10.5V20h11v-9.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (kind === "search") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="M16.2 16.2 20 20" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "talk") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path
+          d="M12 19.2c-.3 0-.6-.1-.9-.3C8.6 17.2 4 13.8 4 9.1 4 6.7 5.9 5 8.3 5c1.5 0 2.8.7 3.7 1.9A4.5 4.5 0 0 1 15.7 5C18.1 5 20 6.7 20 9.1c0 4.7-4.6 8.1-7.1 9.8-.3.2-.6.3-.9.3Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M5 7.5h14a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H9l-6 0v-8.5a2 2 0 0 1 2-2Z" />
+      <path d="M8 11.5h8M8 15h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -193,10 +229,10 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   const tabs = [
-    { href: "/", label: "ホーム", active: pathname === "/" },
-    { href: "/search", label: "さがす", active: pathname.startsWith("/search") },
-    { href: "/talk", label: "話したい", active: pathname.startsWith("/talk"), badge: talkBadgeCount },
-    { href: "/chat", label: "チャット", active: pathname.startsWith("/chat") },
+    { href: "/", label: "ホーム", icon: "home" as const, active: pathname === "/" },
+    { href: "/search", label: "さがす", icon: "search" as const, active: pathname.startsWith("/search") },
+    { href: "/talk", label: "話したい", icon: "talk" as const, active: pathname.startsWith("/talk"), badge: talkBadgeCount },
+    { href: "/chat", label: "チャット", icon: "chat" as const, active: pathname.startsWith("/chat") },
   ];
 
   return (
@@ -209,7 +245,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       style={{ paddingTop: `calc(${APP_HEADER_TOTAL_HEIGHT} + 1px)` }}
     >
       <header
-        className="fixed left-0 right-0 top-0 z-50 border-b border-[#edf4f8] bg-[#f9fdff]/95 backdrop-blur"
+        className="fixed left-0 right-0 top-0 z-50 border-b border-[#ece2ea] bg-[#fffdfc]/95 shadow-[0_2px_8px_rgba(116,123,136,0.06)] backdrop-blur"
         style={{ height: APP_HEADER_TOTAL_HEIGHT, paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="mx-auto flex h-14 w-full max-w-[460px] items-center justify-between px-3">
@@ -286,18 +322,19 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       ) : (
         children
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#e3edf3] bg-[#fffdfa]/96 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#eadfe8] bg-[#fffdfc]/96 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
         <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
           {tabs.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`relative flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs ${
+              className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs ${
                 tab.active
-                  ? "text-[#2f5f79] bg-[#ecf8ff] shadow-[inset_0_0_0_1px_rgba(156,206,231,0.35)]"
-                  : "text-[#6b8393]"
+                  ? "bg-[#fff0f6] text-[#8a546c] shadow-[inset_0_0_0_1px_rgba(235,196,216,0.7)]"
+                  : "text-[#667c8c]"
               }`}
             >
+              <span className="mb-0.5 inline-flex"><TabIcon kind={tab.icon} /></span>
               <span>{tab.label}</span>
               {"badge" in tab && (tab.badge ?? 0) > 0 ? (
                 <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
