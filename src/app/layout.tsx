@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: SERVICE_NAME,
   description: `${SERVICE_NAME} 公式アプリ`,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "NAGISA",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -33,6 +39,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#ecf8ff",
 };
 
 export default function RootLayout({
