@@ -8,6 +8,8 @@ export default function PerksPage() {
   const [query, setQuery] = useState("");
   const [area, setArea] = useState<PerkArea>("すべて");
   const [selectedCategories, setSelectedCategories] = useState<PerkCategory[]>([]);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [categoryError, setCategoryError] = useState("");
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -22,9 +24,25 @@ export default function PerksPage() {
   }, [area, query, selectedCategories]);
 
   const toggleCategory = (category: PerkCategory) => {
-    setSelectedCategories((current) =>
-      current.includes(category) ? current.filter((item) => item !== category) : [...current, category]
-    );
+    setSelectedCategories((current) => {
+      if (current.includes(category)) {
+        setCategoryError("");
+        return current.filter((item) => item !== category);
+      }
+      if (current.length >= 3) {
+        setCategoryError("カテゴリーは最大3つまでです。");
+        return current;
+      }
+      setCategoryError("");
+      return [...current, category];
+    });
+  };
+
+  const resetConditions = () => {
+    setQuery("");
+    setArea("すべて");
+    setSelectedCategories([]);
+    setCategoryError("");
   };
 
   return (
@@ -53,44 +71,97 @@ export default function PerksPage() {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <div className="flex flex-wrap gap-2">
-            {PERK_AREAS.map((item) => {
-              const active = area === item;
-              return (
+          <button
+            type="button"
+            onClick={() => {
+              setIsDetailOpen((current) => !current);
+              setCategoryError("");
+            }}
+            className="inline-flex h-9 w-fit items-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-3 text-xs font-semibold text-[#3e6e88]"
+          >
+            {isDetailOpen ? "条件を閉じる" : "詳細条件"}
+          </button>
+
+          {area !== "すべて" || selectedCategories.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {area !== "すべて" ? (
                 <button
-                  key={item}
                   type="button"
-                  onClick={() => setArea(item)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    active
-                      ? "border-[#f0cddd] bg-[#fff0f6] text-[#7c4f64]"
-                      : "border-[#d8e7ef] bg-white text-[#4e6d80]"
-                  }`}
+                  onClick={() => setArea("すべて")}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2.5 py-1 text-[11px] text-[#4a6e83]"
                 >
-                  {item}
+                  {area} <span aria-hidden>×</span>
                 </button>
-              );
-            })}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {PERK_CATEGORIES.map((category) => {
-              const active = selectedCategories.includes(category);
-              return (
+              ) : null}
+              {selectedCategories.map((category) => (
                 <button
-                  key={category}
+                  key={`chip-${category}`}
                   type="button"
                   onClick={() => toggleCategory(category)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                    active
-                      ? "border-[#efc9da] bg-[#ffeef6] text-[#7e4d65]"
-                      : "border-[#d8e7ef] bg-white text-[#4f6f84]"
-                  }`}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#efc9da] bg-[#ffeef6] px-2.5 py-1 text-[11px] text-[#7d4d64]"
                 >
-                  {category}
+                  {category} <span aria-hidden>×</span>
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : null}
+
+          {isDetailOpen ? (
+            <section className="rounded-2xl border border-[#d8e7ef] bg-[#f9fcff] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-[#4b6f84]">エリア</p>
+                <button
+                  type="button"
+                  onClick={resetConditions}
+                  className="text-[11px] font-medium text-[#3f7aa0] underline underline-offset-2"
+                >
+                  条件をリセット
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PERK_AREAS.map((item) => {
+                  const active = area === item;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setArea(item)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        active
+                          ? "border-[#f0cddd] bg-[#fff0f6] text-[#7c4f64]"
+                          : "border-[#d8e7ef] bg-white text-[#4e6d80]"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-3 text-xs font-semibold text-[#4b6f84]">カテゴリー</p>
+              <p className="mt-1 text-[11px] text-[#6f8797]">カテゴリーは最大3つまで選択できます。</p>
+              {categoryError ? <p className="mt-1 text-[11px] text-rose-700">{categoryError}</p> : null}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PERK_CATEGORIES.map((category) => {
+                  const active = selectedCategories.includes(category);
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                        active
+                          ? "border-[#efc9da] bg-[#ffeef6] text-[#7e4d65]"
+                          : "border-[#d8e7ef] bg-white text-[#4f6f84]"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
         </section>
 
         {filtered.length === 0 ? (
