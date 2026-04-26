@@ -15,19 +15,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: SERVICE_NAME,
+  applicationName: SERVICE_NAME,
   description: `${SERVICE_NAME} 公式アプリ`,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "NAGISA",
+    title: SERVICE_NAME,
     statusBarStyle: "default",
   },
   icons: {
     icon: [
       { url: "/favicon.ico" },
-      { url: "/icon.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/apple-touch-icon.png" }],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     title: SERVICE_NAME,
