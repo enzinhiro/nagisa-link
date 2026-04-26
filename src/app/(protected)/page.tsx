@@ -180,23 +180,28 @@ export default function Home() {
           ) : null}
         </section>
 
-        <section className="rounded-[20px] border border-[#f0dce7] bg-gradient-to-br from-[#fff8fc] via-[#fffefc] to-[#f4fbff] px-4 py-4 shadow-[0_10px_24px_rgba(88,118,139,0.1)]">
-          <div className="flex items-start gap-3">
-            <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#f3d8e5] bg-[#fff1f8] text-xl">
-              🎟️
+        <section className="rounded-[22px] border border-[#ecd8e5] bg-gradient-to-br from-[#fffaf7] via-[#fff3f8] to-[#f5fbff] px-4 py-4 shadow-[0_9px_20px_rgba(114,123,138,0.09)]">
+          <div className="flex items-start gap-3.5">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#efcadb] bg-[#ffedf5] text-[22px] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+              🎫
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="section-title">地元特典</h2>
-              <p className="mt-1 text-xs leading-relaxed text-[#5e7a8d]">
+              <div className="flex items-center gap-2">
+                <h2 className="section-title">地元特典</h2>
+                <span className="rounded-full border border-[#f0cfdd] bg-[#fff2f8] px-2 py-0.5 text-[10px] text-[#7b5268]">
+                  会員限定
+                </span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-[#5f7a8d]">
                 逗子・葉山・横須賀で使える、NAGISA Link会員向け特典です。
               </p>
             </div>
           </div>
           <Link
             href="/perks"
-            className="mt-3 inline-flex h-10 items-center justify-center rounded-full border border-[#d6e6ef] bg-white px-4 text-sm font-semibold text-[#3d6f89]"
+            className="mt-3 inline-flex h-10 items-center justify-center gap-1 rounded-full border border-[#e9bfd3] bg-gradient-to-b from-[#fff0f6] to-[#ffe8f2] px-4 text-sm font-semibold text-[#7d4f66] shadow-[0_6px_12px_rgba(192,142,166,0.18)]"
           >
-            特典を見る
+            特典を見る <span aria-hidden>→</span>
           </Link>
         </section>
       </main>
