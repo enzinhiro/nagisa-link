@@ -179,6 +179,26 @@ export default function Home() {
             </p>
           ) : null}
         </section>
+
+        <section className="rounded-[20px] border border-[#f0dce7] bg-gradient-to-br from-[#fff8fc] via-[#fffefc] to-[#f4fbff] px-4 py-4 shadow-[0_10px_24px_rgba(88,118,139,0.1)]">
+          <div className="flex items-start gap-3">
+            <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#f3d8e5] bg-[#fff1f8] text-xl">
+              🎟️
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="section-title">地元特典</h2>
+              <p className="mt-1 text-xs leading-relaxed text-[#5e7a8d]">
+                逗子・葉山・横須賀で使える、NAGISA Link会員向け特典です。
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/perks"
+            className="mt-3 inline-flex h-10 items-center justify-center rounded-full border border-[#d6e6ef] bg-white px-4 text-sm font-semibold text-[#3d6f89]"
+          >
+            特典を見る
+          </Link>
+        </section>
       </main>
     </div>
   );
