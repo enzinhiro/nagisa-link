@@ -115,7 +115,7 @@ export default function Home() {
           ) : !hasActivity ? (
             <div className="soft-card-subtle flex flex-col gap-2">
               <p className="section-note">いまは新しいお知らせはありません。</p>
-              <p className="text-xs muted-text">オファーや一致は「話したい」タブでも確認できます。</p>
+              <p className="text-xs muted-text">届いた「話したい」や一致は「話したい」タブでも確認できます。</p>
             </div>
           ) : (
             <ul className="flex flex-col gap-2.5 text-sm text-[#365f78]">
@@ -125,7 +125,7 @@ export default function Home() {
                     href="/talk"
                     className="flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#f5dfe6] bg-[#fff5f8] px-3 py-2.5"
                   >
-                    <span>届いたオファーが {incomingPendingCount} 件あります</span>
+                    <span>届いた話したいが {incomingPendingCount} 件あります</span>
                     <span className="inline-flex h-8 min-w-[68px] items-center justify-center rounded-full border border-[#d8e9f4] bg-white px-3 text-xs font-semibold text-[#3f7aa0]">
                       確認
                     </span>

@@ -44,7 +44,7 @@ export default function RulesPage() {
             <div>
               <h2 className="section-title mb-1.5">話したい</h2>
               <ul className="list-disc pl-5 text-sm leading-6 text-[#365f78]">
-                <li>自分が送ったリクエストや、相手から届いたリクエストを確認できます。</li>
+                <li>自分が送った話したいや、相手から届いた話したいを確認できます。</li>
                 <li>お互いに「話したい」になった相手とは、チャットを始められます。</li>
               </ul>
             </div>

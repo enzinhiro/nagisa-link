@@ -202,12 +202,12 @@ export default function TalkPage() {
     );
     setReceivedCards(
       uniqueReceived
-        .map((item) => toCard(item.otherUserId, "オファーが届いています", item.wantId))
+        .map((item) => toCard(item.otherUserId, "話したいが届いています", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
     setSentCards(
       uniqueSent
-        .map((item) => toCard(item.otherUserId, "オファー中", item.wantId))
+        .map((item) => toCard(item.otherUserId, "話したい中", item.wantId))
         .filter((v): v is TalkCard => v !== null)
     );
     const ended = Array.from(endedOtherIds)
@@ -399,7 +399,7 @@ export default function TalkPage() {
 
         {!loading && !message && !hasAnyCards ? (
           <section className="soft-card">
-            <p className="muted-text text-sm">オファーはまだありません。</p>
+            <p className="muted-text text-sm">まだ「話したい」はありません。</p>
           </section>
         ) : null}
 
@@ -423,23 +423,23 @@ export default function TalkPage() {
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">オファーが届いています</h2>
+              <h2 className="section-title">話したいが届いています</h2>
               {receivedCards.length > 0 ? (
                 receivedCards.map((card) => renderCard(card, "received"))
               ) : (
                 <div className="soft-card-subtle">
-                  <p className="section-note">まだ届いたリクエストはありません。</p>
+                  <p className="section-note">まだ届いた「話したい」はありません。</p>
                 </div>
               )}
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">オファー中</h2>
+              <h2 className="section-title">話したい中</h2>
               {sentCards.length > 0 ? (
                 sentCards.map((card) => renderCard(card, "sent"))
               ) : (
                 <div className="soft-card-subtle">
-                  <p className="section-note">まだ送ったリクエストはありません。</p>
+                  <p className="section-note">まだ送った「話したい」はありません。</p>
                 </div>
               )}
             </section>
