@@ -9,6 +9,7 @@ import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
 import { getVisibleConnectionAchievementCounts } from "../../../../lib/profile/connection-achievements";
 import { normalizeChildGender, shouldShowPublicChildGender } from "../../../../lib/profile/child-gender";
+import { isVisiblePublicValue } from "../../../../lib/profile/public-visibility";
 
 type ProfileDetail = {
   id: string;
@@ -28,10 +29,6 @@ type ProfileDetail = {
 type RawProfileDetail = Omit<ProfileDetail, "connection_achievement_count"> & {
   connection_achievement_count: number | string | null;
 };
-
-function hasText(value: string | null | undefined): boolean {
-  return String(value ?? "").trim().length > 0;
-}
 
 export default function SearchDetailPage() {
   const params = useParams<{ id: string }>();
@@ -166,9 +163,16 @@ export default function SearchDetailPage() {
   const isOwnProfile = currentUserId !== null && profile !== null && currentUserId === profile.id;
   const achievementCount = Number(profile?.connection_achievement_count ?? 0);
   const visibleChildGender = normalizeChildGender(profile?.child_gender);
-  const visibleInterestTags = (profile?.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 5);
-  const profileLead = hasText(profile?.want_to_connect) ? profile?.want_to_connect : "";
-  const profileIntro = hasText(profile?.intro) ? profile?.intro : "";
+  const visibleInterestTags = (profile?.child_interest_tags ?? []).filter((tag) => isVisiblePublicValue(tag)).slice(0, 5);
+  const profileLead = isVisiblePublicValue(profile?.want_to_connect) ? profile?.want_to_connect : "";
+  const profileIntro = isVisiblePublicValue(profile?.intro) ? profile?.intro : "";
+  const showArea = isVisiblePublicValue(profile?.area);
+  const showAgeGroup = isVisiblePublicValue(profile?.child_age_group);
+  const showChildGender = shouldShowPublicChildGender(visibleChildGender);
+  const showConnectionPreference = isVisiblePublicValue(profile?.connection_preference);
+  const showMeetingRange = isVisiblePublicValue(profile?.meeting_range);
+  const hasSupplementaryInfo =
+    visibleInterestTags.length > 0 || showChildGender || showConnectionPreference || showMeetingRange;
 
   return (
     <div className="mock-page">
@@ -194,9 +198,9 @@ export default function SearchDetailPage() {
                   <ProfileAvatar userId={profile.id} avatarSeed={profile.avatar_seed} nickname={profile.nickname} />
                   <div className="min-w-0">
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
-                    {(hasText(profile.area) || hasText(profile.child_age_group)) ? (
+                    {(showArea || showAgeGroup) ? (
                       <p className="text-sm muted-text">
-                        {[profile.area, profile.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                        {[profile.area, profile.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                       </p>
                     ) : null}
                   </div>
@@ -222,40 +226,42 @@ export default function SearchDetailPage() {
               ) : null}
             </section>
 
-            <section className="soft-card flex flex-col gap-3">
-              <h2 className="section-title text-[15px]">プロフィール補足</h2>
-              {visibleInterestTags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {visibleInterestTags.map((tag) => (
-                    <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              {shouldShowPublicChildGender(visibleChildGender) || hasText(profile.connection_preference) || hasText(profile.meeting_range) ? (
-                <div className="flex flex-col gap-2.5">
-                  {shouldShowPublicChildGender(visibleChildGender) ? (
-                    <p className="text-sm text-[#45687e]">
-                      <span className="text-xs text-[#6f8796]">お子さんの性別: </span>
-                      {visibleChildGender}
-                    </p>
-                  ) : null}
-                  {hasText(profile.connection_preference) ? (
-                    <p className="text-sm text-[#45687e]">
-                      <span className="text-xs text-[#6f8796]">つながり方の希望: </span>
-                      {profile.connection_preference}
-                    </p>
-                  ) : null}
-                  {hasText(profile.meeting_range) ? (
-                    <p className="text-sm text-[#45687e]">
-                      <span className="text-xs text-[#6f8796]">会いやすい範囲: </span>
-                      {profile.meeting_range}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </section>
+            {hasSupplementaryInfo ? (
+              <section className="soft-card flex flex-col gap-3">
+                <h2 className="section-title text-[15px]">プロフィール補足</h2>
+                {visibleInterestTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {visibleInterestTags.map((tag) => (
+                      <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {showChildGender || showConnectionPreference || showMeetingRange ? (
+                  <div className="flex flex-col gap-2.5">
+                    {showChildGender ? (
+                      <p className="text-sm text-[#45687e]">
+                        <span className="text-xs text-[#6f8796]">お子さんの性別: </span>
+                        {visibleChildGender}
+                      </p>
+                    ) : null}
+                    {showConnectionPreference ? (
+                      <p className="text-sm text-[#45687e]">
+                        <span className="text-xs text-[#6f8796]">つながり方の希望: </span>
+                        {profile.connection_preference}
+                      </p>
+                    ) : null}
+                    {showMeetingRange ? (
+                      <p className="text-sm text-[#45687e]">
+                        <span className="text-xs text-[#6f8796]">会いやすい範囲: </span>
+                        {profile.meeting_range}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
 
             <section className="soft-card flex flex-col gap-2.5">
               {talkMessage ? <p className="text-sm text-[#3f6680]">{talkMessage}</p> : null}

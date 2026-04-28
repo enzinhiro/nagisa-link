@@ -8,6 +8,7 @@ import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 import { getVisibleConnectionAchievementCounts } from "../../../lib/profile/connection-achievements";
+import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
 
 type SearchProfileCard = {
   id: string;
@@ -91,10 +92,6 @@ function chipPreview(text: string, max = 18) {
 
 function normalizeSearchText(value: string): string {
   return value.trim().toLowerCase().replace(/[\s　]+/g, "");
-}
-
-function hasText(value: string | null | undefined): boolean {
-  return String(value ?? "").trim().length > 0;
 }
 
 function clampTextStyle(lines: number) {
@@ -656,11 +653,17 @@ export default function SearchPage() {
                   <p className="section-note">タグ条件を外した候補</p>
                   {relaxedCards.map((card) => {
                     const achievementCount = Number(card.connection_achievement_count ?? 0);
-                    const showArea = hasText(card.area);
-                    const showAgeGroup = hasText(card.child_age_group);
-                    const profileLead = hasText(card.want_to_connect) ? card.want_to_connect : card.intro;
-                    const hasProfileLead = hasText(profileLead);
-                    const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
+                    const showArea = isVisiblePublicValue(card.area);
+                    const showAgeGroup = isVisiblePublicValue(card.child_age_group);
+                    const profileLead = isVisiblePublicValue(card.want_to_connect)
+                      ? card.want_to_connect
+                      : isVisiblePublicValue(card.intro)
+                        ? card.intro
+                        : "";
+                    const hasProfileLead = isVisiblePublicValue(profileLead);
+                    const visibleTags = (card.child_interest_tags ?? [])
+                      .filter((tag) => isVisiblePublicValue(tag))
+                      .slice(0, 3);
                     return (
                     <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -683,7 +686,7 @@ export default function SearchPage() {
                       </div>
                       {showArea || showAgeGroup ? (
                         <p className="person-meta-line">
-                          {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                          {[card.area, card.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                         </p>
                       ) : null}
                       {hasProfileLead ? (
@@ -717,11 +720,17 @@ export default function SearchPage() {
             !message &&
             cards.map((card) => {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
-              const showArea = hasText(card.area);
-              const showAgeGroup = hasText(card.child_age_group);
-              const profileLead = hasText(card.want_to_connect) ? card.want_to_connect : card.intro;
-              const hasProfileLead = hasText(profileLead);
-              const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
+              const showArea = isVisiblePublicValue(card.area);
+              const showAgeGroup = isVisiblePublicValue(card.child_age_group);
+              const profileLead = isVisiblePublicValue(card.want_to_connect)
+                ? card.want_to_connect
+                : isVisiblePublicValue(card.intro)
+                  ? card.intro
+                  : "";
+              const hasProfileLead = isVisiblePublicValue(profileLead);
+              const visibleTags = (card.child_interest_tags ?? [])
+                .filter((tag) => isVisiblePublicValue(tag))
+                .slice(0, 3);
               return (
               <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
                 <div className="flex items-start justify-between gap-2">
@@ -744,7 +753,7 @@ export default function SearchPage() {
                 </div>
                 {showArea || showAgeGroup ? (
                   <p className="person-meta-line">
-                    {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                    {[card.area, card.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                   </p>
                 ) : null}
                 {hasProfileLead ? (

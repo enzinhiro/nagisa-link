@@ -1,3 +1,5 @@
+import { isVisiblePublicValue } from "./public-visibility";
+
 export const CHILD_GENDER_OPTIONS = [
   "男の子",
   "女の子",
@@ -20,6 +22,6 @@ export function normalizeChildGender(value: string | null | undefined): string {
 
 export function shouldShowPublicChildGender(value: string | null | undefined): boolean {
   const normalized = normalizeChildGender(value);
-  if (!normalized) return false;
+  if (!isVisiblePublicValue(normalized)) return false;
   return normalized !== "その他・回答しない";
 }
