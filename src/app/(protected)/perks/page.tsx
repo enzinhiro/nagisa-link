@@ -107,7 +107,7 @@ export default function PerksPage() {
           ) : null}
 
           {isDetailOpen ? (
-            <section className="rounded-2xl border border-[#d8e7ef] bg-[#f9fcff] p-3">
+            <section className="rounded-2xl border border-[#e3e7ef] bg-[#fbfdff] p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#4b6f84]">エリア</p>
                 <button
@@ -165,7 +165,7 @@ export default function PerksPage() {
         </section>
 
         {filtered.length === 0 ? (
-          <section className="soft-card-subtle">
+          <section className="empty-state-card">
             <p className="text-sm text-[#44657a]">条件に合う特典がまだありません。</p>
             <p className="mt-1 text-xs muted-text">条件を変えてお試しください。</p>
           </section>
@@ -174,7 +174,7 @@ export default function PerksPage() {
             {filtered.map((perk) => (
               <article
                 key={perk.id}
-                className="rounded-[20px] border border-[#f0dee7] bg-white px-4 py-3.5 shadow-[0_8px_18px_rgba(87,118,142,0.08)]"
+                className="soft-card !rounded-[18px] !px-4 !py-3.5"
               >
                 <div className="flex items-start gap-3">
                   <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#f2d7e4] bg-[#fff5f9] text-lg">

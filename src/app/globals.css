@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fffaf7;
+  --background: #fffaf8;
   --foreground: #2d4658;
   --surface: #ffffff;
-  --surface-soft: #fffafd;
+  --surface-soft: #fffdfd;
   --primary-soft: #e9f6ff;
   --primary: #9bcfe9;
   --primary-deep: #3e6782;
-  --secondary-soft: #fff0f6;
-  --border-soft: #e7dfea;
-  --border-soft-strong: #d7dce7;
+  --secondary-soft: #fff2f7;
+  --border-soft: #ece4ea;
+  --border-soft-strong: #dcdfe7;
   --text-muted: #708696;
-  --shadow-soft: 0 10px 24px rgba(102, 122, 141, 0.09);
+  --shadow-soft: 0 8px 20px rgba(109, 124, 141, 0.08);
 }
 
 @theme inline {
@@ -44,9 +44,9 @@ a {
   min-height: 100dvh;
   padding: 18px 14px 28px;
   background:
-    radial-gradient(92% 42% at 100% -8%, rgba(177, 222, 244, 0.15), transparent 62%),
-    radial-gradient(86% 38% at -10% -2%, rgba(255, 225, 237, 0.18), transparent 70%),
-    linear-gradient(180deg, #fffaf7 0%, #fffefe 52%, #f7fbff 100%);
+    radial-gradient(92% 42% at 100% -8%, rgba(177, 222, 244, 0.13), transparent 62%),
+    radial-gradient(86% 38% at -10% -2%, rgba(255, 225, 237, 0.22), transparent 70%),
+    linear-gradient(180deg, #fffaf8 0%, #fffdfd 52%, #f8fbff 100%);
 }
 
 .mock-shell {
@@ -63,16 +63,16 @@ a {
 .soft-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  box-shadow: 0 9px 20px rgba(103, 122, 142, 0.08);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
   padding: 16px 14px;
 }
 
 .soft-card-subtle {
   background: var(--surface-soft);
-  border: 1px solid #e8e2ee;
-  border-radius: 18px;
-  padding: 12px;
+  border: 1px solid #eee8ef;
+  border-radius: 14px;
+  padding: 11px 12px;
 }
 
 .tab-shell {
@@ -194,9 +194,9 @@ a {
 
 .primary-btn,
 .secondary-btn {
-  border-radius: 9999px;
+  border-radius: 14px;
   width: 100%;
-  height: 46px;
+  height: 44px;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -207,16 +207,17 @@ a {
 }
 
 .primary-btn {
-  border: 1px solid #e8bfd4;
-  background: linear-gradient(180deg, #fff0f6 0%, #ffe9f2 100%);
-  color: #7b4e65;
-  box-shadow: 0 8px 16px rgba(185, 139, 164, 0.2);
+  border: 1px solid #efcddd;
+  background: linear-gradient(180deg, #fff3f8 0%, #ffeaf3 100%);
+  color: #7d5067;
+  box-shadow: 0 7px 14px rgba(192, 149, 172, 0.2);
 }
 
 .secondary-btn {
-  border: 1px solid #e1dfea;
-  background: #fffefe;
-  color: #536f81;
+  border: 1px solid #e5e3ea;
+  background: #ffffff;
+  color: #566f81;
+  box-shadow: 0 2px 6px rgba(118, 130, 144, 0.06);
 }
 
 .primary-btn:hover,
@@ -227,6 +228,26 @@ a {
 .primary-btn:active,
 .secondary-btn:active {
   transform: translateY(1px);
+}
+
+.empty-state-card {
+  border: 1px solid #f0e9ef;
+  background: linear-gradient(180deg, #fffefe 0%, #fffafc 100%);
+  border-radius: 13px;
+  padding: 10px 12px;
+}
+
+.perk-feature-card {
+  border-radius: 20px;
+  border: 1px solid #edd8e3;
+  background: linear-gradient(145deg, #fff9f8 0%, #fff2f7 62%, #f4faff 100%);
+  box-shadow: 0 10px 20px rgba(123, 131, 142, 0.1);
+}
+
+.perk-feature-cta {
+  border: 1px solid #e9bfd3;
+  background: linear-gradient(180deg, #fff0f6 0%, #ffe9f2 100%);
+  box-shadow: 0 6px 12px rgba(194, 143, 166, 0.18);
 }
 
 .primary-btn:disabled,

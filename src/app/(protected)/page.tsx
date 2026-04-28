@@ -113,7 +113,7 @@ export default function Home() {
           ) : message ? (
             <p className="text-sm text-rose-700">{message}</p>
           ) : !hasActivity ? (
-            <div className="soft-card-subtle flex flex-col gap-2">
+            <div className="empty-state-card flex flex-col gap-1.5">
               <p className="section-note">いまは新しいお知らせはありません。</p>
               <p className="text-xs muted-text">届いた「話したい」や一致は「話したい」タブでも確認できます。</p>
             </div>
@@ -168,7 +168,7 @@ export default function Home() {
             <p className="section-note">最大2件</p>
           </div>
           {!loading && !message && activeChatCount === 0 ? (
-            <div className="soft-card-subtle flex flex-col gap-2">
+            <div className="empty-state-card flex flex-col gap-1.5">
               <p className="section-note">いまは表示できるチャットがありません。</p>
               <p className="text-xs muted-text">一致後に「チャットへ進む」から始められます。</p>
             </div>
@@ -180,7 +180,7 @@ export default function Home() {
           ) : null}
         </section>
 
-        <section className="rounded-[22px] border border-[#ecd8e5] bg-gradient-to-br from-[#fffaf7] via-[#fff3f8] to-[#f5fbff] px-4 py-4 shadow-[0_9px_20px_rgba(114,123,138,0.09)]">
+        <section className="perk-feature-card px-4 py-4">
           <div className="flex items-start gap-3.5">
             <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#efcadb] bg-[#ffedf5] text-[22px] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
               🎫
@@ -199,7 +199,7 @@ export default function Home() {
           </div>
           <Link
             href="/perks"
-            className="mt-3 inline-flex h-10 items-center justify-center gap-1 rounded-full border border-[#e9bfd3] bg-gradient-to-b from-[#fff0f6] to-[#ffe8f2] px-4 text-sm font-semibold text-[#7d4f66] shadow-[0_6px_12px_rgba(192,142,166,0.18)]"
+            className="perk-feature-cta mt-3 inline-flex h-10 items-center justify-center gap-1 rounded-full px-4 text-sm font-semibold text-[#7d4f66]"
           >
             特典を見る <span aria-hidden>→</span>
           </Link>
