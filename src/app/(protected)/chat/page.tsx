@@ -7,6 +7,7 @@ import { toMamaDisplayName } from "../../../lib/profile/displayName";
 import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 import { getChatLastReadAt } from "../../../lib/chat/read-state";
+import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
 
 type ChatRow = {
   id: string;
@@ -20,12 +21,15 @@ type ProfileRow = {
   id: string;
   nickname: string;
   avatar_seed: number | null;
+  area: string | null;
+  child_age_group: string | null;
 };
 
 type MessageSummaryRow = {
   chat_id: string;
   sender_user_id: string;
   created_at: string;
+  body: string;
 };
 
 type ChatCard = {
@@ -35,8 +39,12 @@ type ChatCard = {
   otherNickname: string;
   otherAvatarSeed: number | null;
   expiresAt: string;
+  area: string;
+  childAgeGroup: string;
   isFallback: boolean;
   hasUnread: boolean;
+  latestMessageBody: string;
+  latestMessageAt: string | null;
 };
 
 export default function ChatIndexPage() {
@@ -99,15 +107,15 @@ export default function ChatIndexPage() {
 
       let { data: profilesData, error: profilesError } = await supabase
         .from("public_profiles")
-        .select("id,nickname,avatar_seed")
+        .select("id,nickname,avatar_seed,area,child_age_group")
         .in("id", otherIds);
       if (profilesError && isMissingProfileColumnError(profilesError)) {
         const fallback = await supabase
           .from("public_profiles")
-          .select("id,nickname")
+          .select("id,nickname,area,child_age_group")
           .in("id", otherIds);
         profilesData = Array.isArray(fallback.data)
-          ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
+          ? fallback.data.map((row) => ({ ...row, avatar_seed: null, area: null, child_age_group: null }))
           : fallback.data;
       }
 
@@ -118,7 +126,7 @@ export default function ChatIndexPage() {
 
       const { data: messageRows } = await supabase
         .from("messages")
-        .select("chat_id,sender_user_id,created_at")
+        .select("chat_id,sender_user_id,created_at,body")
         .in("chat_id", chatIds)
         .order("created_at", { ascending: false });
       const messageMap = new Map<string, MessageSummaryRow[]>();
@@ -147,8 +155,12 @@ export default function ChatIndexPage() {
             otherNickname: "相手",
             otherAvatarSeed: null,
             expiresAt: chat.expires_at,
+            area: "",
+            childAgeGroup: "",
             isFallback: true,
             hasUnread,
+            latestMessageBody: latestMessage?.body ?? "",
+            latestMessageAt: latestMessage?.created_at ?? null,
           };
         }
         return {
@@ -158,8 +170,12 @@ export default function ChatIndexPage() {
           otherNickname: otherProfile.nickname,
           otherAvatarSeed: otherProfile.avatar_seed,
           expiresAt: chat.expires_at,
+          area: otherProfile.area ?? "",
+          childAgeGroup: otherProfile.child_age_group ?? "",
           isFallback: false,
           hasUnread,
+          latestMessageBody: latestMessage?.body ?? "",
+          latestMessageAt: latestMessage?.created_at ?? null,
         };
       });
 
@@ -206,11 +222,18 @@ export default function ChatIndexPage() {
     };
   }, [fetchChats, logRealtime]);
 
-  const renderCard = (card: ChatCard, type: "active" | "ended") => {
+  const progressingChats = activeChats.filter((card) => card.hasUnread);
+  const waitingChats = activeChats.filter((card) => !card.hasUnread);
+
+  const renderCard = (card: ChatCard, type: "active" | "waiting" | "ended") => {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
+    const isNearEnd = type !== "ended" && remainingHour <= 6;
+    const showArea = isVisiblePublicValue(card.area);
+    const showAgeGroup = isVisiblePublicValue(card.childAgeGroup);
+    const showLatestMessage = isVisiblePublicValue(card.latestMessageBody);
     return (
       <article key={`${type}-${card.id}`} className="soft-card flex flex-col gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <ProfileAvatar
             userId={card.otherUserId}
             avatarSeed={card.otherAvatarSeed}
@@ -218,19 +241,36 @@ export default function ChatIndexPage() {
             className="h-10 w-10"
           />
           <div className="min-w-0 flex flex-1 flex-col gap-1.5">
-            <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
-            {type === "active" && card.hasUnread ? (
-              <span className="inline-flex w-fit rounded-full bg-[#fff0f6] px-2 py-0.5 text-[10px] text-[#9a4d6f]">
-                新着
-              </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{card.otherDisplayName}</h3>
+              {card.hasUnread ? (
+                <span className="inline-flex w-fit rounded-full bg-[#fff0f6] px-2 py-0.5 text-[10px] text-[#9a4d6f]">
+                  新着
+                </span>
+              ) : null}
+            </div>
+            {showArea || showAgeGroup ? (
+              <p className="person-meta-line">
+                {[card.area, card.childAgeGroup].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+              </p>
+            ) : null}
+            {showLatestMessage ? (
+              <p className="text-xs text-[#5e7a8d] line-clamp-1">
+                {card.latestMessageBody}
+              </p>
             ) : null}
           </div>
-          <span className="inline-flex w-fit rounded-full px-2.5 py-1 text-xs pill-blue">
-            {type === "active" ? `残り${remainingHour}時間` : "終了済み"}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className={`chat-state-badge ${type === "active" ? "chat-state-active" : ""} ${type === "waiting" ? "chat-state-waiting" : ""} ${type === "ended" ? "chat-state-ended" : ""}`}>
+              {type === "active" ? "進行中" : type === "waiting" ? "待機中" : "終了"}
+            </span>
+            <span className={`chat-remaining-badge ${type === "ended" ? "chat-remaining-ended" : isNearEnd ? "chat-remaining-soon" : "chat-remaining-active"}`}>
+              {type === "ended" ? "終了しました" : `残り${remainingHour}時間`}
+            </span>
+          </div>
         </div>
-        <Link href={`/chat/${card.id}`} className="secondary-btn !h-11">
-          チャットを開く
+        <Link href={`/chat/${card.id}`} className={`${type === "active" ? "primary-btn" : "secondary-btn"} !h-11`}>
+          チャットへ進む
         </Link>
       </article>
     );
@@ -257,20 +297,28 @@ export default function ChatIndexPage() {
             <section className="screen-stack">
               <div className="flex items-end justify-between gap-2">
                 <h2 className="section-title">進行中</h2>
-                <p className="section-note">いまやり取りできる相手</p>
+                <p className="section-note">新着メッセージあり</p>
               </div>
-              {activeChats.length > 0 ? (
-                activeChats.map((chat) => renderCard(chat, "active"))
+              {progressingChats.length > 0 ? (
+                progressingChats.map((chat) => renderCard(chat, "active"))
               ) : (
-                activeChats.length === 0 && endedChats.length === 0 ? (
-                  <div className="soft-card-subtle">
-                    <p className="section-note">チャットルームはまだありません。</p>
-                  </div>
-                ) : (
-                  <div className="soft-card-subtle">
-                    <p className="section-note">進行中のチャットはありません。届いた「話したい」を確認してみましょう。</p>
-                  </div>
-                )
+                <div className="empty-state-card">
+                  <p className="section-note">進行中のチャットはありません。</p>
+                </div>
+              )}
+            </section>
+
+            <section className="screen-stack">
+              <div className="flex items-end justify-between gap-2">
+                <h2 className="section-title">待機中</h2>
+                <p className="section-note">相手の返信待ち</p>
+              </div>
+              {waitingChats.length > 0 ? (
+                waitingChats.map((chat) => renderCard(chat, "waiting"))
+              ) : (
+                <div className="empty-state-card">
+                  <p className="section-note">待機中のチャットはありません。</p>
+                </div>
               )}
             </section>
 
@@ -282,7 +330,7 @@ export default function ChatIndexPage() {
               {endedChats.length > 0 ? (
                 endedChats.map((chat) => renderCard(chat, "ended"))
               ) : (
-                <div className="soft-card-subtle">
+                <div className="empty-state-card">
                   <p className="section-note">終了済みのチャットはありません。</p>
                 </div>
               )}
