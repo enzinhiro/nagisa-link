@@ -107,7 +107,7 @@ export default function PerksPage() {
           ) : null}
 
           {isDetailOpen ? (
-            <section className="rounded-2xl border border-[#e3e7ef] bg-[#fbfdff] p-3">
+            <section className="mt-1 border-t border-[#e8edf2] pt-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#4b6f84]">エリア</p>
                 <button
@@ -202,7 +202,7 @@ export default function PerksPage() {
                   ))}
                 </div>
 
-                <p className="mt-3 rounded-xl border border-[#f2dce7] bg-[#fff8fb] px-3 py-2 text-sm font-medium text-[#5f4860]">
+                <p className="perk-benefit-strip mt-3 text-sm font-semibold text-[#5f4860]">
                   {perk.benefit}
                 </p>
 

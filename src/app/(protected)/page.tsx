@@ -113,7 +113,7 @@ export default function Home() {
           ) : message ? (
             <p className="text-sm text-rose-700">{message}</p>
           ) : !hasActivity ? (
-            <div className="empty-state-card flex flex-col gap-1.5">
+            <div className="inline-soft-area flex flex-col gap-1.5">
               <p className="section-note">いまは新しいお知らせはありません。</p>
               <p className="text-xs muted-text">届いた「話したい」や一致は「話したい」タブでも確認できます。</p>
             </div>
@@ -168,7 +168,7 @@ export default function Home() {
             <p className="section-note">最大2件</p>
           </div>
           {!loading && !message && activeChatCount === 0 ? (
-            <div className="empty-state-card flex flex-col gap-1.5">
+            <div className="inline-soft-area flex flex-col gap-1.5">
               <p className="section-note">いまは表示できるチャットがありません。</p>
               <p className="text-xs muted-text">一致後に「チャットへ進む」から始められます。</p>
             </div>

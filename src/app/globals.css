@@ -231,9 +231,9 @@ a {
 }
 
 .empty-state-card {
-  border: 1px solid #f0e9ef;
+  border: 1px dashed #ece4eb;
   background: linear-gradient(180deg, #fffefe 0%, #fffafc 100%);
-  border-radius: 13px;
+  border-radius: 12px;
   padding: 10px 12px;
 }
 
@@ -248,6 +248,24 @@ a {
   border: 1px solid #e9bfd3;
   background: linear-gradient(180deg, #fff0f6 0%, #ffe9f2 100%);
   box-shadow: 0 6px 12px rgba(194, 143, 166, 0.18);
+}
+
+.card-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(225, 233, 240, 0.2), rgba(225, 233, 240, 0.8), rgba(225, 233, 240, 0.2));
+}
+
+.inline-soft-area {
+  border-radius: 12px;
+  background: #fff9fc;
+  padding: 10px 12px;
+}
+
+.perk-benefit-strip {
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff6fa 0%, #fff2f8 100%);
+  padding: 10px 12px;
 }
 
 .primary-btn:disabled,
