@@ -93,6 +93,10 @@ function normalizeSearchText(value: string): string {
   return value.trim().toLowerCase().replace(/[\s　]+/g, "");
 }
 
+function hasText(value: string | null | undefined): boolean {
+  return String(value ?? "").trim().length > 0;
+}
+
 const KEYWORD_VARIANT_GROUPS: string[][] = [
   ["漫画", "マンガ", "まんが", "コミック", "comic"],
   ["アニメ", "あにめ", "anime"],
@@ -643,6 +647,10 @@ export default function SearchPage() {
                   <p className="section-note">タグ条件を外した候補</p>
                   {relaxedCards.map((card) => {
                     const achievementCount = Number(card.connection_achievement_count ?? 0);
+                    const showArea = hasText(card.area);
+                    const showAgeGroup = hasText(card.child_age_group);
+                    const showWantToConnect = hasText(card.want_to_connect);
+                    const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
                     return (
                     <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
@@ -663,27 +671,33 @@ export default function SearchPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-xs text-[#6f8796]">
-                        {card.area} ・ {card.child_age_group}
-                      </p>
-                      <p
-                        className="text-sm text-[#365f78] leading-snug"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {card.want_to_connect}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {(card.child_interest_tags ?? []).slice(0, 3).map((tag) => (
+                      {showArea || showAgeGroup ? (
+                        <p className="text-xs text-[#6f8796]">
+                          {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                        </p>
+                      ) : null}
+                      {showWantToConnect ? (
+                        <p
+                          className="text-sm text-[#365f78] leading-snug"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {card.want_to_connect}
+                        </p>
+                      ) : null}
+                      {visibleTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {visibleTags.map((tag) => (
                           <span key={`${card.id}-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
                             {tag}
                           </span>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : null}
                       <Link href={`/search/${card.id}`} className="secondary-btn !h-10 text-center">
                         詳細を見る
                       </Link>
@@ -698,6 +712,10 @@ export default function SearchPage() {
             !message &&
             cards.map((card) => {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
+              const showArea = hasText(card.area);
+              const showAgeGroup = hasText(card.child_age_group);
+              const showWantToConnect = hasText(card.want_to_connect);
+              const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
               return (
               <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
                 <div className="flex items-start justify-between gap-2">
@@ -718,27 +736,33 @@ export default function SearchPage() {
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs text-[#6f8796]">
-                  {card.area} ・ {card.child_age_group}
-                </p>
-                <p
-                  className="text-sm leading-relaxed text-[#365f78]"
-                  style={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {card.want_to_connect}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(card.child_interest_tags ?? []).slice(0, 3).map((tag) => (
+                {showArea || showAgeGroup ? (
+                  <p className="text-xs text-[#6f8796]">
+                    {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                  </p>
+                ) : null}
+                {showWantToConnect ? (
+                  <p
+                    className="text-sm leading-relaxed text-[#365f78]"
+                    style={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {card.want_to_connect}
+                  </p>
+                ) : null}
+                {visibleTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {visibleTags.map((tag) => (
                     <span key={`${card.id}-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
                       {tag}
                     </span>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : null}
                 <Link href={`/search/${card.id}`} className="secondary-btn !h-11 text-center">
                   詳細を見る
                 </Link>

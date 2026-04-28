@@ -8,6 +8,7 @@ import { canPerformUserWriteAction } from "../../../../lib/account-status";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-query";
 import { getVisibleConnectionAchievementCounts } from "../../../../lib/profile/connection-achievements";
+import { normalizeChildGender, shouldShowPublicChildGender } from "../../../../lib/profile/child-gender";
 
 type ProfileDetail = {
   id: string;
@@ -27,6 +28,10 @@ type ProfileDetail = {
 type RawProfileDetail = Omit<ProfileDetail, "connection_achievement_count"> & {
   connection_achievement_count: number | string | null;
 };
+
+function hasText(value: string | null | undefined): boolean {
+  return String(value ?? "").trim().length > 0;
+}
 
 export default function SearchDetailPage() {
   const params = useParams<{ id: string }>();
@@ -160,6 +165,8 @@ export default function SearchDetailPage() {
 
   const isOwnProfile = currentUserId !== null && profile !== null && currentUserId === profile.id;
   const achievementCount = Number(profile?.connection_achievement_count ?? 0);
+  const visibleChildGender = normalizeChildGender(profile?.child_gender);
+  const visibleInterestTags = (profile?.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 5);
 
   return (
     <div className="mock-page">
@@ -185,7 +192,7 @@ export default function SearchDetailPage() {
                   <ProfileAvatar userId={profile.id} avatarSeed={profile.avatar_seed} nickname={profile.nickname} />
                   <div className="min-w-0">
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
-                    <p className="text-sm muted-text">{profile.area}</p>
+                    {hasText(profile.area) ? <p className="text-sm muted-text">{profile.area}</p> : null}
                   </div>
                 </div>
                 {achievementCount > 0 ? (
@@ -197,21 +204,23 @@ export default function SearchDetailPage() {
             </section>
 
             <section className="soft-card flex flex-col gap-3">
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">お子さんの年齢帯</p>
-                <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
-              </div>
-              {profile.child_gender ? (
+              {hasText(profile.child_age_group) ? (
                 <div className="soft-card-subtle">
-                  <p className="label-text mb-1">お子さんの性別</p>
-                  <p className="text-sm text-[#365f78]">{profile.child_gender}</p>
+                  <p className="label-text mb-1">お子さんの年齢帯</p>
+                  <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
                 </div>
               ) : null}
-              {profile.child_interest_tags.length > 0 ? (
+              {shouldShowPublicChildGender(visibleChildGender) ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">お子さんの性別</p>
+                  <p className="text-sm text-[#365f78]">{visibleChildGender}</p>
+                </div>
+              ) : null}
+              {visibleInterestTags.length > 0 ? (
                 <div className="soft-card-subtle">
                   <p className="label-text mb-2">お子さんの好きなこと</p>
                   <div className="flex flex-wrap gap-2">
-                    {profile.child_interest_tags.slice(0, 5).map((tag) => (
+                    {visibleInterestTags.map((tag) => (
                       <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
                         {tag}
                       </span>
@@ -219,22 +228,30 @@ export default function SearchDetailPage() {
                   </div>
                 </div>
               ) : null}
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">今つながりたいこと</p>
-                <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
-              </div>
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">つながり方の希望</p>
-                <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
-              </div>
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">会いやすい範囲</p>
-                <p className="text-sm text-[#365f78]">{profile.meeting_range}</p>
-              </div>
-              <div className="soft-card-subtle">
-                <p className="label-text mb-1">ひとこと紹介</p>
-                <p className="text-sm text-[#365f78] leading-6">{profile.intro}</p>
-              </div>
+              {hasText(profile.want_to_connect) ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">今つながりたいこと</p>
+                  <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
+                </div>
+              ) : null}
+              {hasText(profile.connection_preference) ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">つながり方の希望</p>
+                  <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
+                </div>
+              ) : null}
+              {hasText(profile.meeting_range) ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">会いやすい範囲</p>
+                  <p className="text-sm text-[#365f78]">{profile.meeting_range}</p>
+                </div>
+              ) : null}
+              {hasText(profile.intro) ? (
+                <div className="soft-card-subtle">
+                  <p className="label-text mb-1">ひとこと紹介</p>
+                  <p className="text-sm text-[#365f78] leading-6">{profile.intro}</p>
+                </div>
+              ) : null}
             </section>
 
             <section className="soft-card flex flex-col gap-2.5">

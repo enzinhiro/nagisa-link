@@ -7,6 +7,7 @@ import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
 import { canPerformUserWriteAction } from "../../../lib/account-status";
 import { generateAvatarSeed } from "../../../lib/profile/avatar";
+import { CHILD_GENDER_OPTIONS, normalizeChildGender } from "../../../lib/profile/child-gender";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
 const CHILD_AGE_GROUPS = [
@@ -16,13 +17,6 @@ const CHILD_AGE_GROUPS = [
   "中学生",
   "高校生",
   "18歳以上",
-];
-
-const CHILD_GENDERS = [
-  "男の子",
-  "女の子",
-  "どちらもいる",
-  "その他 / 答えたくない",
 ];
 
 const PROFILE_SAVE_ERROR_UI =
@@ -153,7 +147,7 @@ export default function ProfileOnboardingPage() {
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");
         setChildAgeGroup(data.child_age_group ?? "");
-        setChildGender(data.child_gender ?? "");
+        setChildGender(normalizeChildGender(data.child_gender));
         setChildInterestTags(data.child_interest_tags ?? []);
         setWantToConnect(data.want_to_connect ?? "");
         const savedConnectionPreference = data.connection_preference ?? "";
@@ -236,7 +230,7 @@ export default function ProfileOnboardingPage() {
     ];
 
     if (requiredValues.some((value) => value.trim().length === 0)) {
-      setMessage("未入力の必須項目があります。すべて入力してください。");
+      setMessage("まだ入力が必要な項目があります。すべて入力してから保存してください。");
       return;
     }
 
@@ -284,7 +278,7 @@ export default function ProfileOnboardingPage() {
       nickname: nickname.trim(),
       area,
       child_age_group: childAgeGroup,
-      child_gender: childGender,
+      child_gender: normalizeChildGender(childGender),
       child_interest_tags: childInterestTags,
       want_to_connect: wantToConnect.trim(),
       connection_preference:
@@ -458,7 +452,7 @@ export default function ProfileOnboardingPage() {
                 <option value="" disabled>
                   選択してください
                 </option>
-                {CHILD_GENDERS.map((option) => (
+                {CHILD_GENDER_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
