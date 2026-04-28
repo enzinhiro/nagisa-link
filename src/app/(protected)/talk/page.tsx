@@ -261,11 +261,7 @@ export default function TalkPage() {
     };
   }, [currentUserId, fetchTalks]);
 
-  const handleResponse = async (
-    wantId: string | undefined,
-    otherUserId: string,
-    nextStatus: "matched" | "declined"
-  ) => {
+  const handleResponse = async (wantId: string | undefined, otherUserId: string) => {
     if (!wantId || !currentUserId) return;
     setUpdatingWantId(wantId);
     setFeedbackMessage("");
@@ -282,7 +278,7 @@ export default function TalkPage() {
     const respondedAt = new Date().toISOString();
     const { error } = await supabase
       .from("wants")
-      .update({ status: nextStatus, responded_at: respondedAt })
+      .update({ status: "matched", responded_at: respondedAt })
       .eq("id", wantId)
       .eq("to_user", currentUserId);
 
@@ -293,13 +289,8 @@ export default function TalkPage() {
       return;
     }
 
-    if (nextStatus === "matched") {
-      setFeedbackMessage("承諾しました。チャットへ移動します...");
-      await handleCreateOrOpenChat(otherUserId);
-      return;
-    }
-    setFeedbackMessage("今回は見送りました。");
-    await fetchTalks(false);
+    setFeedbackMessage("一致しました。チャットへ移動します...");
+    await handleCreateOrOpenChat(otherUserId);
   };
 
   const handleCreateOrOpenChat = async (otherUserId: string) => {
@@ -374,28 +365,28 @@ export default function TalkPage() {
         </button>
       ) : null}
       {section === "received" ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             className="primary-btn !h-11"
             disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, card.otherUserId, "matched")}
+            onClick={() => handleResponse(card.wantId, card.otherUserId)}
           >
             話してみたい
           </button>
-          <button
-            type="button"
-            className="secondary-btn !h-11"
-            disabled={updatingWantId === card.wantId}
-            onClick={() => handleResponse(card.wantId, card.otherUserId, "declined")}
-          >
-            今回は見送る
-          </button>
+          <p className="text-xs leading-5 text-[#6f8797]">
+            無理に返答する必要はありません。
+            <br />
+            7日後に自動で消え、相手に通知されることはありません。
+          </p>
         </div>
+      ) : null}
+      {section === "sent" ? (
+        <p className="text-xs leading-5 text-[#6f8797]">相手が「話してみたい」と思った場合に一致します。</p>
       ) : null}
       {section === "ended" && card.expiresAt ? (
         <p className="section-note">
-          終了日時: {new Date(card.expiresAt).toLocaleDateString("ja-JP")}
+          期限が過ぎました（{new Date(card.expiresAt).toLocaleDateString("ja-JP")}）
         </p>
       ) : null}
     </article>
