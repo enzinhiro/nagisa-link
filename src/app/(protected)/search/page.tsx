@@ -97,6 +97,15 @@ function hasText(value: string | null | undefined): boolean {
   return String(value ?? "").trim().length > 0;
 }
 
+function clampTextStyle(lines: number) {
+  return {
+    display: "-webkit-box",
+    WebkitLineClamp: lines,
+    WebkitBoxOrient: "vertical" as const,
+    overflow: "hidden",
+  };
+}
+
 const KEYWORD_VARIANT_GROUPS: string[][] = [
   ["漫画", "マンガ", "まんが", "コミック", "comic"],
   ["アニメ", "あにめ", "anime"],
@@ -649,10 +658,11 @@ export default function SearchPage() {
                     const achievementCount = Number(card.connection_achievement_count ?? 0);
                     const showArea = hasText(card.area);
                     const showAgeGroup = hasText(card.child_age_group);
-                    const showWantToConnect = hasText(card.want_to_connect);
+                    const profileLead = hasText(card.want_to_connect) ? card.want_to_connect : card.intro;
+                    const hasProfileLead = hasText(profileLead);
                     const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
                     return (
-                    <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2">
+                    <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2.5">
                           <ProfileAvatar
@@ -672,22 +682,17 @@ export default function SearchPage() {
                         ) : null}
                       </div>
                       {showArea || showAgeGroup ? (
-                        <p className="text-xs text-[#6f8796]">
+                        <p className="person-meta-line">
                           {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
                         </p>
                       ) : null}
-                      {showWantToConnect ? (
-                        <p
-                          className="text-sm text-[#365f78] leading-snug"
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {card.want_to_connect}
-                        </p>
+                      {hasProfileLead ? (
+                        <div className="person-summary-strip">
+                          <p className="text-[11px] font-semibold text-[#6b8598]">今つながりたいこと</p>
+                          <p className="mt-1 text-sm text-[#365f78] leading-snug" style={clampTextStyle(2)}>
+                            {profileLead}
+                          </p>
+                        </div>
                       ) : null}
                       {visibleTags.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
@@ -714,7 +719,8 @@ export default function SearchPage() {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
               const showArea = hasText(card.area);
               const showAgeGroup = hasText(card.child_age_group);
-              const showWantToConnect = hasText(card.want_to_connect);
+              const profileLead = hasText(card.want_to_connect) ? card.want_to_connect : card.intro;
+              const hasProfileLead = hasText(profileLead);
               const visibleTags = (card.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 3);
               return (
               <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
@@ -737,22 +743,17 @@ export default function SearchPage() {
                   ) : null}
                 </div>
                 {showArea || showAgeGroup ? (
-                  <p className="text-xs text-[#6f8796]">
+                  <p className="person-meta-line">
                     {[card.area, card.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
                   </p>
                 ) : null}
-                {showWantToConnect ? (
-                  <p
-                    className="text-sm leading-relaxed text-[#365f78]"
-                    style={{
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {card.want_to_connect}
-                  </p>
+                {hasProfileLead ? (
+                  <div className="person-connect-strip">
+                    <p className="text-[11px] font-semibold text-[#6b8598]">今つながりたいこと</p>
+                    <p className="mt-1 text-sm leading-relaxed text-[#365f78]" style={clampTextStyle(3)}>
+                      {profileLead}
+                    </p>
+                  </div>
                 ) : null}
                 {visibleTags.length > 0 ? (
                   <div className="flex flex-wrap gap-2">

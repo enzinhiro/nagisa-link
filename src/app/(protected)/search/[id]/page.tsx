@@ -167,6 +167,8 @@ export default function SearchDetailPage() {
   const achievementCount = Number(profile?.connection_achievement_count ?? 0);
   const visibleChildGender = normalizeChildGender(profile?.child_gender);
   const visibleInterestTags = (profile?.child_interest_tags ?? []).filter((tag) => hasText(tag)).slice(0, 5);
+  const profileLead = hasText(profile?.want_to_connect) ? profile?.want_to_connect : "";
+  const profileIntro = hasText(profile?.intro) ? profile?.intro : "";
 
   return (
     <div className="mock-page">
@@ -192,7 +194,11 @@ export default function SearchDetailPage() {
                   <ProfileAvatar userId={profile.id} avatarSeed={profile.avatar_seed} nickname={profile.nickname} />
                   <div className="min-w-0">
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
-                    {hasText(profile.area) ? <p className="text-sm muted-text">{profile.area}</p> : null}
+                    {(hasText(profile.area) || hasText(profile.child_age_group)) ? (
+                      <p className="text-sm muted-text">
+                        {[profile.area, profile.child_age_group].filter((value) => hasText(value)).join(" ・ ")}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
                 {achievementCount > 0 ? (
@@ -201,55 +207,52 @@ export default function SearchDetailPage() {
                   </span>
                 ) : null}
               </div>
+              {(profileLead || profileIntro) ? <div className="card-divider" /> : null}
+              {profileLead ? (
+                <div className="person-connect-strip">
+                  <p className="text-xs font-semibold text-[#5f7c8f]">今つながりたいこと</p>
+                  <p className="mt-1.5 text-sm leading-6 text-[#365f78]">{profileLead}</p>
+                </div>
+              ) : null}
+              {profileIntro ? (
+                <div className="person-summary-strip">
+                  <p className="text-xs font-semibold text-[#6a8292]">ひとこと紹介</p>
+                  <p className="mt-1 text-sm leading-6 text-[#365f78]">{profileIntro}</p>
+                </div>
+              ) : null}
             </section>
 
             <section className="soft-card flex flex-col gap-3">
-              {hasText(profile.child_age_group) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">お子さんの年齢帯</p>
-                  <p className="text-sm text-[#365f78]">{profile.child_age_group}</p>
-                </div>
-              ) : null}
-              {shouldShowPublicChildGender(visibleChildGender) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">お子さんの性別</p>
-                  <p className="text-sm text-[#365f78]">{visibleChildGender}</p>
-                </div>
-              ) : null}
+              <h2 className="section-title text-[15px]">プロフィール補足</h2>
               {visibleInterestTags.length > 0 ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-2">お子さんの好きなこと</p>
-                  <div className="flex flex-wrap gap-2">
-                    {visibleInterestTags.map((tag) => (
-                      <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {visibleInterestTags.map((tag) => (
+                    <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               ) : null}
-              {hasText(profile.want_to_connect) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">今つながりたいこと</p>
-                  <p className="text-sm text-[#365f78] leading-6">{profile.want_to_connect}</p>
-                </div>
-              ) : null}
-              {hasText(profile.connection_preference) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">つながり方の希望</p>
-                  <p className="text-sm text-[#365f78]">{profile.connection_preference}</p>
-                </div>
-              ) : null}
-              {hasText(profile.meeting_range) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">会いやすい範囲</p>
-                  <p className="text-sm text-[#365f78]">{profile.meeting_range}</p>
-                </div>
-              ) : null}
-              {hasText(profile.intro) ? (
-                <div className="soft-card-subtle">
-                  <p className="label-text mb-1">ひとこと紹介</p>
-                  <p className="text-sm text-[#365f78] leading-6">{profile.intro}</p>
+              {shouldShowPublicChildGender(visibleChildGender) || hasText(profile.connection_preference) || hasText(profile.meeting_range) ? (
+                <div className="flex flex-col gap-2.5">
+                  {shouldShowPublicChildGender(visibleChildGender) ? (
+                    <p className="text-sm text-[#45687e]">
+                      <span className="text-xs text-[#6f8796]">お子さんの性別: </span>
+                      {visibleChildGender}
+                    </p>
+                  ) : null}
+                  {hasText(profile.connection_preference) ? (
+                    <p className="text-sm text-[#45687e]">
+                      <span className="text-xs text-[#6f8796]">つながり方の希望: </span>
+                      {profile.connection_preference}
+                    </p>
+                  ) : null}
+                  {hasText(profile.meeting_range) ? (
+                    <p className="text-sm text-[#45687e]">
+                      <span className="text-xs text-[#6f8796]">会いやすい範囲: </span>
+                      {profile.meeting_range}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </section>
@@ -258,7 +261,7 @@ export default function SearchDetailPage() {
               {talkMessage ? <p className="text-sm text-[#3f6680]">{talkMessage}</p> : null}
               <button
                 type="button"
-                className="primary-btn"
+                className="primary-btn !h-11"
                 onClick={handleWantToTalk}
                 disabled={isSendingWant || hasPendingWant || isOwnProfile}
               >
