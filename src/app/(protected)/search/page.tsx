@@ -9,6 +9,9 @@ import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 import { getVisibleConnectionAchievementCounts } from "../../../lib/profile/connection-achievements";
 import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
+import { CHILD_AGE_GROUP_OPTIONS, toDisplayChildAgeGroups } from "../../../lib/profile/age-groups";
+import { MOM_INTEREST_TAG_OPTIONS, normalizeMomInterestTags } from "../../../lib/profile/mom-interest-tags";
+import { CONNECTION_PREFERENCE_OPTIONS } from "../../../lib/profile/connection-preference";
 
 type SearchProfileCard = {
   id: string;
@@ -17,7 +20,9 @@ type SearchProfileCard = {
   area: string;
   connection_achievement_count: number;
   child_age_group: string;
+  child_age_groups: string[];
   child_interest_tags: string[];
+  mom_interest_tags: string[];
   want_to_connect: string;
   intro: string;
   connection_preference: string;
@@ -29,6 +34,7 @@ type FilterState = {
   keyword: string;
   area: string;
   age: string;
+  momInterests: string[];
   connection: string;
   meeting: string;
   tags: string[];
@@ -38,6 +44,7 @@ const emptyFilters = (): FilterState => ({
   keyword: "",
   area: "",
   age: "",
+  momInterests: [],
   connection: "",
   meeting: "",
   tags: [],
@@ -48,6 +55,7 @@ function readFiltersFromParams(searchParams: URLSearchParams): FilterState {
     keyword: searchParams.get("q") ?? "",
     area: searchParams.get("area") ?? "",
     age: searchParams.get("age") ?? "",
+    momInterests: searchParams.get("mom") ? searchParams.get("mom")!.split(",").filter(Boolean) : [],
     connection: searchParams.get("connection") ?? "",
     meeting: searchParams.get("meeting") ?? "",
     tags: searchParams.get("tags") ? searchParams.get("tags")!.split(",").filter(Boolean) : [],
@@ -59,6 +67,7 @@ function filtersToSearchParams(f: FilterState): URLSearchParams {
   if (f.keyword.trim()) params.set("q", f.keyword.trim());
   if (f.area) params.set("area", f.area);
   if (f.age) params.set("age", f.age);
+  if (f.momInterests.length > 0) params.set("mom", f.momInterests.join(","));
   if (f.connection) params.set("connection", f.connection);
   if (f.meeting) params.set("meeting", f.meeting);
   if (f.tags.length > 0) params.set("tags", f.tags.join(","));
@@ -70,6 +79,7 @@ function hasAnyFilter(f: FilterState): boolean {
     f.keyword.trim().length > 0 ||
     f.area.length > 0 ||
     f.age.length > 0 ||
+    f.momInterests.length > 0 ||
     f.tags.length > 0 ||
     f.connection.length > 0 ||
     f.meeting.length > 0
@@ -77,11 +87,17 @@ function hasAnyFilter(f: FilterState): boolean {
 }
 
 function filtersEqual(a: FilterState, b: FilterState): boolean {
-  if (a.keyword !== b.keyword || a.area !== b.area || a.age !== b.age || a.connection !== b.connection || a.meeting !== b.meeting) {
+  if (
+    a.keyword !== b.keyword ||
+    a.area !== b.area ||
+    a.age !== b.age ||
+    a.connection !== b.connection ||
+    a.meeting !== b.meeting
+  ) {
     return false;
   }
-  if (a.tags.length !== b.tags.length) return false;
-  return a.tags.every((t, i) => t === b.tags[i]);
+  if (a.tags.length !== b.tags.length || a.momInterests.length !== b.momInterests.length) return false;
+  return a.tags.every((t, i) => t === b.tags[i]) && a.momInterests.every((t, i) => t === b.momInterests[i]);
 }
 
 function chipPreview(text: string, max = 18) {
@@ -217,12 +233,13 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
     card.nickname,
     displayName,
     card.area,
-    card.child_age_group,
+    toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group).join(" "),
     card.want_to_connect,
     card.connection_preference,
     card.meeting_range,
     card.intro ?? "",
     (card.child_interest_tags ?? []).join(" "),
+    normalizeMomInterestTags(card.mom_interest_tags ?? []).join(" "),
   ];
   return candidateTexts.some((text) => {
     const normalizedText = normalizeSearchText(text);
@@ -235,14 +252,8 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
 }
 
 const AREA_OPTIONS = ["逗子市", "葉山町", "横須賀市"];
-const AGE_OPTIONS = ["未就学", "小学校低学年", "小学校高学年", "中学生", "高校生", "18歳以上"];
-const CONNECTION_OPTIONS = [
-  "まずは親同士で少し話したい",
-  "似た状況の家庭と情報交換したい",
-  "子どもの好きなことが近い家庭とつながりたい",
-  "将来的に親子で会える相手を探したい",
-  "まずはオンラインでやり取りしたい",
-];
+const AGE_OPTIONS = [...CHILD_AGE_GROUP_OPTIONS];
+const CONNECTION_OPTIONS = [...CONNECTION_PREFERENCE_OPTIONS];
 const MEETING_RANGE_OPTIONS = [
   "同じ市町村なら話しやすい",
   "近隣エリアまでならOK",
@@ -266,6 +277,17 @@ const TAG_OPTIONS = [
   "自然・散歩",
   "その他",
 ];
+
+function matchesAgeFilter(card: SearchProfileCard, age: string): boolean {
+  if (!age) return true;
+  return toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group).includes(age);
+}
+
+function matchesMomInterests(card: SearchProfileCard, selectedInterests: string[]): boolean {
+  if (selectedInterests.length === 0) return true;
+  const visibleMomInterests = new Set(normalizeMomInterestTags(card.mom_interest_tags ?? []));
+  return selectedInterests.some((interest) => visibleMomInterests.has(interest));
+}
 
 export default function SearchPage() {
   const router = useRouter();
@@ -343,12 +365,11 @@ export default function SearchPage() {
       let query = supabase
         .from("public_profiles")
         .select(
-          "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+          "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_age_groups,child_interest_tags,mom_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
         )
         .neq("id", user.id);
 
       if (queryFilters.area) query = query.eq("area", queryFilters.area);
-      if (queryFilters.age) query = query.eq("child_age_group", queryFilters.age);
       if (queryFilters.connection) query = query.eq("connection_preference", queryFilters.connection);
       if (queryFilters.meeting) query = query.eq("meeting_range", queryFilters.meeting);
       if (queryFilters.tags.length > 0) query = query.overlaps("child_interest_tags", queryFilters.tags);
@@ -363,14 +384,13 @@ export default function SearchPage() {
           )
           .neq("id", user.id);
         if (queryFilters.area) fallbackQuery = fallbackQuery.eq("area", queryFilters.area);
-        if (queryFilters.age) fallbackQuery = fallbackQuery.eq("child_age_group", queryFilters.age);
         if (queryFilters.connection) fallbackQuery = fallbackQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) fallbackQuery = fallbackQuery.eq("meeting_range", queryFilters.meeting);
         if (queryFilters.tags.length > 0) fallbackQuery = fallbackQuery.overlaps("child_interest_tags", queryFilters.tags);
         const fallbackResult = await fallbackQuery.order("created_at", { ascending: false }).limit(40);
         error = fallbackResult.error;
         if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
-          data = fallbackResult.data.map((row) => ({ ...row, avatar_seed: null })) as SearchProfileCard[];
+          data = fallbackResult.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] })) as SearchProfileCard[];
         } else {
           data = null;
         }
@@ -384,7 +404,11 @@ export default function SearchPage() {
       }
 
       const fetched = ((data ?? []) as SearchProfileCard[]).filter((card) => {
-        return matchesKeyword(card, normalizedKeyword);
+        return (
+          matchesKeyword(card, normalizedKeyword) &&
+          matchesAgeFilter(card, queryFilters.age) &&
+          matchesMomInterests(card, queryFilters.momInterests)
+        );
       });
 
       const sorted = fetched.sort((a, b) => {
@@ -406,12 +430,11 @@ export default function SearchPage() {
         let relaxedQuery = supabase
           .from("public_profiles")
           .select(
-            "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
+            "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_age_groups,child_interest_tags,mom_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
           )
           .neq("id", user.id);
 
         if (queryFilters.area) relaxedQuery = relaxedQuery.eq("area", queryFilters.area);
-        if (queryFilters.age) relaxedQuery = relaxedQuery.eq("child_age_group", queryFilters.age);
         if (queryFilters.connection) relaxedQuery = relaxedQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) relaxedQuery = relaxedQuery.eq("meeting_range", queryFilters.meeting);
 
@@ -426,16 +449,19 @@ export default function SearchPage() {
             )
             .neq("id", user.id);
           if (queryFilters.area) relaxedFallback = relaxedFallback.eq("area", queryFilters.area);
-          if (queryFilters.age) relaxedFallback = relaxedFallback.eq("child_age_group", queryFilters.age);
           if (queryFilters.connection) relaxedFallback = relaxedFallback.eq("connection_preference", queryFilters.connection);
           if (queryFilters.meeting) relaxedFallback = relaxedFallback.eq("meeting_range", queryFilters.meeting);
           const fallbackRes = await relaxedFallback.order("created_at", { ascending: false }).limit(10);
           relaxedData = Array.isArray(fallbackRes.data)
-            ? (fallbackRes.data.map((row) => ({ ...row, avatar_seed: null })) as SearchProfileCard[])
+            ? (fallbackRes.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] })) as SearchProfileCard[])
             : null;
         }
         const relaxedFetched = ((relaxedData ?? []) as SearchProfileCard[]).filter((card) => {
-          return matchesKeyword(card, normalizedKeyword);
+          return (
+            matchesKeyword(card, normalizedKeyword) &&
+            matchesAgeFilter(card, queryFilters.age) &&
+            matchesMomInterests(card, queryFilters.momInterests)
+          );
         });
         const relaxedLimited = relaxedFetched.slice(0, 3);
         const relaxedCounts = await getVisibleConnectionAchievementCounts(
@@ -455,6 +481,7 @@ export default function SearchPage() {
   }, [
     queryFilters.area,
     queryFilters.age,
+    queryFilters.momInterests,
     queryFilters.connection,
     queryFilters.meeting,
     queryFilters.tags,
@@ -465,6 +492,7 @@ export default function SearchPage() {
     const chips: { key: string; label: string }[] = [];
     if (queryFilters.area) chips.push({ key: "area", label: queryFilters.area });
     if (queryFilters.age) chips.push({ key: "age", label: queryFilters.age });
+    queryFilters.momInterests.slice(0, 4).forEach((t) => chips.push({ key: `mom-${t}`, label: t }));
     if (queryFilters.connection) chips.push({ key: "connection", label: chipPreview(queryFilters.connection) });
     if (queryFilters.meeting) chips.push({ key: "meeting", label: chipPreview(queryFilters.meeting) });
     queryFilters.tags.slice(0, 6).forEach((t) => chips.push({ key: `tag-${t}`, label: t }));
@@ -547,6 +575,27 @@ export default function SearchPage() {
                 >
                   <option value="">指定なし</option>
                   {AGE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="label-text">
+                  ママの興味・関心（複数選択）
+                  {filters.momInterests.length > 0 ? ` : ${filters.momInterests.length}件選択中` : ""}
+                </span>
+                <select
+                  className="mock-select"
+                  value={filters.momInterests}
+                  onChange={(e) =>
+                    setFilters((f) => ({ ...f, momInterests: Array.from(e.target.selectedOptions, (opt) => opt.value) }))
+                  }
+                  multiple
+                  size={5}
+                >
+                  {MOM_INTEREST_TAG_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
@@ -654,7 +703,9 @@ export default function SearchPage() {
                   {relaxedCards.map((card) => {
                     const achievementCount = Number(card.connection_achievement_count ?? 0);
                     const showArea = isVisiblePublicValue(card.area);
-                    const showAgeGroup = isVisiblePublicValue(card.child_age_group);
+                    const displayAgeGroups = toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group);
+                    const ageText = displayAgeGroups.join("・");
+                    const showAgeGroup = isVisiblePublicValue(ageText);
                     const showWantToConnect = isVisiblePublicValue(card.want_to_connect);
                     const showIntro = !showWantToConnect && isVisiblePublicValue(card.intro);
                     const profileLeadLabel = showWantToConnect ? "今つながりたいこと" : showIntro ? "ひとこと紹介" : "";
@@ -663,6 +714,7 @@ export default function SearchPage() {
                     const visibleTags = (card.child_interest_tags ?? [])
                       .filter((tag) => isVisiblePublicValue(tag))
                       .slice(0, 3);
+                    const visibleMomInterests = normalizeMomInterestTags(card.mom_interest_tags ?? []).slice(0, 2);
                     return (
                     <article key={`relaxed-${card.id}`} className="soft-card-subtle flex flex-col gap-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -685,7 +737,7 @@ export default function SearchPage() {
                       </div>
                       {showArea || showAgeGroup ? (
                         <p className="person-meta-line">
-                          {[card.area, card.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+                          {[card.area, ageText].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                         </p>
                       ) : null}
                       {hasProfileLead ? (
@@ -705,6 +757,15 @@ export default function SearchPage() {
                           ))}
                         </div>
                       ) : null}
+                      {visibleMomInterests.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {visibleMomInterests.map((tag) => (
+                            <span key={`${card.id}-mom-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                       <Link href={`/search/${card.id}`} className="secondary-btn !h-10 text-center">
                         詳細を見る
                       </Link>
@@ -720,7 +781,9 @@ export default function SearchPage() {
             cards.map((card) => {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
               const showArea = isVisiblePublicValue(card.area);
-              const showAgeGroup = isVisiblePublicValue(card.child_age_group);
+              const displayAgeGroups = toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group);
+              const ageText = displayAgeGroups.join("・");
+              const showAgeGroup = isVisiblePublicValue(ageText);
               const showWantToConnect = isVisiblePublicValue(card.want_to_connect);
               const showIntro = !showWantToConnect && isVisiblePublicValue(card.intro);
               const profileLeadLabel = showWantToConnect ? "今つながりたいこと" : showIntro ? "ひとこと紹介" : "";
@@ -729,6 +792,7 @@ export default function SearchPage() {
               const visibleTags = (card.child_interest_tags ?? [])
                 .filter((tag) => isVisiblePublicValue(tag))
                 .slice(0, 3);
+              const visibleMomInterests = normalizeMomInterestTags(card.mom_interest_tags ?? []).slice(0, 3);
               return (
               <article key={card.id} className="soft-card flex flex-col gap-2.5 !px-4 !py-3.5">
                 <div className="flex items-start justify-between gap-2">
@@ -751,7 +815,7 @@ export default function SearchPage() {
                 </div>
                 {showArea || showAgeGroup ? (
                   <p className="person-meta-line">
-                    {[card.area, card.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+                    {[card.area, ageText].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                   </p>
                 ) : null}
                 {hasProfileLead ? (
@@ -768,6 +832,15 @@ export default function SearchPage() {
                     <span key={`${card.id}-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
                       {tag}
                     </span>
+                    ))}
+                  </div>
+                ) : null}
+                {visibleMomInterests.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {visibleMomInterests.map((tag) => (
+                      <span key={`${card.id}-mom-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
+                        {tag}
+                      </span>
                     ))}
                   </div>
                 ) : null}

@@ -8,6 +8,7 @@ import { ProfileAvatar } from "../../../components/profile-avatar";
 import { isMissingProfileColumnError } from "../../../lib/supabase/profile-query";
 import { getChatLastReadAt } from "../../../lib/chat/read-state";
 import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
+import { toDisplayChildAgeGroups } from "../../../lib/profile/age-groups";
 
 type ChatRow = {
   id: string;
@@ -23,6 +24,7 @@ type ProfileRow = {
   avatar_seed: number | null;
   area: string | null;
   child_age_group: string | null;
+  child_age_groups: string[] | null;
 };
 
 type MessageSummaryRow = {
@@ -40,7 +42,7 @@ type ChatCard = {
   otherAvatarSeed: number | null;
   expiresAt: string;
   area: string;
-  childAgeGroup: string;
+  childAgeLabel: string;
   isFallback: boolean;
   hasUnread: boolean;
   latestMessageBody: string;
@@ -107,7 +109,7 @@ export default function ChatIndexPage() {
 
       let { data: profilesData, error: profilesError } = await supabase
         .from("public_profiles")
-        .select("id,nickname,avatar_seed,area,child_age_group")
+        .select("id,nickname,avatar_seed,area,child_age_group,child_age_groups")
         .in("id", otherIds);
       if (profilesError && isMissingProfileColumnError(profilesError)) {
         const fallback = await supabase
@@ -115,7 +117,7 @@ export default function ChatIndexPage() {
           .select("id,nickname,area,child_age_group")
           .in("id", otherIds);
         profilesData = Array.isArray(fallback.data)
-          ? fallback.data.map((row) => ({ ...row, avatar_seed: null, area: null, child_age_group: null }))
+          ? fallback.data.map((row) => ({ ...row, avatar_seed: null, area: null, child_age_group: null, child_age_groups: [] }))
           : fallback.data;
       }
 
@@ -156,7 +158,7 @@ export default function ChatIndexPage() {
             otherAvatarSeed: null,
             expiresAt: chat.expires_at,
             area: "",
-            childAgeGroup: "",
+            childAgeLabel: "",
             isFallback: true,
             hasUnread,
             latestMessageBody: latestMessage?.body ?? "",
@@ -171,7 +173,7 @@ export default function ChatIndexPage() {
           otherAvatarSeed: otherProfile.avatar_seed,
           expiresAt: chat.expires_at,
           area: otherProfile.area ?? "",
-          childAgeGroup: otherProfile.child_age_group ?? "",
+          childAgeLabel: toDisplayChildAgeGroups(otherProfile.child_age_groups ?? [], otherProfile.child_age_group).join("・"),
           isFallback: false,
           hasUnread,
           latestMessageBody: latestMessage?.body ?? "",
@@ -229,7 +231,7 @@ export default function ChatIndexPage() {
     const remainingHour = Math.max(0, Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)));
     const isNearEnd = type !== "ended" && remainingHour <= 6;
     const showArea = isVisiblePublicValue(card.area);
-    const showAgeGroup = isVisiblePublicValue(card.childAgeGroup);
+    const showAgeGroup = isVisiblePublicValue(card.childAgeLabel);
     const showLatestMessage = isVisiblePublicValue(card.latestMessageBody);
     return (
       <article key={`${type}-${card.id}`} className="soft-card flex flex-col gap-3">
@@ -251,11 +253,14 @@ export default function ChatIndexPage() {
             </div>
             {showArea || showAgeGroup ? (
               <p className="person-meta-line">
-                {[card.area, card.childAgeGroup].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+                {[card.area, card.childAgeLabel].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
               </p>
             ) : null}
             {showLatestMessage ? (
-              <p className="text-xs text-[#5e7a8d] line-clamp-1">
+              <p
+                className="text-xs text-[#5e7a8d]"
+                style={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+              >
                 {card.latestMessageBody}
               </p>
             ) : null}

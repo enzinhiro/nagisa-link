@@ -14,6 +14,7 @@ import {
   splitMatchedAndEnded,
 } from "../../../lib/talk/wantsSummary";
 import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
+import { toDisplayChildAgeGroups } from "../../../lib/profile/age-groups";
 
 type WantRow = {
   id: string;
@@ -26,6 +27,8 @@ type ProfileRow = {
   id: string;
   nickname: string;
   area: string;
+  child_age_group: string;
+  child_age_groups: string[];
   want_to_connect: string;
   connection_achievement_count: number;
   avatar_seed: number | null;
@@ -36,6 +39,7 @@ type TalkCard = {
   otherUserId: string;
   nickname: string;
   area: string;
+  childAgeLabel: string;
   wantToConnect: string;
   connectionAchievementCount: number;
   avatarSeed: number | null;
@@ -145,16 +149,16 @@ export default function TalkPage() {
 
     let { data: profilesData, error: profilesError } = await supabase
       .from("public_profiles")
-      .select("id,nickname,area,want_to_connect,connection_achievement_count,avatar_seed")
+      .select("id,nickname,area,child_age_group,child_age_groups,want_to_connect,connection_achievement_count,avatar_seed")
       .in("id", profileIds);
 
     if (profilesError && isMissingProfileColumnError(profilesError)) {
       const fallback = await supabase
         .from("public_profiles")
-        .select("id,nickname,area,want_to_connect,connection_achievement_count")
+        .select("id,nickname,area,child_age_group,want_to_connect,connection_achievement_count")
         .in("id", profileIds);
       profilesData = Array.isArray(fallback.data)
-        ? fallback.data.map((row) => ({ ...row, avatar_seed: null }))
+        ? fallback.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [] }))
         : fallback.data;
       profilesError = fallback.error;
     }
@@ -178,6 +182,7 @@ export default function TalkPage() {
         otherUserId: id,
         nickname: p.nickname,
         area: p.area,
+        childAgeLabel: toDisplayChildAgeGroups(p.child_age_groups, p.child_age_group).join("・"),
         wantToConnect: p.want_to_connect,
         connectionAchievementCount: p.connection_achievement_count ?? 0,
         avatarSeed: p.avatar_seed,
@@ -194,6 +199,7 @@ export default function TalkPage() {
           otherUserId: id,
           nickname: "相手",
           area: "",
+          childAgeLabel: "",
           wantToConnect: "一致しました。下のボタンからチャットへ進めます。",
           connectionAchievementCount: 0,
           avatarSeed: null,
@@ -336,7 +342,11 @@ export default function TalkPage() {
           />
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
-            {isVisiblePublicValue(card.area) ? <p className="text-xs muted-text">{card.area}</p> : null}
+            {isVisiblePublicValue(card.area) || isVisiblePublicValue(card.childAgeLabel) ? (
+              <p className="text-xs muted-text">
+                {[card.area, card.childAgeLabel].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+              </p>
+            ) : null}
           </div>
         </div>
         <span className={`talk-state-badge ${section === "matched" ? "talk-state-matched" : ""} ${section === "received" ? "talk-state-received" : ""} ${section === "sent" ? "talk-state-sent" : ""} ${section === "ended" ? "talk-state-ended" : ""}`}>

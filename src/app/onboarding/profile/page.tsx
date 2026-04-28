@@ -8,17 +8,14 @@ import { supabase } from "../../../lib/supabase/client";
 import { canPerformUserWriteAction } from "../../../lib/account-status";
 import { generateAvatarSeed } from "../../../lib/profile/avatar";
 import { CHILD_GENDER_OPTIONS, normalizeChildGender } from "../../../lib/profile/child-gender";
+import { CHILD_AGE_GROUP_OPTIONS, normalizeChildAgeGroups } from "../../../lib/profile/age-groups";
+import { MOM_INTEREST_TAG_OPTIONS, normalizeMomInterestTags } from "../../../lib/profile/mom-interest-tags";
+import {
+  CONNECTION_PREFERENCE_OPTIONS,
+  normalizeConnectionPreference,
+} from "../../../lib/profile/connection-preference";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
-const CHILD_AGE_GROUPS = [
-  "未就学",
-  "小学校低学年",
-  "小学校高学年",
-  "中学生",
-  "高校生",
-  "18歳以上",
-];
-
 const PROFILE_SAVE_ERROR_UI =
   "プロフィールの保存に失敗しました。時間をおいてもう一度お試しください。";
 const PROFILE_BOOTSTRAP_ERROR_UI =
@@ -68,15 +65,6 @@ const CHILD_INTEREST_TAGS = [
   "その他",
 ];
 
-const CONNECTION_PREFERENCES = [
-  "子ども同士で遊ぶきっかけを作りたい",
-  "まずは親同士でチャットしたい",
-  "まずは親同士で話したい",
-  "情報交換をしたい",
-  "近い悩みの人とつながりたい",
-  "その他（自由入力）",
-];
-
 const MEETING_RANGES = [
   "同じ市町村なら話しやすい",
   "近隣エリアまでならOK",
@@ -96,12 +84,12 @@ export default function ProfileOnboardingPage() {
   const [realName, setRealName] = useState("");
   const [nickname, setNickname] = useState("");
   const [area, setArea] = useState("");
-  const [childAgeGroup, setChildAgeGroup] = useState("");
+  const [childAgeGroups, setChildAgeGroups] = useState<string[]>([]);
   const [childGender, setChildGender] = useState("");
   const [childInterestTags, setChildInterestTags] = useState<string[]>([]);
+  const [momInterestTags, setMomInterestTags] = useState<string[]>([]);
   const [wantToConnect, setWantToConnect] = useState("");
   const [connectionPreference, setConnectionPreference] = useState("");
-  const [customConnectionPreference, setCustomConnectionPreference] = useState("");
   const [meetingRange, setMeetingRange] = useState("");
   const [intro, setIntro] = useState("");
 
@@ -125,7 +113,7 @@ export default function ProfileOnboardingPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "real_name,nickname,area,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,profile_completed,avatar_seed"
+          "real_name,nickname,area,child_age_group,child_age_groups,child_gender,child_interest_tags,mom_interest_tags,want_to_connect,connection_preference,meeting_range,intro,profile_completed,avatar_seed"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -146,21 +134,18 @@ export default function ProfileOnboardingPage() {
         setRealName((data.real_name ?? authRealName) || "");
         setNickname(data.nickname ?? "");
         setArea(data.area ?? "");
-        setChildAgeGroup(data.child_age_group ?? "");
+        const normalizedChildAgeGroups = normalizeChildAgeGroups(data.child_age_groups ?? []);
+        setChildAgeGroups(
+          normalizedChildAgeGroups.length > 0
+            ? normalizedChildAgeGroups
+            : normalizeChildAgeGroups([data.child_age_group ?? ""])
+        );
         setChildGender(normalizeChildGender(data.child_gender));
         setChildInterestTags(data.child_interest_tags ?? []);
+        setMomInterestTags(normalizeMomInterestTags(data.mom_interest_tags ?? []));
         setWantToConnect(data.want_to_connect ?? "");
-        const savedConnectionPreference = data.connection_preference ?? "";
-        if (
-          savedConnectionPreference &&
-          !CONNECTION_PREFERENCES.includes(savedConnectionPreference)
-        ) {
-          setConnectionPreference("その他（自由入力）");
-          setCustomConnectionPreference(savedConnectionPreference);
-        } else {
-          setConnectionPreference(savedConnectionPreference);
-          setCustomConnectionPreference("");
-        }
+        const savedConnectionPreference = normalizeConnectionPreference(data.connection_preference ?? "");
+        setConnectionPreference(savedConnectionPreference);
         setMeetingRange(data.meeting_range ?? "");
         setIntro(data.intro ?? "");
       } else if (authRealName) {
@@ -177,20 +162,20 @@ export default function ProfileOnboardingPage() {
   }, [router]);
 
   const selectedTagCount = childInterestTags.length;
+  const selectedMomTagCount = momInterestTags.length;
+  const selectedAgeGroupCount = childAgeGroups.length;
   const isTagLimitReached = selectedTagCount >= 5;
-  const effectiveConnectionPreference =
-    connectionPreference === "その他（自由入力）"
-      ? customConnectionPreference.trim()
-      : connectionPreference.trim();
+  const isMomTagLimitReached = selectedMomTagCount >= 5;
   const requiredChecks: Array<{ label: string; ok: boolean }> = [
     { label: "本名", ok: realName.trim().length > 0 },
     { label: "ニックネーム", ok: nickname.trim().length > 0 },
     { label: "お住まいのエリア", ok: area.trim().length > 0 },
-    { label: "お子さんの年齢帯", ok: childAgeGroup.trim().length > 0 },
+    { label: "お子さんの年齢帯", ok: childAgeGroups.length >= 1 },
     { label: "お子さんの性別", ok: childGender.trim().length > 0 },
     { label: "お子さんの好きなこと", ok: childInterestTags.length >= 1 && childInterestTags.length <= 5 },
+    { label: "ママの興味・関心", ok: momInterestTags.length >= 1 && momInterestTags.length <= 5 },
     { label: "今つながりたいこと", ok: wantToConnect.trim().length > 0 },
-    { label: "つながり方の希望", ok: effectiveConnectionPreference.length > 0 },
+    { label: "つながり方の希望", ok: connectionPreference.trim().length > 0 },
     { label: "会いやすい範囲", ok: meetingRange.trim().length > 0 },
     { label: "ひとこと紹介", ok: intro.trim().length > 0 },
   ];
@@ -207,6 +192,16 @@ export default function ProfileOnboardingPage() {
       return [...prev, tag];
     });
   };
+  const toggleMomInterestTag = (tag: string) => {
+    setMomInterestTags((prev) => {
+      if (prev.includes(tag)) return prev.filter((t) => t !== tag);
+      if (prev.length >= 5) return prev;
+      return [...prev, tag];
+    });
+  };
+  const toggleChildAgeGroup = (ageGroup: string) => {
+    setChildAgeGroups((prev) => (prev.includes(ageGroup) ? prev.filter((v) => v !== ageGroup) : [...prev, ageGroup]));
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -221,7 +216,6 @@ export default function ProfileOnboardingPage() {
       realName,
       nickname,
       area,
-      childAgeGroup,
       childGender,
       wantToConnect,
       connectionPreference,
@@ -234,27 +228,25 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
+    if (childAgeGroups.length === 0) {
+      setMessage("まだ入力が必要な項目があります。すべて入力してから保存してください。");
+      return;
+    }
+
     if (childInterestTags.length === 0 || childInterestTags.length > 5) {
       setMessage("お子さんの好きなことは1〜5個で選択してください。");
       return;
     }
 
-    if (connectionPreference === "その他（自由入力）") {
-      if (!customConnectionPreference.trim()) {
-        setMessage("つながり方の希望（自由入力）を入力してください。");
-        return;
-      }
-      if (customConnectionPreference.trim().length > 60) {
-        setMessage("つながり方の希望（自由入力）は60文字以内で入力してください。");
-        return;
-      }
+    if (momInterestTags.length === 0 || momInterestTags.length > 5) {
+      setMessage("ママの興味・関心は1〜5個で選択してください。");
+      return;
     }
 
     const freeTextValues = [
       realName.trim(),
       wantToConnect.trim(),
       intro.trim(),
-      connectionPreference === "その他（自由入力）" ? customConnectionPreference.trim() : "",
     ];
     if (freeTextValues.some(containsUrlLikeText)) {
       setMessage(PROFILE_URL_BLOCK_MESSAGE);
@@ -277,14 +269,13 @@ export default function ProfileOnboardingPage() {
       real_name: realName.trim(),
       nickname: nickname.trim(),
       area,
-      child_age_group: childAgeGroup,
+      child_age_group: childAgeGroups[0] ?? "",
+      child_age_groups: childAgeGroups,
       child_gender: normalizeChildGender(childGender),
       child_interest_tags: childInterestTags,
+      mom_interest_tags: momInterestTags,
       want_to_connect: wantToConnect.trim(),
-      connection_preference:
-        connectionPreference === "その他（自由入力）"
-          ? customConnectionPreference.trim()
-          : connectionPreference,
+      connection_preference: connectionPreference,
       meeting_range: meetingRange,
       intro: intro.trim(),
       profile_completed: true,
@@ -425,21 +416,27 @@ export default function ProfileOnboardingPage() {
             </div>
             <label>
               <span className="label-text">お子さんの年齢帯（必須）</span>
-              <select
-                className="mock-select"
-                value={childAgeGroup}
-                onChange={(e) => setChildAgeGroup(e.target.value)}
-                required
-              >
-                <option value="" disabled>
-                  選択してください
-                </option>
-                {CHILD_AGE_GROUPS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <p className="section-note mb-2">当てはまるものを選んでください。{selectedAgeGroupCount}件選択中</p>
+              <div className="flex flex-wrap gap-2.5">
+                {CHILD_AGE_GROUP_OPTIONS.map((option) => {
+                  const isSelected = childAgeGroups.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => toggleChildAgeGroup(option)}
+                      className={`rounded-full border px-3 py-2 text-sm transition ${
+                        isSelected
+                          ? "border-[#8fcbe8] bg-[#d9f2ff] font-semibold text-[#1f5470]"
+                          : "border-[#d8e7ef] bg-white text-[#42657a]"
+                      }`}
+                    >
+                      {isSelected ? `✓ ${option}` : option}
+                    </button>
+                  );
+                })}
+              </div>
+              <input type="hidden" required value={childAgeGroups.length > 0 ? "selected" : ""} />
             </label>
             <label>
               <span className="label-text">お子さんの性別（必須）</span>
@@ -486,6 +483,35 @@ export default function ProfileOnboardingPage() {
                 最大5個まで選べます。{isTagLimitReached ? "上限に達しています。" : ""}
               </p>
             </label>
+            <label>
+              <span className="label-text">ママの興味・関心（必須）</span>
+              <p className="section-note mb-2">
+                今気になっていることや、話してみたいテーマを選んでください。{selectedMomTagCount} / 5個
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {MOM_INTEREST_TAG_OPTIONS.map((tag) => {
+                  const isSelected = momInterestTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleMomInterestTag(tag)}
+                      className={`rounded-full border px-3 py-2 text-sm transition ${
+                        isSelected
+                          ? "border-[#f0cddd] bg-[#fff0f6] font-semibold text-[#7c4f64]"
+                          : "border-[#eadfe7] bg-white text-[#6b5b68]"
+                      }`}
+                    >
+                      {isSelected ? `✓ ${tag}` : tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <input type="hidden" required value={momInterestTags.length > 0 ? "selected" : ""} />
+              <p className="mt-2 text-xs muted-text">
+                最大5個まで選べます。{isMomTagLimitReached ? "上限に達しています。" : ""}
+              </p>
+            </label>
           </section>
 
           <section className="soft-card flex flex-col gap-3.5">
@@ -509,38 +535,20 @@ export default function ProfileOnboardingPage() {
                 className="mock-select"
                 value={connectionPreference}
                 onChange={(e) => {
-                  const next = e.target.value;
-                  setConnectionPreference(next);
-                  if (next !== "その他（自由入力）") {
-                    setCustomConnectionPreference("");
-                  }
+                  setConnectionPreference(e.target.value);
                 }}
                 required
               >
                 <option value="" disabled>
                   選択してください
                 </option>
-                {CONNECTION_PREFERENCES.map((option) => (
+                {CONNECTION_PREFERENCE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
               </select>
             </label>
-            {connectionPreference === "その他（自由入力）" ? (
-              <label>
-                <span className="label-text">つながり方の希望（自由入力・必須）</span>
-                <input
-                  className="mock-input"
-                  placeholder="例: まずは短いチャットから始めたいです"
-                  value={customConnectionPreference}
-                  onChange={(e) => setCustomConnectionPreference(e.target.value)}
-                  maxLength={60}
-                  required
-                />
-                <p className="mt-2 text-xs muted-text">60文字以内で入力してください。</p>
-              </label>
-            ) : null}
             <label>
               <span className="label-text">会いやすい範囲（必須）</span>
               <select

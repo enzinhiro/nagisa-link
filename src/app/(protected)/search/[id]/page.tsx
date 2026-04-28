@@ -10,6 +10,8 @@ import { isMissingProfileColumnError } from "../../../../lib/supabase/profile-qu
 import { getVisibleConnectionAchievementCounts } from "../../../../lib/profile/connection-achievements";
 import { normalizeChildGender, shouldShowPublicChildGender } from "../../../../lib/profile/child-gender";
 import { isVisiblePublicValue } from "../../../../lib/profile/public-visibility";
+import { toDisplayChildAgeGroups } from "../../../../lib/profile/age-groups";
+import { normalizeMomInterestTags } from "../../../../lib/profile/mom-interest-tags";
 
 type ProfileDetail = {
   id: string;
@@ -17,8 +19,10 @@ type ProfileDetail = {
   area: string;
   connection_achievement_count: number;
   child_age_group: string;
+  child_age_groups: string[];
   child_gender: string | null;
   child_interest_tags: string[];
+  mom_interest_tags: string[];
   want_to_connect: string;
   connection_preference: string;
   meeting_range: string;
@@ -68,7 +72,7 @@ export default function SearchDetailPage() {
       let { data, error } = await supabase
         .from("public_profiles")
         .select(
-          "id,nickname,area,connection_achievement_count,child_age_group,child_gender,child_interest_tags,want_to_connect,connection_preference,meeting_range,intro,avatar_seed"
+          "id,nickname,area,connection_achievement_count,child_age_group,child_age_groups,child_gender,child_interest_tags,mom_interest_tags,want_to_connect,connection_preference,meeting_range,intro,avatar_seed"
         )
         .eq("id", profileId)
         .neq("id", user.id)
@@ -83,7 +87,7 @@ export default function SearchDetailPage() {
           .eq("id", profileId)
           .neq("id", user.id)
           .maybeSingle();
-        data = fallback.data ? { ...fallback.data, avatar_seed: null } : fallback.data;
+        data = fallback.data ? { ...fallback.data, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] } : fallback.data;
         error = fallback.error;
       }
 
@@ -163,16 +167,22 @@ export default function SearchDetailPage() {
   const isOwnProfile = currentUserId !== null && profile !== null && currentUserId === profile.id;
   const achievementCount = Number(profile?.connection_achievement_count ?? 0);
   const visibleChildGender = normalizeChildGender(profile?.child_gender);
+  const visibleAgeGroups = toDisplayChildAgeGroups(profile?.child_age_groups, profile?.child_age_group);
   const visibleInterestTags = (profile?.child_interest_tags ?? []).filter((tag) => isVisiblePublicValue(tag)).slice(0, 5);
+  const visibleMomInterests = normalizeMomInterestTags(profile?.mom_interest_tags ?? []);
   const profileLead = isVisiblePublicValue(profile?.want_to_connect) ? profile?.want_to_connect : "";
   const profileIntro = isVisiblePublicValue(profile?.intro) ? profile?.intro : "";
   const showArea = isVisiblePublicValue(profile?.area);
-  const showAgeGroup = isVisiblePublicValue(profile?.child_age_group);
+  const showAgeGroup = visibleAgeGroups.length > 0;
   const showChildGender = shouldShowPublicChildGender(visibleChildGender);
   const showConnectionPreference = isVisiblePublicValue(profile?.connection_preference);
   const showMeetingRange = isVisiblePublicValue(profile?.meeting_range);
   const hasSupplementaryInfo =
-    visibleInterestTags.length > 0 || showChildGender || showConnectionPreference || showMeetingRange;
+    visibleInterestTags.length > 0 ||
+    visibleMomInterests.length > 0 ||
+    showChildGender ||
+    showConnectionPreference ||
+    showMeetingRange;
 
   return (
     <div className="mock-page">
@@ -200,7 +210,7 @@ export default function SearchDetailPage() {
                     <h1 className="hero-title truncate text-xl font-semibold">{toMamaDisplayName(profile.nickname)}</h1>
                     {(showArea || showAgeGroup) ? (
                       <p className="text-sm muted-text">
-                        {[profile.area, profile.child_age_group].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
+                        {[profile.area, visibleAgeGroups.join("・")].filter((value) => isVisiblePublicValue(value)).join(" ・ ")}
                       </p>
                     ) : null}
                   </div>
@@ -233,6 +243,15 @@ export default function SearchDetailPage() {
                   <div className="flex flex-wrap gap-2">
                     {visibleInterestTags.map((tag) => (
                       <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {visibleMomInterests.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {visibleMomInterests.map((tag) => (
+                      <span key={`mom-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
                         {tag}
                       </span>
                     ))}
