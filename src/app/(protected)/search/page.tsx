@@ -655,11 +655,10 @@ export default function SearchPage() {
                     const achievementCount = Number(card.connection_achievement_count ?? 0);
                     const showArea = isVisiblePublicValue(card.area);
                     const showAgeGroup = isVisiblePublicValue(card.child_age_group);
-                    const profileLead = isVisiblePublicValue(card.want_to_connect)
-                      ? card.want_to_connect
-                      : isVisiblePublicValue(card.intro)
-                        ? card.intro
-                        : "";
+                    const showWantToConnect = isVisiblePublicValue(card.want_to_connect);
+                    const showIntro = !showWantToConnect && isVisiblePublicValue(card.intro);
+                    const profileLeadLabel = showWantToConnect ? "今つながりたいこと" : showIntro ? "ひとこと紹介" : "";
+                    const profileLead = showWantToConnect ? card.want_to_connect : showIntro ? card.intro : "";
                     const hasProfileLead = isVisiblePublicValue(profileLead);
                     const visibleTags = (card.child_interest_tags ?? [])
                       .filter((tag) => isVisiblePublicValue(tag))
@@ -691,7 +690,7 @@ export default function SearchPage() {
                       ) : null}
                       {hasProfileLead ? (
                         <div className="person-summary-strip">
-                          <p className="text-[11px] font-semibold text-[#6b8598]">今つながりたいこと</p>
+                          <p className="text-[11px] font-semibold text-[#6b8598]">{profileLeadLabel}</p>
                           <p className="mt-1 text-sm text-[#365f78] leading-snug" style={clampTextStyle(2)}>
                             {profileLead}
                           </p>
@@ -722,11 +721,10 @@ export default function SearchPage() {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
               const showArea = isVisiblePublicValue(card.area);
               const showAgeGroup = isVisiblePublicValue(card.child_age_group);
-              const profileLead = isVisiblePublicValue(card.want_to_connect)
-                ? card.want_to_connect
-                : isVisiblePublicValue(card.intro)
-                  ? card.intro
-                  : "";
+              const showWantToConnect = isVisiblePublicValue(card.want_to_connect);
+              const showIntro = !showWantToConnect && isVisiblePublicValue(card.intro);
+              const profileLeadLabel = showWantToConnect ? "今つながりたいこと" : showIntro ? "ひとこと紹介" : "";
+              const profileLead = showWantToConnect ? card.want_to_connect : showIntro ? card.intro : "";
               const hasProfileLead = isVisiblePublicValue(profileLead);
               const visibleTags = (card.child_interest_tags ?? [])
                 .filter((tag) => isVisiblePublicValue(tag))
@@ -758,7 +756,7 @@ export default function SearchPage() {
                 ) : null}
                 {hasProfileLead ? (
                   <div className="person-connect-strip">
-                    <p className="text-[11px] font-semibold text-[#6b8598]">今つながりたいこと</p>
+                    <p className="text-[11px] font-semibold text-[#6b8598]">{profileLeadLabel}</p>
                     <p className="mt-1 text-sm leading-relaxed text-[#365f78]" style={clampTextStyle(3)}>
                       {profileLead}
                     </p>
