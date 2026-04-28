@@ -285,6 +285,41 @@ a {
   padding: 9px 11px;
 }
 
+.talk-state-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid #e2e8ef;
+  background: #f8fbfe;
+  padding: 3px 9px;
+  font-size: 11px;
+  color: #5f7c90;
+}
+
+.talk-state-matched {
+  border-color: #efcfdd;
+  background: #fff1f7;
+  color: #86566d;
+}
+
+.talk-state-received {
+  border-color: #d4e7f3;
+  background: #f1f9ff;
+  color: #3f708a;
+}
+
+.talk-state-sent {
+  border-color: #e2e6ec;
+  background: #f8f9fb;
+  color: #687d8d;
+}
+
+.talk-state-ended {
+  border-color: #e4e6ea;
+  background: #f6f7f9;
+  color: #748693;
+}
+
 .primary-btn:disabled,
 .secondary-btn:disabled {
   opacity: 0.62;

@@ -13,6 +13,7 @@ import {
   pendingSentOffers,
   splitMatchedAndEnded,
 } from "../../../lib/talk/wantsSummary";
+import { isVisiblePublicValue } from "../../../lib/profile/public-visibility";
 
 type WantRow = {
   id: string;
@@ -335,17 +336,23 @@ export default function TalkPage() {
           />
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-semibold leading-6 text-[#2f5f79]">{toMamaDisplayName(card.nickname)}</h3>
-            <p className="text-xs muted-text">{card.area}</p>
+            {isVisiblePublicValue(card.area) ? <p className="text-xs muted-text">{card.area}</p> : null}
           </div>
         </div>
-        <span className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">{card.label}</span>
+        <span className={`talk-state-badge ${section === "matched" ? "talk-state-matched" : ""} ${section === "received" ? "talk-state-received" : ""} ${section === "sent" ? "talk-state-sent" : ""} ${section === "ended" ? "talk-state-ended" : ""}`}>
+          {section === "matched"
+            ? "一致しました"
+            : section === "received"
+              ? "届いています"
+              : section === "sent"
+                ? "返答待ち"
+                : "終了"}
+        </span>
       </div>
-      <p className="text-sm leading-6 text-[#365f78]">{card.wantToConnect}</p>
-      {card.connectionAchievementCount > 0 ? (
-        <div className="soft-card-subtle !px-3 !py-2">
-          <p className="text-xs text-[#5b798d]">つながり実績 {card.connectionAchievementCount}</p>
-        </div>
+      {isVisiblePublicValue(card.wantToConnect) ? (
+        <p className="person-summary-strip text-sm leading-6 text-[#365f78]">{card.wantToConnect}</p>
       ) : null}
+      {card.connectionAchievementCount > 0 ? <p className="text-xs text-[#6a8292]">つながり実績 {card.connectionAchievementCount}</p> : null}
       {section === "matched" ? (
         <button
           type="button"
@@ -376,8 +383,11 @@ export default function TalkPage() {
           </button>
         </div>
       ) : null}
-      {section === "sent" ? <p className="section-note">返答待ち</p> : null}
-      {section === "ended" ? <p className="section-note">チャットは終了しました</p> : null}
+      {section === "ended" && card.expiresAt ? (
+        <p className="section-note">
+          終了日時: {new Date(card.expiresAt).toLocaleDateString("ja-JP")}
+        </p>
+      ) : null}
     </article>
   );
 
@@ -412,34 +422,34 @@ export default function TalkPage() {
         {!loading && !message ? (
           <>
             <section className="screen-stack">
-              <h2 className="section-title">一致</h2>
+              <h2 className="section-title">一致した相手</h2>
               {matchedCards.length > 0 ? (
                 matchedCards.map((card) => renderCard(card, "matched"))
               ) : (
-                <div className="soft-card-subtle">
+                <div className="empty-state-card">
                   <p className="section-note">まだ一致した相手はいません。</p>
                 </div>
               )}
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">話したいが届いています</h2>
+              <h2 className="section-title">届いた話したい</h2>
               {receivedCards.length > 0 ? (
                 receivedCards.map((card) => renderCard(card, "received"))
               ) : (
-                <div className="soft-card-subtle">
-                  <p className="section-note">まだ届いた「話したい」はありません。</p>
+                <div className="empty-state-card">
+                  <p className="section-note">届いている話したいはありません。</p>
                 </div>
               )}
             </section>
 
             <section className="screen-stack">
-              <h2 className="section-title">話したい中</h2>
+              <h2 className="section-title">送った話したい</h2>
               {sentCards.length > 0 ? (
                 sentCards.map((card) => renderCard(card, "sent"))
               ) : (
-                <div className="soft-card-subtle">
-                  <p className="section-note">まだ送った「話したい」はありません。</p>
+                <div className="empty-state-card">
+                  <p className="section-note">送信中の話したいはありません。</p>
                 </div>
               )}
             </section>
@@ -449,7 +459,7 @@ export default function TalkPage() {
               {endedCards.length > 0 ? (
                 endedCards.map((card) => renderCard(card, "ended"))
               ) : (
-                <div className="soft-card-subtle">
+                <div className="empty-state-card">
                   <p className="section-note">終了済みのチャットはありません。</p>
                 </div>
               )}
