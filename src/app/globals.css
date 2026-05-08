@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fffaf8;
-  --foreground: #2d4658;
+  --background: #f9fcff;
+  --foreground: #2b475a;
   --surface: #ffffff;
-  --surface-soft: #fffdfd;
+  --surface-soft: #fcfeff;
   --primary-soft: #e9f6ff;
   --primary: #9bcfe9;
   --primary-deep: #3e6782;
   --secondary-soft: #fff2f7;
-  --border-soft: #ece4ea;
-  --border-soft-strong: #dcdfe7;
-  --text-muted: #708696;
-  --shadow-soft: 0 8px 20px rgba(109, 124, 141, 0.08);
+  --border-soft: #e2e8ef;
+  --border-soft-strong: #cfd9e4;
+  --text-muted: #617989;
+  --shadow-soft: 0 6px 16px rgba(102, 119, 137, 0.08);
 }
 
 @theme inline {
@@ -44,9 +44,9 @@ a {
   min-height: 100dvh;
   padding: 18px 14px 28px;
   background:
-    radial-gradient(92% 42% at 100% -8%, rgba(177, 222, 244, 0.13), transparent 62%),
-    radial-gradient(86% 38% at -10% -2%, rgba(255, 225, 237, 0.22), transparent 70%),
-    linear-gradient(180deg, #fffaf8 0%, #fffdfd 52%, #f8fbff 100%);
+    radial-gradient(92% 42% at 100% -8%, rgba(177, 222, 244, 0.16), transparent 62%),
+    radial-gradient(86% 38% at -10% -2%, rgba(255, 225, 237, 0.18), transparent 70%),
+    linear-gradient(180deg, #f8fbff 0%, #fbfdff 52%, #f4f9ff 100%);
 }
 
 .mock-shell {
@@ -135,7 +135,7 @@ a {
 
 .section-note {
   font-size: 12px;
-  color: #6e8798;
+  color: #617b8d;
   line-height: 1.5;
 }
 
@@ -231,17 +231,17 @@ a {
 }
 
 .empty-state-card {
-  border: 1px dashed #ece4eb;
-  background: linear-gradient(180deg, #fffefe 0%, #fffafc 100%);
+  border: 1px dashed #dde6ee;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
   border-radius: 12px;
   padding: 10px 12px;
 }
 
 .perk-feature-card {
   border-radius: 20px;
-  border: 1px solid #edd8e3;
-  background: linear-gradient(145deg, #fff9f8 0%, #fff2f7 62%, #f4faff 100%);
-  box-shadow: 0 10px 20px rgba(123, 131, 142, 0.1);
+  border: 1px solid #e1e8ef;
+  background: linear-gradient(145deg, #ffffff 0%, #fff8fb 62%, #f6fbff 100%);
+  box-shadow: 0 8px 18px rgba(118, 129, 142, 0.09);
 }
 
 .perk-feature-cta {
@@ -253,18 +253,20 @@ a {
 .card-divider {
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg, rgba(225, 233, 240, 0.2), rgba(225, 233, 240, 0.8), rgba(225, 233, 240, 0.2));
+  background: linear-gradient(90deg, rgba(214, 224, 234, 0.25), rgba(214, 224, 234, 0.9), rgba(214, 224, 234, 0.25));
 }
 
 .inline-soft-area {
   border-radius: 12px;
-  background: #fff9fc;
+  background: #ffffff;
+  border: 1px solid #e7edf3;
   padding: 10px 12px;
 }
 
 .perk-benefit-strip {
   border-radius: 12px;
-  background: linear-gradient(180deg, #fff6fa 0%, #fff2f8 100%);
+  border: 1px solid #f0d8e4;
+  background: linear-gradient(180deg, #fff7fb 0%, #fff2f8 100%);
   padding: 10px 12px;
 }
 
