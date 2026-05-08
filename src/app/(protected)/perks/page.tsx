@@ -15,6 +15,15 @@ export default function PerksPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [categoryError, setCategoryError] = useState("");
 
+  const formatBenefit = (benefit: string) => {
+    const trimmed = benefit.trim();
+    if (trimmed.startsWith("NAGISA Link会員は")) {
+      return `会員特典：${trimmed.replace("NAGISA Link会員は", "")}`;
+    }
+    if (trimmed.startsWith("会員特典：")) return trimmed;
+    return `会員特典：${trimmed}`;
+  };
+
   useEffect(() => {
     const fetchPerks = async () => {
       setLoading(true);
@@ -83,8 +92,8 @@ export default function PerksPage() {
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3">
           <div className="min-w-0">
-            <h1 className="section-title text-[18px]">地元特典</h1>
-            <p className="section-note">会員向けのシンプルな特典チケット</p>
+            <h1 className="section-title text-[18px]">ママ応援店舗</h1>
+            <p className="section-note">NAGISA Link会員向け特典のある、地元のお店を紹介しています。</p>
           </div>
           <label className="block">
             <span className="sr-only">地元特典を検索</span>
@@ -231,14 +240,14 @@ export default function PerksPage() {
                 </div>
 
                 <p className="perk-benefit-strip mt-3 text-sm font-semibold text-[#5f4860]">
-                  {perk.benefit}
+                  {formatBenefit(perk.benefit)}
                 </p>
 
                 <Link
                   href={`/perks/${perk.slug}`}
                   className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
                 >
-                  チケットを表示
+                  会員特典を見る
                 </Link>
               </article>
             ))}

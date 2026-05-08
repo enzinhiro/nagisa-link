@@ -183,20 +183,20 @@ export default function Home() {
         <section className="perk-feature-card px-4 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="section-title">地元特典</h2>
+              <h2 className="section-title">ママ応援店舗</h2>
               <span className="rounded-full border border-[#f0cfdd] bg-[#fff2f8] px-2 py-0.5 text-[10px] text-[#7b5268]">
-                会員限定
+                会員特典あり
               </span>
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[#5f7a8d]">
-              逗子・葉山・横須賀で使える、NAGISA Link会員向け特典です。
+              逗子・葉山・横須賀で、NAGISA Link会員向け特典のあるお店を紹介しています。
             </p>
           </div>
           <Link
             href="/perks"
             className="perk-feature-cta mt-3 inline-flex h-10 items-center justify-center gap-1 rounded-full px-4 text-sm font-semibold text-[#7d4f66]"
           >
-            特典を見る <span aria-hidden>→</span>
+            会員特典を見る <span aria-hidden>→</span>
           </Link>
         </section>
       </main>
