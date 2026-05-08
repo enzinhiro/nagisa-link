@@ -95,21 +95,35 @@ export default function PerkDetailPage() {
               </span>
             </div>
             <p className="mt-1 text-xs text-[#698293]">{perk.address ?? "住所情報は準備中です。"}</p>
-            {googleMapsUrl ? (
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
-              >
-                Googleマップで見る
-              </a>
+            {googleMapsUrl || perk.website_url ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {googleMapsUrl ? (
+                  <a
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
+                  >
+                    Googleマップで見る
+                  </a>
+                ) : null}
+                {perk.website_url ? (
+                  <a
+                    href={perk.website_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
+                  >
+                    公式サイトを見る
+                  </a>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
           <div className="card-divider my-4" />
 
-          <p className="text-[11px] font-semibold tracking-wide text-[#7e93a2]">特典内容</p>
+          <p className="text-[11px] font-semibold tracking-wide text-[#7e93a2]">会員特典</p>
           <p className="perk-benefit-strip mt-1 text-base font-semibold text-[#5e4760]">
             {perk.benefit}
           </p>
@@ -118,29 +132,16 @@ export default function PerkDetailPage() {
             <>
               <p className="mt-3 text-[11px] font-semibold tracking-wide text-[#7e93a2]">お店からのひとこと</p>
               <p className="mt-1 text-sm leading-relaxed text-[#5f7b8d]">{perk.description}</p>
+              <div className="card-divider my-4" />
             </>
           ) : null}
 
-          {perk.website_url ? (
-            <>
-              <div className="mt-3">
-                <a
-                  href={perk.website_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
-                >
-                  公式サイトを見る
-                </a>
-              </div>
-            </>
-          ) : null}
-
-          <div className="card-divider my-4" />
+          {!perk.description ? <div className="card-divider my-4" /> : null}
           <p className="text-[11px] font-semibold tracking-wide text-[#7e93a2]">使い方</p>
           <p className="mt-2 text-sm text-[#4e6f83]">{perk.usage_text}</p>
           {perk.condition_text ? (
             <>
+              <div className="card-divider my-4" />
               <p className="mt-3 text-[11px] font-semibold tracking-wide text-[#7e93a2]">利用条件</p>
               <p className="mt-1 text-sm text-[#4e6f83]">{perk.condition_text}</p>
             </>
