@@ -49,12 +49,6 @@ export default function PerksPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3">
-          <Link
-            href="/"
-            className="inline-flex h-8 w-fit items-center rounded-full border border-[#d7e7ef] bg-white px-3 text-xs text-[#47687c]"
-          >
-            ← 戻る
-          </Link>
           <div className="min-w-0">
             <h1 className="section-title text-[18px]">地元特典</h1>
             <p className="section-note">会員向けのシンプルな特典チケット</p>
