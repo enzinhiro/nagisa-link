@@ -140,6 +140,12 @@ export default function AdminHomePage() {
               </div>
               {metricsNote ? <p className="text-xs muted-text">{metricsNote}</p> : null}
             </section>
+
+            <section className="soft-card">
+              <Link href="/admin/perks" className="secondary-btn !h-11">
+                地元特典管理
+              </Link>
+            </section>
           </>
         ) : null}
       </main>

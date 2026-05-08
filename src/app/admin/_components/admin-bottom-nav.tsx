@@ -7,6 +7,7 @@ export function AdminBottomNav() {
   const pathname = usePathname();
   const tabs = [
     { href: "/admin", label: "TOP", active: pathname === "/admin" },
+    { href: "/", label: "ホーム", active: pathname === "/" },
     {
       href: "/admin/invite-codes",
       label: "コード",
@@ -14,7 +15,6 @@ export function AdminBottomNav() {
     },
     { href: "/admin/users", label: "会員", active: pathname.startsWith("/admin/users") },
     { href: "/admin/reports", label: "通報", active: pathname.startsWith("/admin/reports") },
-    { href: "/", label: "ホーム", active: false },
   ];
 
   return (
