@@ -13,6 +13,7 @@ export const PERK_CATEGORIES = [
   "雨の日OK",
   "初回体験",
   "予約制",
+  "その他",
 ] as const;
 
 export type PerkArea = (typeof PERK_AREAS)[number];
