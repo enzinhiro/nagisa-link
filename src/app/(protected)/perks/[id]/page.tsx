@@ -83,14 +83,14 @@ export default function PerkDetailPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <header className="px-1 pt-1">
-          <h1 className="section-title text-[18px]">地元特典チケット</h1>
+          <h1 className="section-title text-[18px]">会員特典チケット</h1>
         </header>
 
         <section className="perk-feature-card !rounded-[14px] px-4 py-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-semibold text-[#315970]">{perk.name}</h2>
-              <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
+              <span className="rounded-full border border-[#deebf4] bg-[#f7fcff] px-2 py-0.5 text-[10px] font-medium text-[#68869a]">
                 {perk.area}
               </span>
             </div>
@@ -102,7 +102,7 @@ export default function PerkDetailPage() {
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-[#cfe1ee] bg-[#eef7ff] px-4.5 text-[12px] font-semibold text-[#355f78]"
                   >
                     Googleマップで見る
                   </a>
@@ -112,7 +112,7 @@ export default function PerkDetailPage() {
                     href={perk.website_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-[#cfe1ee] bg-[#eef7ff] px-4.5 text-[12px] font-semibold text-[#355f78]"
                   >
                     公式サイトを見る
                   </a>
