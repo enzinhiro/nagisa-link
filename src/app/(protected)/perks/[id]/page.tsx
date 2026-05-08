@@ -17,7 +17,7 @@ export default async function PerkDetailPage({ params }: PerkDetailPageProps) {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="flex items-center gap-3 px-1 pt-1">
+        <header className="flex flex-col items-start gap-2 px-1 pt-1">
           <Link
             href="/perks"
             className="inline-flex h-9 items-center rounded-full border border-[#d7e7ef] bg-white px-3 text-sm text-[#47687c]"
@@ -28,19 +28,14 @@ export default async function PerkDetailPage({ params }: PerkDetailPageProps) {
         </header>
 
         <section className="perk-feature-card px-4 py-4">
-          <div className="flex items-start gap-3">
-            <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[#f0d5e2] bg-[#fff2f8] text-2xl">
-              {perk.icon}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold text-[#315970]">{perk.title}</h2>
+              <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
+                {perk.area}
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold text-[#315970]">{perk.title}</h2>
-                <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
-                  {perk.area}
-                </span>
-            </div>
-              <p className="mt-1 text-xs text-[#698293]">{perk.address}</p>
-            </div>
+            <p className="mt-1 text-xs text-[#698293]">{perk.address}</p>
           </div>
 
           <div className="card-divider my-4" />

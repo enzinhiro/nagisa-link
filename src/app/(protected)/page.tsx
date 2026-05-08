@@ -181,21 +181,16 @@ export default function Home() {
         </section>
 
         <section className="perk-feature-card px-4 py-4">
-          <div className="flex items-start gap-3.5">
-            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#efcadb] bg-[#ffedf5] text-[22px] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-              🎫
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="section-title">地元特典</h2>
+              <span className="rounded-full border border-[#f0cfdd] bg-[#fff2f8] px-2 py-0.5 text-[10px] text-[#7b5268]">
+                会員限定
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="section-title">地元特典</h2>
-                <span className="rounded-full border border-[#f0cfdd] bg-[#fff2f8] px-2 py-0.5 text-[10px] text-[#7b5268]">
-                  会員限定
-                </span>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-[#5f7a8d]">
-                逗子・葉山・横須賀で使える、NAGISA Link会員向け特典です。
-              </p>
-            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[#5f7a8d]">
+              逗子・葉山・横須賀で使える、NAGISA Link会員向け特典です。
+            </p>
           </div>
           <Link
             href="/perks"

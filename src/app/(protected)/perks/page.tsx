@@ -49,17 +49,15 @@ export default function PerksPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack">
         <section className="soft-card flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex h-9 items-center rounded-full border border-[#d7e7ef] bg-white px-3 text-sm text-[#47687c]"
-            >
-              ← 戻る
-            </Link>
-            <div className="min-w-0">
-              <h1 className="section-title text-[18px]">地元特典</h1>
-              <p className="section-note">会員向けのシンプルな特典チケット</p>
-            </div>
+          <Link
+            href="/"
+            className="inline-flex h-8 w-fit items-center rounded-full border border-[#d7e7ef] bg-white px-3 text-xs text-[#47687c]"
+          >
+            ← 戻る
+          </Link>
+          <div className="min-w-0">
+            <h1 className="section-title text-[18px]">地元特典</h1>
+            <p className="section-note">会員向けのシンプルな特典チケット</p>
           </div>
           <label className="block">
             <span className="sr-only">地元特典を検索</span>
@@ -176,19 +174,14 @@ export default function PerksPage() {
                 key={perk.id}
                 className="soft-card !rounded-[18px] !px-4 !py-3.5"
               >
-                <div className="flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#f2d7e4] bg-[#fff5f9] text-lg">
-                    {perk.icon}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-semibold text-[#315970]">{perk.title}</h2>
+                    <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
+                      {perk.area}
+                    </span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-sm font-semibold text-[#315970]">{perk.title}</h2>
-                      <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
-                        {perk.area}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[#688194]">{perk.address}</p>
-                  </div>
+                  <p className="mt-1 text-xs text-[#688194]">{perk.address}</p>
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-1.5">
