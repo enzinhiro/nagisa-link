@@ -1,27 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { PERK_AREAS, PERK_CATEGORIES, PERKS, type PerkArea, type PerkCategory } from "../../../lib/perks";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../../../lib/supabase/client";
+import { PERK_AREAS, PERK_CATEGORIES, type PerkArea, type PerkCategory, type PerkRecord } from "../../../lib/perks";
 
 export default function PerksPage() {
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [perks, setPerks] = useState<PerkRecord[]>([]);
   const [query, setQuery] = useState("");
   const [area, setArea] = useState<PerkArea>("すべて");
   const [selectedCategories, setSelectedCategories] = useState<PerkCategory[]>([]);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [categoryError, setCategoryError] = useState("");
 
+  useEffect(() => {
+    const fetchPerks = async () => {
+      setLoading(true);
+      setMessage("");
+      const { data, error } = await supabase
+        .from("perks")
+        .select(
+          "id,slug,name,area,address,categories,benefit,description,website_url,usage_text,condition_text,is_published,display_order,created_at,updated_at"
+        )
+        .eq("is_published", true)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        setMessage("地元特典の読み込みに失敗しました。時間をおいて再度お試しください。");
+        setPerks([]);
+        setLoading(false);
+        return;
+      }
+
+      setPerks((data ?? []) as PerkRecord[]);
+      setLoading(false);
+    };
+
+    void fetchPerks();
+  }, []);
+
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return PERKS.filter((perk) => {
+    return perks.filter((perk) => {
       const areaMatch = area === "すべて" || perk.area === area;
       const categoryMatch =
         selectedCategories.length === 0 || selectedCategories.every((category) => perk.categories.includes(category));
-      const textTarget = [perk.title, perk.area, perk.address, perk.benefit, perk.categories.join(" ")].join(" ").toLowerCase();
+      const textTarget = [perk.name, perk.area, perk.address ?? "", perk.benefit, perk.categories.join(" ")]
+        .join(" ")
+        .toLowerCase();
       const searchMatch = normalizedQuery.length === 0 || textTarget.includes(normalizedQuery);
       return areaMatch && categoryMatch && searchMatch;
     });
-  }, [area, query, selectedCategories]);
+  }, [area, perks, query, selectedCategories]);
 
   const toggleCategory = (category: PerkCategory) => {
     setSelectedCategories((current) => {
@@ -156,7 +189,15 @@ export default function PerksPage() {
           ) : null}
         </section>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <section className="soft-card">
+            <p className="muted-text text-sm">地元特典を読み込んでいます...</p>
+          </section>
+        ) : message ? (
+          <section className="soft-card">
+            <p className="text-sm text-rose-700">{message}</p>
+          </section>
+        ) : filtered.length === 0 ? (
           <section className="empty-state-card">
             <p className="text-sm text-[#44657a]">条件に合う特典がまだありません。</p>
             <p className="mt-1 text-xs muted-text">条件を変えてお試しください。</p>
@@ -170,12 +211,12 @@ export default function PerksPage() {
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-semibold text-[#315970]">{perk.title}</h2>
+                    <h2 className="text-sm font-semibold text-[#315970]">{perk.name}</h2>
                     <span className="rounded-full border border-[#d9e9f2] bg-[#f3fbff] px-2 py-0.5 text-[11px] text-[#4a6e83]">
                       {perk.area}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-[#688194]">{perk.address}</p>
+                  <p className="mt-1 text-xs text-[#688194]">{perk.address ?? "住所情報は準備中です。"}</p>
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -194,7 +235,7 @@ export default function PerksPage() {
                 </p>
 
                 <Link
-                  href={`/perks/${perk.id}`}
+                  href={`/perks/${perk.slug}`}
                   className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
                 >
                   チケットを表示
