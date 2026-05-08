@@ -62,16 +62,10 @@ export default async function PerkDetailPage({ params }: PerkDetailPageProps) {
           <div className="card-divider my-4" />
           <p className="text-[11px] font-semibold tracking-wide text-[#7e93a2]">使い方</p>
           <ol className="mt-2 flex flex-col gap-1.5 text-sm text-[#4e6f83]">
-            <li>1. お店でこの画面を開く</li>
-            <li>2. スタッフに提示する</li>
-            <li>3. 特典を利用する</li>
+            <li>1. 予約時に特典利用を伝える</li>
+            <li>2. 来店時にこの画面を見せる</li>
+            <li>3. 施術料金5%オフ</li>
           </ol>
-          <p className="mt-2 text-[11px] text-[#6f8797]">予約時にNAGISA Linkの特典画面を提示</p>
-          <ul className="mt-1 list-disc pl-4 text-xs leading-relaxed text-[#5f7b8d]">
-            {perk.conditions.map((condition) => (
-              <li key={condition}>{condition}</li>
-            ))}
-          </ul>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#e8edf2] pt-3">
             <p className="inline-flex rounded-full border border-[#f2d6e3] bg-[#fff2f8] px-2.5 py-1 text-[11px] text-[#7e5267]">

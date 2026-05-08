@@ -193,22 +193,6 @@ export default function PerksPage() {
                   {perk.benefit}
                 </p>
 
-                {perk.links.length > 0 ? (
-                  <div className="mt-2.5 flex flex-wrap gap-3 text-xs text-[#3f7aa0]">
-                    {perk.links.map((link) => (
-                      <a
-                        key={`${perk.id}-${link.label}`}
-                        href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline decoration-[#9fcde5] underline-offset-2"
-                      >
-                        {link.label}
-                      </a>
-                    ))}
-                  </div>
-                ) : null}
-
                 <Link
                   href={`/perks/${perk.id}`}
                   className="mt-3 inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
