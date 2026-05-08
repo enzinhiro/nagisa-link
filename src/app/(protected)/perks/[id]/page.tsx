@@ -75,6 +75,10 @@ export default function PerkDetailPage() {
     );
   }
 
+  const googleMapsUrl = perk.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(perk.address)}`
+    : null;
+
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
@@ -91,6 +95,16 @@ export default function PerkDetailPage() {
               </span>
             </div>
             <p className="mt-1 text-xs text-[#698293]">{perk.address ?? "住所情報は準備中です。"}</p>
+            {googleMapsUrl ? (
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex h-9 items-center justify-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-4 text-xs font-semibold text-[#3c6d88]"
+              >
+                Googleマップで見る
+              </a>
+            ) : null}
           </div>
 
           <div className="card-divider my-4" />
