@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminBottomNav } from "../_components/admin-bottom-nav";
 import { supabase } from "../../../lib/supabase/client";
+import { PERK_AREAS, PERK_CATEGORIES } from "../../../lib/perks";
 
 type AdminPerkRow = {
   id: string;
@@ -27,7 +28,7 @@ type PerkFormState = {
   slug: string;
   area: string;
   address: string;
-  categoriesText: string;
+  categories: string[];
   benefit: string;
   description: string;
   websiteUrl: string;
@@ -43,7 +44,7 @@ const INITIAL_FORM: PerkFormState = {
   slug: "",
   area: "",
   address: "",
-  categoriesText: "",
+  categories: [],
   benefit: "",
   description: "",
   websiteUrl: "",
@@ -97,7 +98,7 @@ export default function AdminPerksPage() {
       slug: row.slug,
       area: row.area,
       address: row.address ?? "",
-      categoriesText: (row.categories ?? []).join(", "),
+      categories: row.categories ?? [],
       benefit: row.benefit,
       description: row.description ?? "",
       websiteUrl: row.website_url ?? "",
@@ -119,20 +120,20 @@ export default function AdminPerksPage() {
       setFeedback("店舗名・slug・エリア・特典内容は必須です。");
       return;
     }
+    if (form.categories.length === 0) {
+      setFeedback("カテゴリーを1つ以上選択してください。");
+      return;
+    }
 
     setSaving(true);
     setFeedback("");
 
-    const categories = form.categoriesText
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
     const payload = {
       name: form.name.trim(),
       slug: form.slug.trim(),
       area: form.area.trim(),
       address: form.address.trim() || null,
-      categories,
+      categories: form.categories,
       benefit: form.benefit.trim(),
       description: form.description.trim() || null,
       website_url: form.websiteUrl.trim() || null,
@@ -229,7 +230,18 @@ export default function AdminPerksPage() {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="flex flex-col gap-1">
                   <span className="label-text">エリア *</span>
-                  <input className="mock-input" value={form.area} onChange={(e) => setForm((prev) => ({ ...prev, area: e.target.value }))} />
+                  <select
+                    className="mock-select admin-select"
+                    value={form.area}
+                    onChange={(e) => setForm((prev) => ({ ...prev, area: e.target.value }))}
+                  >
+                    <option value="">選択してください</option>
+                    {PERK_AREAS.filter((area) => area !== "すべて").map((area) => (
+                      <option key={area} value={area}>
+                        {area}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="label-text">表示順</span>
@@ -246,13 +258,29 @@ export default function AdminPerksPage() {
                 <input className="mock-input" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="label-text">カテゴリー（カンマ区切り）</span>
-                <input
-                  className="mock-input"
-                  value={form.categoriesText}
-                  onChange={(e) => setForm((prev) => ({ ...prev, categoriesText: e.target.value }))}
-                  placeholder="からだ・整体, 予約制"
-                />
+                <span className="label-text">カテゴリー *（複数選択可）</span>
+                <div className="flex flex-wrap gap-2 rounded-[14px] border border-[#d5e0ea] bg-white p-3">
+                  {PERK_CATEGORIES.map((category) => {
+                    const checked = form.categories.includes(category);
+                    return (
+                      <label key={category} className="inline-flex items-center gap-1.5 text-xs text-[#4d6f83]">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setForm((prev) => ({
+                              ...prev,
+                              categories: e.target.checked
+                                ? [...prev.categories, category]
+                                : prev.categories.filter((item) => item !== category),
+                            }));
+                          }}
+                        />
+                        {category}
+                      </label>
+                    );
+                  })}
+                </div>
               </label>
               <label className="flex flex-col gap-1">
                 <span className="label-text">特典内容 *</span>
