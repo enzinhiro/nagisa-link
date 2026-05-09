@@ -510,13 +510,13 @@ export default function SearchPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <section className="soft-card flex flex-col gap-3">
-          <div className="flex flex-col gap-2.5">
-            <label className="flex flex-col gap-1.5">
-              <span className="label-text">キーワード</span>
+      <main className="mock-shell screen-stack !gap-2">
+        <section className="flex flex-col gap-2 rounded-[14px] border border-[#e6eef5] bg-[#fcfeff] px-3 py-2.5 shadow-[0_2px_10px_rgba(102,119,137,0.05)]">
+          <div className="flex flex-col gap-2">
+            <label className="block">
+              <span className="sr-only">キーワードで検索</span>
               <input
-                className="mock-input !h-11"
+                className="mock-input !h-10"
                 value={filters.keyword}
                 onChange={(e) => setFilters((f) => ({ ...f, keyword: e.target.value }))}
                 placeholder="気になることや好きなことから探す"
@@ -528,13 +528,13 @@ export default function SearchPage() {
                 }}
               />
             </label>
-            <div className="flex flex-wrap items-stretch gap-2">
-              <button type="button" className="primary-btn !h-11 min-w-[7.5rem] flex-1 sm:flex-none" onClick={runSearch}>
+            <div className="flex flex-wrap items-stretch gap-1.5">
+              <button type="button" className="primary-btn !h-10 min-w-[6.5rem] flex-1 sm:flex-none" onClick={runSearch}>
                 探す
               </button>
               <button
                 type="button"
-                className="secondary-btn !h-11 flex-1 sm:flex-none"
+                className="secondary-btn !h-10 flex-1 sm:flex-none"
                 aria-expanded={detailOpen}
                 onClick={() => setDetailOpen((o) => !o)}
               >
@@ -542,14 +542,14 @@ export default function SearchPage() {
               </button>
             </div>
             {hasAnyFilter(filters) || hasAnyFilter(queryFilters) ? (
-              <button type="button" className="secondary-btn !h-10 w-full sm:w-auto" onClick={clearAllFilters}>
+              <button type="button" className="secondary-btn !h-9 w-full sm:w-auto" onClick={clearAllFilters}>
                 条件を解除する
               </button>
             ) : null}
           </div>
 
           {detailOpen ? (
-            <div className="flex flex-col gap-3.5 border-t border-[#dbe8f0] pt-3.5">
+            <div className="flex flex-col gap-3 border-t border-[#dbe8f0] pt-3">
               <p className="text-xs muted-text">詳細条件は「探す」を押すと反映されます。</p>
               <label>
                 <span className="label-text">地域</span>
@@ -660,7 +660,7 @@ export default function SearchPage() {
           ) : null}
         </section>
 
-        <div ref={resultsAnchorRef} className="scroll-mt-4 pt-1" />
+        <div ref={resultsAnchorRef} className="scroll-mt-2" />
 
         {!loading && !message && countLabel ? (
           <section className="flex flex-col gap-2">

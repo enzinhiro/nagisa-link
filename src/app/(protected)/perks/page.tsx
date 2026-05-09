@@ -89,32 +89,30 @@ export default function PerksPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack">
-        <section className="soft-card flex flex-col gap-3">
-          <div className="min-w-0">
-            <h1 className="section-title text-[18px]">ママ応援店舗</h1>
-            <p className="section-note">NAGISA Link会員向け特典のある、地元のお店を紹介しています。</p>
+      <main className="mock-shell screen-stack !gap-2">
+        <section className="flex flex-col gap-2 rounded-[14px] border border-[#e6eef5] bg-[#fcfeff] px-3 py-2.5 shadow-[0_2px_10px_rgba(102,119,137,0.05)]">
+          <div className="flex flex-row flex-wrap items-center gap-2">
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">地元特典を検索</span>
+              <input
+                type="search"
+                className="mock-input !h-10"
+                placeholder="店名・エリア・カテゴリーで検索"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDetailOpen((current) => !current);
+                setCategoryError("");
+              }}
+              className="inline-flex h-9 shrink-0 items-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-3 text-xs font-semibold text-[#3e6e88]"
+            >
+              {isDetailOpen ? "条件を閉じる" : "詳細条件"}
+            </button>
           </div>
-          <label className="block">
-            <span className="sr-only">地元特典を検索</span>
-            <input
-              type="search"
-              className="mock-input"
-              placeholder="店名・エリア・カテゴリーで検索"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              setIsDetailOpen((current) => !current);
-              setCategoryError("");
-            }}
-            className="inline-flex h-9 w-fit items-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-3 text-xs font-semibold text-[#3e6e88]"
-          >
-            {isDetailOpen ? "条件を閉じる" : "詳細条件"}
-          </button>
 
           {area !== "すべて" || selectedCategories.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -141,7 +139,7 @@ export default function PerksPage() {
           ) : null}
 
           {isDetailOpen ? (
-            <section className="mt-1 border-t border-[#e8edf2] pt-3">
+            <section className="mt-0.5 border-t border-[#e8edf2] pt-2.5">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#4b6f84]">エリア</p>
                 <button
