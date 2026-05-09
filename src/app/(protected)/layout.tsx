@@ -53,6 +53,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
   const [talkBadgeCount, setTalkBadgeCount] = useState(0);
+  const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
@@ -176,6 +177,32 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         } else {
           setTalkBadgeCount(0);
         }
+
+        const [{ data: latestAnnouncement, error: announcementError }, { data: myProfile, error: profileError }] =
+          await Promise.all([
+            supabase
+              .from("announcements")
+              .select("created_at")
+              .eq("is_published", true)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            supabase.from("profiles").select("announcements_last_read_at").eq("id", user.id).maybeSingle(),
+          ]);
+
+        if (announcementError || profileError || !latestAnnouncement?.created_at) {
+          setHasUnreadAnnouncements(false);
+        } else {
+          const lastReadRaw = (myProfile as { announcements_last_read_at?: string | null } | null)
+            ?.announcements_last_read_at;
+          if (!lastReadRaw) {
+            setHasUnreadAnnouncements(true);
+          } else {
+            setHasUnreadAnnouncements(
+              new Date(latestAnnouncement.created_at).getTime() > new Date(lastReadRaw).getTime()
+            );
+          }
+        }
         guardCompletedUserIdRef.current = user.id;
       } catch (error) {
         console.error("[protected-guard] unexpected guard error");
@@ -196,6 +223,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setIsMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith("/announcements")) {
+      setHasUnreadAnnouncements(false);
+    }
   }, [pathname]);
 
   if (isChecking) {
@@ -263,7 +296,21 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               />
             </Link>
           </div>
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/announcements"
+              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d8e7ef] bg-white text-[#47687c]"
+              aria-label="お知らせ"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M6.5 10.5a5.5 5.5 0 1 1 11 0v4.2l1.6 1.8H4.9l1.6-1.8v-4.2Z" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 19.2a2 2 0 0 0 4 0" strokeLinecap="round" />
+              </svg>
+              {hasUnreadAnnouncements ? (
+                <span className="absolute right-1.5 top-1.5 inline-flex h-2 w-2 rounded-full bg-[#ff6b89]" />
+              ) : null}
+            </Link>
+            <div className="relative">
             {isAdminUser ? (
               <span className="absolute -left-12 top-1/2 -translate-y-1/2 rounded-full border border-[#f1d7e3] bg-[#fff3f8] px-2 py-0.5 text-[10px] text-[#8c6375]">
                 管理者
@@ -314,6 +361,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
                 </button>
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </header>

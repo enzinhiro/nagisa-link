@@ -142,9 +142,14 @@ export default function AdminHomePage() {
             </section>
 
             <section className="soft-card">
-              <Link href="/admin/perks" className="secondary-btn !h-11">
-                地元特典管理
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link href="/admin/perks" className="secondary-btn !h-11">
+                  地元特典管理
+                </Link>
+                <Link href="/admin/announcements" className="secondary-btn !h-11">
+                  お知らせ管理
+                </Link>
+              </div>
             </section>
           </>
         ) : null}
