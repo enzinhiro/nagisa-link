@@ -923,10 +923,13 @@ export default function SearchPage() {
               <button type="button" className="primary-btn !h-11" onClick={runSearch}>
                 この条件で探す
               </button>
+              <p className="text-[11px] text-[#6f8797]">条件を選んでから、この条件で探すを押してください。</p>
             </div>
           ) : null}
         </section>
 
+        {!detailOpen ? (
+          <>
         <div ref={resultsAnchorRef} className="scroll-mt-2" />
 
         {!loading && !message && countLabel ? (
@@ -1118,6 +1121,8 @@ export default function SearchPage() {
               );
             })}
         </section>
+          </>
+        ) : null}
       </main>
     </div>
   );
