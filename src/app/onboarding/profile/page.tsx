@@ -342,7 +342,7 @@ export default function ProfileOnboardingPage() {
     }
 
     setAvatarSeed(nextAvatarSeed);
-    router.push(isEditingProfile ? "/profile" : "/search");
+    router.push("/");
   };
 
   if (isBooting) {
