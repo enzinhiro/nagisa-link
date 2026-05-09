@@ -116,6 +116,25 @@ function normalizeSearchText(value: string): string {
   return value.trim().toLowerCase().normalize("NFKC").replace(/[\s　]+/g, "");
 }
 
+/** キーワードを単語に分割（全角/半角スペース、連続空白対応） */
+function splitSearchQuery(raw: string): string[] {
+  return raw
+    .trim()
+    .split(/[\s　]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+/** ひらがな ↔ 片仮名の代表的なブロック変換（同一読みのゆれ吸収） */
+function alternateKanaForms(s: string): string[] {
+  const out = new Set<string>([s]);
+  const toH = s.replace(/[\u30a1-\u30f6]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  const toK = s.replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  out.add(toH);
+  out.add(toK);
+  return [...out].filter((x) => x.length > 0);
+}
+
 /** キーワード検索用に、エリアの正式表記と「市」「町」を落とした略称の両方を対象に含める */
 function areaTextsForKeywordMatch(area: string | null | undefined): string[] {
   const raw = String(area ?? "").trim();
@@ -209,68 +228,6 @@ const NORMALIZED_ALL_GAME_TERMS = Array.from(
   new Set(NORMALIZED_GAME_CATEGORY_GROUP.concat(...GAME_TITLE_GROUPS))
 );
 
-function hasVariantGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
-  if (!normalizedKeyword || !normalizedText) return false;
-  return NORMALIZED_KEYWORD_VARIANT_GROUPS.some((group) => {
-    const keywordHitsGroup = group.some((term) => normalizedKeyword.includes(term));
-    if (!keywordHitsGroup) return false;
-    return group.some((term) => normalizedText.includes(term));
-  });
-}
-
-function hasGameGroupMatch(normalizedKeyword: string, normalizedText: string): boolean {
-  if (!normalizedKeyword || !normalizedText) return false;
-  const gameCategoryTerms = ["ゲーム", "げーむ", "game"].map((term) => normalizeSearchText(term));
-
-  const keywordHitsGameCategory = NORMALIZED_GAME_CATEGORY_GROUP.some((term) =>
-    normalizedKeyword.includes(term)
-  );
-  if (keywordHitsGameCategory) {
-    return NORMALIZED_ALL_GAME_TERMS.some((term) => normalizedText.includes(term));
-  }
-
-  return GAME_TITLE_GROUPS.some((titleGroup) => {
-    const keywordHitsTitle = titleGroup.some((term) => normalizedKeyword.includes(term));
-    if (!keywordHitsTitle) return false;
-    const titleHit = titleGroup.some((term) => normalizedText.includes(term));
-    if (titleHit) return true;
-    // Title query should also match generic game-category users.
-    return gameCategoryTerms.some((term) => normalizedText.includes(term));
-  });
-}
-
-function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
-  const keyword = normalizeSearchText(rawKeyword);
-  if (!keyword) return true;
-  if (keywordMatchesStoredArea(keyword, card.area)) return true;
-  const candidateTexts = keywordMatchCandidateTexts(card);
-  return candidateTexts.some((text) => {
-    const normalizedText = normalizeSearchText(text);
-    return (
-      normalizedText.includes(keyword) ||
-      hasVariantGroupMatch(keyword, normalizedText) ||
-      hasGameGroupMatch(keyword, normalizedText)
-    );
-  });
-}
-
-/** `matchesKeyword` と同じ候補配列（デバッグ用に共通化） */
-function keywordMatchCandidateTexts(card: SearchProfileCard): string[] {
-  const displayName = toMamaDisplayName(card.nickname);
-  return [
-    card.nickname,
-    displayName,
-    ...areaTextsForKeywordMatch(card.area),
-    toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group).join(" "),
-    card.want_to_connect,
-    card.connection_preference,
-    card.meeting_range,
-    card.intro ?? "",
-    (card.child_interest_tags ?? []).join(" "),
-    normalizeMomInterestTags(card.mom_interest_tags ?? []).join(" "),
-  ];
-}
-
 /** 運営で揃えた地域の正式名と、キーワード検索で同一扱いする別名 */
 const AREA_ALIAS_GROUPS = {
   逗子市: ["逗子市", "逗子"],
@@ -323,7 +280,14 @@ function supplementaryAreaTargetsForFetch(
   rawKeyword: string,
   detailAreaFilter: string
 ): OfficialServiceArea[] | null {
-  const fromKw = getAreaTargetsFromKeyword(rawKeyword);
+  const parts = splitSearchQuery(rawKeyword);
+  const pieces = parts.length > 0 ? parts : rawKeyword.trim() ? [rawKeyword] : [];
+  const union = new Set<OfficialServiceArea>();
+  for (const piece of pieces) {
+    const targets = getAreaTargetsFromKeyword(piece);
+    targets.forEach((t) => union.add(t));
+  }
+  const fromKw = [...union];
   if (fromKw.length === 0) return null;
   const trimmedDetail = detailAreaFilter.trim();
   if (!trimmedDetail) return fromKw;
@@ -336,6 +300,172 @@ function mergeProfilesById(a: SearchProfileCard[], b: SearchProfileCard[]): Sear
   for (const row of a) map.set(row.id, row);
   for (const row of b) if (!map.has(row.id)) map.set(row.id, row);
   return [...map.values()];
+}
+
+/** 同義語グループがあれば、グループ内の語もマッチ候補に含める */
+function synonymExpansionsForToken(normToken: string): string[] {
+  const acc = new Set<string>([normToken]);
+  for (const group of NORMALIZED_KEYWORD_VARIANT_GROUPS) {
+    if (!group.some((term) => term === normToken || term.includes(normToken) || normToken.includes(term))) {
+      continue;
+    }
+    for (const term of group) acc.add(term);
+  }
+  return [...acc];
+}
+
+const KEYWORD_FIELD_WEIGHTS = {
+  nickname: 88,
+  displayName: 88,
+  area: 95,
+  wantToConnect: 90,
+  intro: 58,
+  ageLine: 68,
+  connectionPreference: 64,
+  meetingRange: 64,
+  tagItem: 84,
+} as const;
+
+function expandTokenCandidates(normToken: string): string[] {
+  const set = new Set<string>();
+  for (const form of alternateKanaForms(normToken)) {
+    for (const syn of synonymExpansionsForToken(form)) {
+      set.add(syn);
+    }
+  }
+  return [...set].filter(Boolean);
+}
+
+function scoreSubstringInHaystack(token: string, haystackNorm: string, weight: number): number {
+  if (!token || !haystackNorm) return 0;
+  if (haystackNorm.includes(token)) {
+    const bump = Math.min(1, token.length / 10);
+    return Math.round(weight * (0.66 + 0.34 * bump));
+  }
+  return 0;
+}
+
+function buildWeightedSearchFields(card: SearchProfileCard): { norm: string; w: number }[] {
+  const displayName = toMamaDisplayName(card.nickname);
+  const ageLine = toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group).join(" ");
+  const childTags = card.child_interest_tags ?? [];
+  const momTags = normalizeMomInterestTags(card.mom_interest_tags ?? []);
+  return [
+    { norm: normalizeSearchText(displayName), w: KEYWORD_FIELD_WEIGHTS.displayName },
+    { norm: normalizeSearchText(card.nickname), w: KEYWORD_FIELD_WEIGHTS.nickname },
+    ...areaTextsForKeywordMatch(card.area).map((t) => ({
+      norm: normalizeSearchText(t),
+      w: KEYWORD_FIELD_WEIGHTS.area,
+    })),
+    { norm: normalizeSearchText(card.want_to_connect ?? ""), w: KEYWORD_FIELD_WEIGHTS.wantToConnect },
+    { norm: normalizeSearchText(card.intro ?? ""), w: KEYWORD_FIELD_WEIGHTS.intro },
+    { norm: normalizeSearchText(ageLine), w: KEYWORD_FIELD_WEIGHTS.ageLine },
+    { norm: normalizeSearchText(card.connection_preference ?? ""), w: KEYWORD_FIELD_WEIGHTS.connectionPreference },
+    { norm: normalizeSearchText(card.meeting_range ?? ""), w: KEYWORD_FIELD_WEIGHTS.meetingRange },
+    ...childTags.map((t) => ({ norm: normalizeSearchText(String(t)), w: KEYWORD_FIELD_WEIGHTS.tagItem })),
+    ...momTags.map((t) => ({ norm: normalizeSearchText(String(t)), w: KEYWORD_FIELD_WEIGHTS.tagItem })),
+  ];
+}
+
+function concatNormalizedSearchBlob(card: SearchProfileCard): string {
+  return buildWeightedSearchFields(card)
+    .map((r) => r.norm)
+    .join("\u0001");
+}
+
+function variantGroupScoreForToken(normToken: string, cardBlob: string): number {
+  for (const group of NORMALIZED_KEYWORD_VARIANT_GROUPS) {
+    const keywordTouches = group.some(
+      (term) => term === normToken || normToken.includes(term) || term.includes(normToken)
+    );
+    if (!keywordTouches) continue;
+    if (group.some((term) => cardBlob.includes(term))) return 76;
+  }
+  return 0;
+}
+
+function gameGroupScoreForToken(normToken: string, cardBlob: string): number {
+  const gameCategoryTerms = ["ゲーム", "げーむ", "game"].map((term) => normalizeSearchText(term));
+  const kwHitsGameCategory = NORMALIZED_GAME_CATEGORY_GROUP.some(
+    (term) => normToken.includes(term) || term.includes(normToken)
+  );
+  if (kwHitsGameCategory) {
+    if (NORMALIZED_ALL_GAME_TERMS.some((term) => cardBlob.includes(term))) return 82;
+    return 0;
+  }
+  for (const titleGroup of GAME_TITLE_GROUPS) {
+    const keywordHitsTitle = titleGroup.some((term) => normToken.includes(term) || term.includes(normToken));
+    if (!keywordHitsTitle) continue;
+    if (titleGroup.some((term) => cardBlob.includes(term))) return 78;
+    if (gameCategoryTerms.some((term) => cardBlob.includes(term))) return 72;
+  }
+  return 0;
+}
+
+function areaTokenMatchScore(normToken: string, card: SearchProfileCard): number {
+  if (keywordMatchesStoredArea(normToken, card.area)) return 96;
+  const a = normalizeSearchText(String(card.area ?? ""));
+  for (const candidate of expandTokenCandidates(normToken)) {
+    if (candidate.length < 2) continue;
+    if (a.includes(candidate)) return 90;
+  }
+  return 0;
+}
+
+function scoreTokenOnCard(normToken: string, card: SearchProfileCard): number {
+  if (!normToken) return 0;
+  let max = areaTokenMatchScore(normToken, card);
+  const blob = concatNormalizedSearchBlob(card);
+  const fields = buildWeightedSearchFields(card);
+  for (const t of expandTokenCandidates(normToken)) {
+    if (!t) continue;
+    for (const { norm, w } of fields) {
+      max = Math.max(max, scoreSubstringInHaystack(t, norm, w));
+    }
+    max = Math.max(max, variantGroupScoreForToken(t, blob));
+    max = Math.max(max, gameGroupScoreForToken(t, blob));
+  }
+  return max;
+}
+
+const MIN_SCORE_SINGLE = 17;
+const MIN_MULTI_EACH = 14;
+const MIN_MULTI_SUM = 52;
+const MIN_MULTI_STRONG = 44;
+const MULTI_ALL_MATCH_BONUS = 92;
+
+function evaluateKeywordSearch(card: SearchProfileCard, rawKeyword: string): { include: boolean; rankScore: number } {
+  const normFull = normalizeSearchText(rawKeyword);
+  const tokens = splitSearchQuery(rawKeyword)
+    .map((x) => normalizeSearchText(x))
+    .filter(Boolean);
+  const effectiveTokens = tokens.length > 0 ? tokens : normFull ? [normFull] : [];
+  if (effectiveTokens.length === 0) {
+    return { include: true, rankScore: 0 };
+  }
+
+  const scores = effectiveTokens.map((t) => scoreTokenOnCard(t, card));
+
+  let include = false;
+  if (scores.length === 1) {
+    include = scores[0] >= MIN_SCORE_SINGLE;
+  } else {
+    const eachOk = scores.every((s) => s >= MIN_MULTI_EACH);
+    const sum = scores.reduce((x, y) => x + y, 0);
+    const someStrong = scores.some((s) => s >= MIN_MULTI_STRONG);
+    const twoWeak = scores.filter((s) => s >= 12).length >= 2;
+    include = eachOk || sum >= MIN_MULTI_SUM || someStrong || (twoWeak && sum >= 42);
+  }
+
+  const rankScore =
+    scores.reduce((x, y) => x + y, 0) +
+    (scores.length > 1 && scores.every((s) => s >= MIN_MULTI_EACH) ? MULTI_ALL_MATCH_BONUS : 0);
+
+  return { include, rankScore };
+}
+
+function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
+  return evaluateKeywordSearch(card, rawKeyword).include;
 }
 
 const AGE_OPTIONS = [...CHILD_AGE_GROUP_OPTIONS];
@@ -522,22 +652,24 @@ export default function SearchPage() {
         }
       }
 
-      const fetched = mergedRows.filter((card) => {
-        return (
-          matchesKeyword(card, queryFilters.keyword) &&
-          matchesAgeFilter(card, queryFilters.age) &&
-          matchesMomInterests(card, queryFilters.momInterests)
+      const fetchedRows = mergedRows
+        .map((card) => ({ card, kw: evaluateKeywordSearch(card, queryFilters.keyword) }))
+        .filter(
+          (row) =>
+            row.kw.include &&
+            matchesAgeFilter(row.card, queryFilters.age) &&
+            matchesMomInterests(row.card, queryFilters.momInterests)
         );
-      });
 
-      const sorted = fetched.sort((a, b) => {
-        const areaPriorityA = a.area === queryFilters.area && queryFilters.area ? 0 : 1;
-        const areaPriorityB = b.area === queryFilters.area && queryFilters.area ? 0 : 1;
+      const sorted = fetchedRows.sort((a, b) => {
+        if (b.kw.rankScore !== a.kw.rankScore) return b.kw.rankScore - a.kw.rankScore;
+        const areaPriorityA = a.card.area === queryFilters.area && queryFilters.area ? 0 : 1;
+        const areaPriorityB = b.card.area === queryFilters.area && queryFilters.area ? 0 : 1;
         if (areaPriorityA !== areaPriorityB) return areaPriorityA - areaPriorityB;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return new Date(b.card.created_at).getTime() - new Date(a.card.created_at).getTime();
       });
 
-      const limited = sorted.slice(0, 10);
+      const limited = sorted.map((r) => r.card).slice(0, 10);
       const limitedCounts = await getVisibleConnectionAchievementCounts(limited.map((card) => card.id));
       const limitedWithVisibleCounts = limited.map((card) => ({
         ...card,
