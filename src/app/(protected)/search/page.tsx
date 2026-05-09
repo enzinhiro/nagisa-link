@@ -528,6 +528,7 @@ export default function SearchPage() {
 
   const [cards, setCards] = useState<SearchProfileCard[]>([]);
   const [relaxedCards, setRelaxedCards] = useState<SearchProfileCard[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -564,8 +565,21 @@ export default function SearchPage() {
     const cleared = emptyFilters();
     setFilters(cleared);
     setQueryFilters(cleared);
+    setVisibleCount(10);
     setDetailOpen(false);
   }, []);
+
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [
+    queryFilters.keyword,
+    queryFilters.area,
+    queryFilters.age,
+    queryFilters.connection,
+    queryFilters.meeting,
+    queryFilters.tags,
+    queryFilters.momInterests,
+  ]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -683,15 +697,15 @@ export default function SearchPage() {
         return new Date(b.card.created_at).getTime() - new Date(a.card.created_at).getTime();
       });
 
-      const limited = sorted.map((r) => r.card).slice(0, 10);
-      const limitedCounts = await getVisibleConnectionAchievementCounts(limited.map((card) => card.id));
-      const limitedWithVisibleCounts = limited.map((card) => ({
+      const sortedCards = sorted.map((r) => r.card);
+      const visibleCounts = await getVisibleConnectionAchievementCounts(sortedCards.map((card) => card.id));
+      const cardsWithVisibleCounts = sortedCards.map((card) => ({
         ...card,
-        connection_achievement_count: limitedCounts.get(card.id) ?? 0,
+        connection_achievement_count: visibleCounts.get(card.id) ?? 0,
       }));
-      setCards(limitedWithVisibleCounts);
+      setCards(cardsWithVisibleCounts);
 
-      if (limited.length === 0 && queryFilters.tags.length > 0) {
+      if (sortedCards.length === 0 && queryFilters.tags.length > 0) {
         let relaxedQuery = supabase
           .from("public_profiles")
           .select(
@@ -773,6 +787,11 @@ export default function SearchPage() {
     if (n === 1) return "1件見つかりました";
     return `${n}件見つかりました`;
   }, [cards.length, loading]);
+
+  const hasSearchFilters = hasAnyFilter(queryFilters);
+  const visibleCards = cards.slice(0, visibleCount);
+  const canShowMore = !loading && !message && cards.length > visibleCount;
+  const initialVisibleLabel = `${visibleCards.length}人表示しています`;
 
   return (
     <div className="mock-page">
@@ -934,8 +953,8 @@ export default function SearchPage() {
 
         {!loading && !message && countLabel ? (
           <section className="flex flex-col gap-2">
-            <h2 className="section-title text-base">検索結果</h2>
-            <p className="text-sm font-medium text-[#365f78]">{countLabel}</p>
+            <h2 className="section-title text-base">{hasSearchFilters ? "検索結果" : "ママ一覧"}</h2>
+            <p className="text-sm font-medium text-[#365f78]">{hasSearchFilters ? countLabel : initialVisibleLabel}</p>
             {appliedChips.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {appliedChips.map((c) => (
@@ -1048,7 +1067,7 @@ export default function SearchPage() {
           )}
           {!loading &&
             !message &&
-            cards.map((card) => {
+            visibleCards.map((card) => {
               const achievementCount = Number(card.connection_achievement_count ?? 0);
               const showArea = isVisiblePublicValue(card.area);
               const displayAgeGroups = toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group);
@@ -1120,6 +1139,15 @@ export default function SearchPage() {
               </article>
               );
             })}
+          {canShowMore ? (
+            <button
+              type="button"
+              className="secondary-btn !h-10"
+              onClick={() => setVisibleCount((current) => current + 10)}
+            >
+              もっと見る
+            </button>
+          ) : null}
         </section>
           </>
         ) : null}
