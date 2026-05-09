@@ -513,28 +513,29 @@ export default function SearchPage() {
       <main className="mock-shell screen-stack !gap-2">
         <section className="flex flex-col gap-2 rounded-[14px] border border-[#e6eef5] bg-[#fcfeff] px-3 py-2.5 shadow-[0_2px_10px_rgba(102,119,137,0.05)]">
           <div className="flex flex-col gap-2">
-            <label className="block">
-              <span className="sr-only">キーワードで検索</span>
-              <input
-                className="mock-input !h-10"
-                value={filters.keyword}
-                onChange={(e) => setFilters((f) => ({ ...f, keyword: e.target.value }))}
-                placeholder="気になることや好きなことから探す"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    runSearch();
-                  }
-                }}
-              />
-            </label>
-            <div className="flex flex-wrap items-stretch gap-1.5">
-              <button type="button" className="primary-btn !h-10 min-w-[6.5rem] flex-1 sm:flex-none" onClick={runSearch}>
-                探す
-              </button>
+            <div className="flex flex-row flex-wrap items-center gap-2">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">キーワードで検索</span>
+                <input
+                  className="mock-input !h-10"
+                  value={filters.keyword}
+                  onChange={(e) => {
+                    const keyword = e.target.value;
+                    setFilters((f) => ({ ...f, keyword }));
+                    setQueryFilters((q) => ({ ...q, keyword }));
+                  }}
+                  placeholder="気になることや好きなことから探す"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runSearch();
+                    }
+                  }}
+                />
+              </label>
               <button
                 type="button"
-                className="secondary-btn !h-10 flex-1 sm:flex-none"
+                className="secondary-btn !h-10 shrink-0"
                 aria-expanded={detailOpen}
                 onClick={() => setDetailOpen((o) => !o)}
               >
@@ -550,7 +551,7 @@ export default function SearchPage() {
 
           {detailOpen ? (
             <div className="flex flex-col gap-3 border-t border-[#dbe8f0] pt-3">
-              <p className="text-xs muted-text">詳細条件は「探す」を押すと反映されます。</p>
+              <p className="text-xs muted-text">詳細条件は「この条件で探す」を押すと反映されます。</p>
               <label>
                 <span className="label-text">地域</span>
                 <select
