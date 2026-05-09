@@ -22,12 +22,17 @@ const TYPE_LABEL: Record<AnnouncementType, string> = {
   important: "重要",
 };
 
+function emptyFormState() {
+  return { title: "", body: "", type: "notice" as AnnouncementType, isPublished: true };
+}
+
 export default function AdminAnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [feedback, setFeedback] = useState("");
   const [items, setItems] = useState<AdminAnnouncementRow[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [type, setType] = useState<AnnouncementType>("notice");
@@ -62,7 +67,25 @@ export default function AdminAnnouncementsPage() {
     void fetchItems();
   }, []);
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+  const resetForm = () => {
+    const empty = emptyFormState();
+    setEditingId(null);
+    setTitle(empty.title);
+    setBody(empty.body);
+    setType(empty.type);
+    setIsPublished(empty.isPublished);
+  };
+
+  const startEdit = (row: AdminAnnouncementRow) => {
+    setEditingId(row.id);
+    setTitle(row.title);
+    setBody(row.body);
+    setType(row.type);
+    setIsPublished(row.is_published);
+    setFeedback("");
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!title.trim() || !body.trim()) {
       setFeedback("タイトルと本文は必須です。");
@@ -70,6 +93,29 @@ export default function AdminAnnouncementsPage() {
     }
     setSaving(true);
     setFeedback("");
+
+    if (editingId) {
+      const { error } = await supabase
+        .from("announcements")
+        .update({
+          title: title.trim(),
+          body: body.trim(),
+          type,
+          is_published: isPublished,
+        })
+        .eq("id", editingId);
+
+      setSaving(false);
+      if (error) {
+        console.error("[admin/announcements] update failed", error);
+        setFeedback("更新に失敗しました。入力内容を確認してください。");
+        return;
+      }
+      setFeedback("お知らせを更新しました。");
+      resetForm();
+      await fetchItems();
+      return;
+    }
 
     const {
       data: { user },
@@ -85,41 +131,52 @@ export default function AdminAnnouncementsPage() {
 
     if (error) {
       setSaving(false);
+      console.error("[admin/announcements] insert failed", error);
       setFeedback("作成に失敗しました。入力内容を確認してください。");
       return;
     }
 
-    setTitle("");
-    setBody("");
-    setType("notice");
-    setIsPublished(true);
+    resetForm();
     setFeedback("お知らせを作成しました。");
     setSaving(false);
     await fetchItems();
   };
 
   const handleTogglePublished = async (row: AdminAnnouncementRow) => {
+    setFeedback("");
     const { error } = await supabase
       .from("announcements")
       .update({ is_published: !row.is_published })
       .eq("id", row.id);
     if (error) {
+      console.error("[admin/announcements] toggle published failed", error);
       setFeedback("公開状態の更新に失敗しました。");
       return;
     }
     setFeedback(row.is_published ? "非公開にしました。" : "公開しました。");
+    if (editingId === row.id) {
+      setIsPublished(!row.is_published);
+    }
     await fetchItems();
   };
 
   const handleDelete = async (row: AdminAnnouncementRow) => {
+    if (!window.confirm("このお知らせを削除しますか？")) return;
+    setFeedback("");
     const { error } = await supabase.from("announcements").delete().eq("id", row.id);
     if (error) {
+      console.error("[admin/announcements] delete failed", error);
       setFeedback("削除に失敗しました。");
       return;
+    }
+    if (editingId === row.id) {
+      resetForm();
     }
     setFeedback("お知らせを削除しました。");
     await fetchItems();
   };
+
+  const isEditing = editingId !== null;
 
   return (
     <div className="mock-page">
@@ -129,9 +186,9 @@ export default function AdminAnnouncementsPage() {
         </header>
 
         <section className="soft-card">
-          <h2 className="section-title text-[17px]">新規作成</h2>
+          <h2 className="section-title text-[17px]">{isEditing ? "お知らせを編集" : "新規作成"}</h2>
           {feedback ? <p className="mt-2 text-xs text-[#3f6983]">{feedback}</p> : null}
-          <form className="mt-3 flex flex-col gap-2.5" onSubmit={handleCreate}>
+          <form className="mt-3 flex flex-col gap-2.5" onSubmit={handleSubmit}>
             <label className="flex flex-col gap-1">
               <span className="label-text">タイトル *</span>
               <input className="mock-input" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -156,9 +213,16 @@ export default function AdminAnnouncementsPage() {
                 <span className="text-sm text-[#3f6a83]">公開する</span>
               </label>
             </div>
-            <button type="submit" className="primary-btn !h-11" disabled={saving}>
-              {saving ? "保存中..." : "お知らせを作成"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" className="primary-btn !h-11 flex-1 min-w-[8rem]" disabled={saving}>
+                {saving ? "保存中..." : isEditing ? "変更を保存" : "お知らせを作成"}
+              </button>
+              {isEditing ? (
+                <button type="button" className="secondary-btn !h-11 flex-1 min-w-[8rem]" disabled={saving} onClick={() => resetForm()}>
+                  編集をキャンセル
+                </button>
+              ) : null}
+            </div>
           </form>
         </section>
 
@@ -191,11 +255,22 @@ export default function AdminAnnouncementsPage() {
                     </div>
                     <p className="text-xs text-[#607a8c]">{TYPE_LABEL[item.type]}</p>
                     <p className="text-sm text-[#4b687b] whitespace-pre-wrap">{item.body}</p>
-                    <div className="flex gap-2">
-                      <button type="button" className="secondary-btn !h-9 !w-auto px-3 text-xs" onClick={() => handleTogglePublished(item)}>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="secondary-btn !h-9 !w-auto px-3 text-xs"
+                        onClick={() => startEdit(item)}
+                      >
+                        編集
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-btn !h-9 !w-auto px-3 text-xs"
+                        onClick={() => void handleTogglePublished(item)}
+                      >
                         {item.is_published ? "非公開にする" : "公開する"}
                       </button>
-                      <button type="button" className="secondary-btn !h-9 !w-auto px-3 text-xs" onClick={() => handleDelete(item)}>
+                      <button type="button" className="secondary-btn !h-9 !w-auto px-3 text-xs" onClick={() => void handleDelete(item)}>
                         削除
                       </button>
                     </div>

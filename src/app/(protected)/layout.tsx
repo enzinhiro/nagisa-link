@@ -179,15 +179,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           setTalkBadgeCount(0);
         }
 
-        const [{ data: latestAnnouncement, error: announcementError }, { data: myProfile, error: profileError }] =
+        const [{ data: latestRows, error: announcementError }, { data: myProfile, error: profileError }] =
           await Promise.all([
             supabase
               .from("announcements")
               .select("created_at")
               .eq("is_published", true)
               .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle(),
+              .limit(1),
             supabase.from("profiles").select("announcements_last_read_at").eq("id", user.id).maybeSingle(),
           ]);
 
@@ -207,7 +206,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             hint: profileError.hint,
           });
         }
-        if (announcementError || profileError || !latestAnnouncement?.created_at) {
+
+        const latestCreatedAt = latestRows?.[0]?.created_at ?? null;
+        if (announcementError || profileError || !latestCreatedAt) {
           setHasUnreadAnnouncements(false);
         } else {
           const lastReadRaw = (myProfile as { announcements_last_read_at?: string | null } | null)
@@ -216,7 +217,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             setHasUnreadAnnouncements(true);
           } else {
             setHasUnreadAnnouncements(
-              new Date(latestAnnouncement.created_at).getTime() > new Date(lastReadRaw).getTime()
+              new Date(latestCreatedAt).getTime() > new Date(lastReadRaw).getTime()
             );
           }
         }

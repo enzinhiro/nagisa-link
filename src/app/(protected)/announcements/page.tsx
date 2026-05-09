@@ -77,7 +77,7 @@ export default function AnnouncementsPage() {
           details: error.details,
           hint: error.hint,
         });
-        setMessage("お知らせの取得に失敗しました。時間をおいて再度お試しください。");
+        setMessage("お知らせの取得に失敗しました。");
         setItems([]);
         setLoading(false);
         return;
