@@ -59,6 +59,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const [profileGateError, setProfileGateError] = useState<string | null>(null);
   const [inviteExitMessage, setInviteExitMessage] = useState<string | null>(null);
   const isChatDetailPage = pathname.startsWith("/chat/") && pathname !== "/chat";
+  const showConsumerTabBar = !pathname.startsWith("/admin");
   const guardRunningRef = useRef(false);
   const guardCompletedUserIdRef = useRef<string | null>(null);
   const inviteCheckedUserIdRef = useRef<string | null>(null);
@@ -289,7 +290,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       className={
         isChatDetailPage
           ? "flex h-dvh max-h-dvh flex-col overflow-hidden pb-[calc(5rem+env(safe-area-inset-bottom,0px))]"
-          : "min-h-dvh pb-20"
+          : showConsumerTabBar
+            ? "min-h-dvh pb-20"
+            : "min-h-dvh pb-[env(safe-area-inset-bottom,0px)]"
       }
       style={{ paddingTop: `calc(${APP_HEADER_TOTAL_HEIGHT} + 1px)` }}
     >
@@ -381,29 +384,31 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       ) : (
         children
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#eadfe8] bg-[#fffdfc]/96 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
-        <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
-          {tabs.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs ${
-                tab.active
-                  ? "bg-[#fff0f6] text-[#8a546c] shadow-[inset_0_0_0_1px_rgba(235,196,216,0.7)]"
-                  : "text-[#667c8c]"
-              }`}
-            >
-              <span className="mb-0.5 inline-flex"><TabIcon kind={tab.icon} /></span>
-              <span>{tab.label}</span>
-              {"badge" in tab && (tab.badge ?? 0) > 0 ? (
-                <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
-                  {tab.badge}
-                </span>
-              ) : null}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      {showConsumerTabBar ? (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#eadfe8] bg-[#fffdfc]/96 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
+          <div className="mx-auto grid max-w-[460px] grid-cols-4 px-2 py-2">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs ${
+                  tab.active
+                    ? "bg-[#fff0f6] text-[#8a546c] shadow-[inset_0_0_0_1px_rgba(235,196,216,0.7)]"
+                    : "text-[#667c8c]"
+                }`}
+              >
+                <span className="mb-0.5 inline-flex"><TabIcon kind={tab.icon} /></span>
+                <span>{tab.label}</span>
+                {"badge" in tab && (tab.badge ?? 0) > 0 ? (
+                  <span className="absolute right-3 top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[#ff8aa8] px-1 text-[10px] text-white">
+                    {tab.badge}
+                  </span>
+                ) : null}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }

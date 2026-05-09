@@ -79,7 +79,7 @@ export default function AdminHomePage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <main className="mock-shell screen-stack">
         <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
         </header>

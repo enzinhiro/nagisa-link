@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { isAdminEmail } from "../../lib/admin-access";
+import { AdminBottomNav } from "./_components/admin-bottom-nav";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -52,5 +53,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-dvh pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+      {children}
+      <AdminBottomNav />
+    </div>
+  );
 }
