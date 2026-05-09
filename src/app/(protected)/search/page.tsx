@@ -30,6 +30,12 @@ type SearchProfileCard = {
   created_at: string;
 };
 
+const PUBLIC_PROFILE_SEARCH_SELECT_FULL =
+  "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_age_groups,child_interest_tags,mom_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at";
+
+const PUBLIC_PROFILE_SEARCH_SELECT_FALLBACK =
+  "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at";
+
 type FilterState = {
   keyword: string;
   area: string;
@@ -237,7 +243,21 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
   const keyword = normalizeSearchText(rawKeyword);
   if (!keyword) return true;
   const displayName = toMamaDisplayName(card.nickname);
-  const candidateTexts = [
+  const candidateTexts = keywordMatchCandidateTexts(card);
+  return candidateTexts.some((text) => {
+    const normalizedText = normalizeSearchText(text);
+    return (
+      normalizedText.includes(keyword) ||
+      hasVariantGroupMatch(keyword, normalizedText) ||
+      hasGameGroupMatch(keyword, normalizedText)
+    );
+  });
+}
+
+/** `matchesKeyword` と同じ候補配列（デバッグ用に共通化） */
+function keywordMatchCandidateTexts(card: SearchProfileCard): string[] {
+  const displayName = toMamaDisplayName(card.nickname);
+  return [
     card.nickname,
     displayName,
     ...areaTextsForKeywordMatch(card.area),
@@ -249,17 +269,59 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
     (card.child_interest_tags ?? []).join(" "),
     normalizeMomInterestTags(card.mom_interest_tags ?? []).join(" "),
   ];
-  return candidateTexts.some((text) => {
-    const normalizedText = normalizeSearchText(text);
-    return (
-      normalizedText.includes(keyword) ||
-      hasVariantGroupMatch(keyword, normalizedText) ||
-      hasGameGroupMatch(keyword, normalizedText)
-    );
-  });
 }
 
 const AREA_OPTIONS = ["逗子市", "葉山町", "横須賀市"];
+
+/**
+ * キーワードが特定の運営エリア名（および「市」「町」を除いた呼び方）に一致するときのみ返す。
+ * 1〜2ユーザーではなく大量ユーザーのとき、作成日順の上位 N 件取得だけだとヒットしないため、
+ * `.in(\"area\", ...)` での追加フェッチ判定に使う。
+ */
+function canonicalAreasFromKeyword(normalizedKeyword: string): string[] {
+  if (!normalizedKeyword || normalizedKeyword.length < 2) return [];
+  const hits = new Set<string>();
+  for (const official of AREA_OPTIONS) {
+    const nOff = normalizeSearchText(official);
+    const bare = official.replace(/市$/, "").replace(/町$/, "");
+    const nBare = normalizeSearchText(bare);
+    const matchesBarePrefix = nBare.length >= 2 && nBare.startsWith(normalizedKeyword);
+    const matchesOffPrefix = nOff.startsWith(normalizedKeyword);
+    if (
+      normalizedKeyword === nOff ||
+      normalizedKeyword === nBare ||
+      matchesOffPrefix ||
+      matchesBarePrefix
+    ) {
+      hits.add(official);
+    }
+  }
+  return [...hits];
+}
+
+/** 詳細エリア指定と矛盾するキーワードなら追加フェッチしない */
+function supplementaryAreaTargets(normalizedKeyword: string, detailAreaFilter: string): string[] | null {
+  const fromKw = canonicalAreasFromKeyword(normalizedKeyword);
+  if (fromKw.length === 0) return null;
+  const trimmedDetail = detailAreaFilter.trim();
+  if (!trimmedDetail) return fromKw;
+  const narrowed = fromKw.filter((a) => a === trimmedDetail);
+  return narrowed.length > 0 ? narrowed : null;
+}
+
+function mergeProfilesById(a: SearchProfileCard[], b: SearchProfileCard[]): SearchProfileCard[] {
+  const map = new Map<string, SearchProfileCard>();
+  for (const row of a) map.set(row.id, row);
+  for (const row of b) if (!map.has(row.id)) map.set(row.id, row);
+  return [...map.values()];
+}
+
+/** `.env.local` に NEXT_PUBLIC_DEBUG_SEARCH=1 がない限りコンソールに出ない */
+function searchDebug(...args: unknown[]) {
+  if (process.env.NEXT_PUBLIC_DEBUG_SEARCH === "1") {
+    console.log("[search-debug]", ...args);
+  }
+}
 const AGE_OPTIONS = [...CHILD_AGE_GROUP_OPTIONS];
 const CONNECTION_OPTIONS = [...CONNECTION_PREFERENCE_OPTIONS];
 const MEETING_RANGE_OPTIONS = [
@@ -370,12 +432,7 @@ export default function SearchPage() {
         return;
       }
 
-      let query = supabase
-        .from("public_profiles")
-        .select(
-          "id,nickname,avatar_seed,area,connection_achievement_count,child_age_group,child_age_groups,child_interest_tags,mom_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
-        )
-        .neq("id", user.id);
+      let query = supabase.from("public_profiles").select(PUBLIC_PROFILE_SEARCH_SELECT_FULL).neq("id", user.id);
 
       if (queryFilters.area) query = query.eq("area", queryFilters.area);
       if (queryFilters.connection) query = query.eq("connection_preference", queryFilters.connection);
@@ -386,12 +443,11 @@ export default function SearchPage() {
       query = query.order("created_at", { ascending: false }).limit(fetchLimit);
 
       let { data, error } = await query;
+      let usingFallbackColumns = false;
       if (error && isMissingProfileColumnError(error)) {
         let fallbackQuery = supabase
           .from("public_profiles")
-          .select(
-            "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
-          )
+          .select(PUBLIC_PROFILE_SEARCH_SELECT_FALLBACK)
           .neq("id", user.id);
         if (queryFilters.area) fallbackQuery = fallbackQuery.eq("area", queryFilters.area);
         if (queryFilters.connection) fallbackQuery = fallbackQuery.eq("connection_preference", queryFilters.connection);
@@ -401,6 +457,7 @@ export default function SearchPage() {
         const fetchLimitFb = keywordActiveFb ? 500 : 40;
         const fallbackResult = await fallbackQuery.order("created_at", { ascending: false }).limit(fetchLimitFb);
         error = fallbackResult.error;
+        usingFallbackColumns = true;
         if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
           data = fallbackResult.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] })) as SearchProfileCard[];
         } else {
@@ -415,7 +472,71 @@ export default function SearchPage() {
         return;
       }
 
-      const fetched = ((data ?? []) as SearchProfileCard[]).filter((card) => {
+      let mergedRows = (data ?? []) as SearchProfileCard[];
+      const supTargets = supplementaryAreaTargets(normalizedKeyword, queryFilters.area);
+      if (keywordActive && supTargets && supTargets.length > 0) {
+        const supLimit = 400;
+        if (usingFallbackColumns) {
+          let supQ = supabase
+            .from("public_profiles")
+            .select(PUBLIC_PROFILE_SEARCH_SELECT_FALLBACK)
+            .neq("id", user.id)
+            .in("area", supTargets);
+          if (queryFilters.connection) supQ = supQ.eq("connection_preference", queryFilters.connection);
+          if (queryFilters.meeting) supQ = supQ.eq("meeting_range", queryFilters.meeting);
+          if (queryFilters.tags.length > 0) supQ = supQ.overlaps("child_interest_tags", queryFilters.tags);
+          const supRes = await supQ.order("created_at", { ascending: false }).limit(supLimit);
+          if (!supRes.error && Array.isArray(supRes.data)) {
+            const mapped = supRes.data.map((row) => ({
+              ...row,
+              avatar_seed: null,
+              child_age_groups: [],
+              mom_interest_tags: [],
+            })) as SearchProfileCard[];
+            mergedRows = mergeProfilesById(mergedRows, mapped);
+          }
+        } else {
+          let supQ = supabase
+            .from("public_profiles")
+            .select(PUBLIC_PROFILE_SEARCH_SELECT_FULL)
+            .neq("id", user.id)
+            .in("area", supTargets);
+          if (queryFilters.connection) supQ = supQ.eq("connection_preference", queryFilters.connection);
+          if (queryFilters.meeting) supQ = supQ.eq("meeting_range", queryFilters.meeting);
+          if (queryFilters.tags.length > 0) supQ = supQ.overlaps("child_interest_tags", queryFilters.tags);
+          const supRes = await supQ.order("created_at", { ascending: false }).limit(supLimit);
+          if (!supRes.error && Array.isArray(supRes.data)) {
+            mergedRows = mergeProfilesById(mergedRows, supRes.data as SearchProfileCard[]);
+          }
+        }
+      }
+
+      const anDebug = mergedRows.find((c) => c.nickname.includes("杏"));
+      searchDebug({
+        rawKeyword: queryFilters.keyword,
+        normalizedKeyword,
+        keywordActive,
+        fetchLimit,
+        primaryRowCount: (data ?? []).length,
+        mergedRowCount: mergedRows.length,
+        supplementaryTargets: supTargets,
+        anMamaInPrimary: Boolean((data ?? []).find((c) => (c as SearchProfileCard).nickname.includes("杏"))),
+        anMamaInMerged: Boolean(anDebug),
+        anMamaProfile: anDebug
+          ? {
+              nickname: anDebug.nickname,
+              displayName: toMamaDisplayName(anDebug.nickname),
+              area: anDebug.area,
+              areaKeywordTexts: areaTextsForKeywordMatch(anDebug.area),
+              candidateTexts: keywordMatchCandidateTexts(anDebug),
+              matchesKeyword: matchesKeyword(anDebug, queryFilters.keyword),
+              matchesAge: matchesAgeFilter(anDebug, queryFilters.age),
+              matchesMom: matchesMomInterests(anDebug, queryFilters.momInterests),
+            }
+          : null,
+      });
+
+      const fetched = mergedRows.filter((card) => {
         return (
           matchesKeyword(card, normalizedKeyword) &&
           matchesAgeFilter(card, queryFilters.age) &&
