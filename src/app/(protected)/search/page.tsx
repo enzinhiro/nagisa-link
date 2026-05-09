@@ -110,6 +110,14 @@ function normalizeSearchText(value: string): string {
   return value.trim().toLowerCase().replace(/[\s　]+/g, "");
 }
 
+/** キーワード検索用に、エリアの正式表記と「市」「町」を落とした略称の両方を対象に含める */
+function areaTextsForKeywordMatch(area: string | null | undefined): string[] {
+  const raw = String(area ?? "").trim();
+  if (!raw) return [];
+  const stripped = raw.replace(/市$/, "").replace(/町$/, "");
+  return stripped !== raw ? [raw, stripped] : [raw];
+}
+
 function clampTextStyle(lines: number) {
   return {
     display: "-webkit-box",
@@ -232,7 +240,7 @@ function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
   const candidateTexts = [
     card.nickname,
     displayName,
-    card.area,
+    ...areaTextsForKeywordMatch(card.area),
     toDisplayChildAgeGroups(card.child_age_groups, card.child_age_group).join(" "),
     card.want_to_connect,
     card.connection_preference,
@@ -373,7 +381,9 @@ export default function SearchPage() {
       if (queryFilters.connection) query = query.eq("connection_preference", queryFilters.connection);
       if (queryFilters.meeting) query = query.eq("meeting_range", queryFilters.meeting);
       if (queryFilters.tags.length > 0) query = query.overlaps("child_interest_tags", queryFilters.tags);
-      query = query.order("created_at", { ascending: false }).limit(40);
+      const keywordActive = normalizeSearchText(queryFilters.keyword).length > 0;
+      const fetchLimit = keywordActive ? 500 : 40;
+      query = query.order("created_at", { ascending: false }).limit(fetchLimit);
 
       let { data, error } = await query;
       if (error && isMissingProfileColumnError(error)) {
@@ -387,7 +397,9 @@ export default function SearchPage() {
         if (queryFilters.connection) fallbackQuery = fallbackQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) fallbackQuery = fallbackQuery.eq("meeting_range", queryFilters.meeting);
         if (queryFilters.tags.length > 0) fallbackQuery = fallbackQuery.overlaps("child_interest_tags", queryFilters.tags);
-        const fallbackResult = await fallbackQuery.order("created_at", { ascending: false }).limit(40);
+        const keywordActiveFb = normalizeSearchText(queryFilters.keyword).length > 0;
+        const fetchLimitFb = keywordActiveFb ? 500 : 40;
+        const fallbackResult = await fallbackQuery.order("created_at", { ascending: false }).limit(fetchLimitFb);
         error = fallbackResult.error;
         if (!fallbackResult.error && Array.isArray(fallbackResult.data)) {
           data = fallbackResult.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] })) as SearchProfileCard[];
@@ -438,9 +450,10 @@ export default function SearchPage() {
         if (queryFilters.connection) relaxedQuery = relaxedQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) relaxedQuery = relaxedQuery.eq("meeting_range", queryFilters.meeting);
 
+        const relaxedLimit = normalizeSearchText(queryFilters.keyword).length > 0 ? 300 : 10;
         let { data: relaxedData, error: relaxedError } = await relaxedQuery
           .order("created_at", { ascending: false })
-          .limit(10);
+          .limit(relaxedLimit);
         if (relaxedError && isMissingProfileColumnError(relaxedError)) {
           let relaxedFallback = supabase
             .from("public_profiles")
@@ -451,7 +464,7 @@ export default function SearchPage() {
           if (queryFilters.area) relaxedFallback = relaxedFallback.eq("area", queryFilters.area);
           if (queryFilters.connection) relaxedFallback = relaxedFallback.eq("connection_preference", queryFilters.connection);
           if (queryFilters.meeting) relaxedFallback = relaxedFallback.eq("meeting_range", queryFilters.meeting);
-          const fallbackRes = await relaxedFallback.order("created_at", { ascending: false }).limit(10);
+          const fallbackRes = await relaxedFallback.order("created_at", { ascending: false }).limit(relaxedLimit);
           relaxedData = Array.isArray(fallbackRes.data)
             ? (fallbackRes.data.map((row) => ({ ...row, avatar_seed: null, child_age_groups: [], mom_interest_tags: [] })) as SearchProfileCard[])
             : null;
