@@ -91,8 +91,8 @@ export default function PerksPage() {
     <div className="mock-page">
       <main className="mock-shell screen-stack !gap-2">
         <section className="flex flex-col gap-2 rounded-[14px] border border-[#e6eef5] bg-[#fcfeff] px-3 py-2.5 shadow-[0_2px_10px_rgba(102,119,137,0.05)]">
-          <div className="flex flex-row flex-wrap items-center gap-2">
-            <label className="min-w-0 flex-1">
+          <div className="flex flex-col gap-2">
+            <label className="block">
               <span className="sr-only">地元特典を検索</span>
               <input
                 type="search"
@@ -104,11 +104,12 @@ export default function PerksPage() {
             </label>
             <button
               type="button"
+              aria-expanded={isDetailOpen}
               onClick={() => {
                 setIsDetailOpen((current) => !current);
                 setCategoryError("");
               }}
-              className="inline-flex h-9 shrink-0 items-center rounded-full border border-[#d8e7ef] bg-[#f7fbfe] px-3 text-xs font-semibold text-[#3e6e88]"
+              className="secondary-btn !h-10 w-full sm:w-auto sm:self-start"
             >
               {isDetailOpen ? "条件を閉じる" : "詳細条件"}
             </button>
@@ -139,7 +140,7 @@ export default function PerksPage() {
           ) : null}
 
           {isDetailOpen ? (
-            <section className="mt-0.5 border-t border-[#e8edf2] pt-2.5">
+            <section className="flex flex-col gap-3 border-t border-[#dbe8f0] pt-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#4b6f84]">エリア</p>
                 <button
