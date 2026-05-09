@@ -295,6 +295,17 @@ function supplementaryAreaTargetsForFetch(
   return narrowed.length > 0 ? narrowed : null;
 }
 
+/** 詳細条件の地域値（正式名/別名）を DB の area 検索値配列に展開 */
+function areaFilterValues(selectedArea: string): string[] {
+  const trimmed = selectedArea.trim();
+  if (!trimmed) return [];
+  const targets = getAreaTargetsFromKeyword(trimmed);
+  const official = targets[0];
+  if (!official) return [trimmed];
+  const aliases = AREA_ALIAS_GROUPS[official];
+  return Array.from(new Set([official, ...aliases]));
+}
+
 function mergeProfilesById(a: SearchProfileCard[], b: SearchProfileCard[]): SearchProfileCard[] {
   const map = new Map<string, SearchProfileCard>();
   for (const row of a) map.set(row.id, row);
@@ -575,7 +586,8 @@ export default function SearchPage() {
 
       let query = supabase.from("public_profiles").select(PUBLIC_PROFILE_SEARCH_SELECT_FULL).neq("id", user.id);
 
-      if (queryFilters.area) query = query.eq("area", queryFilters.area);
+      const selectedAreaValues = areaFilterValues(queryFilters.area);
+      if (selectedAreaValues.length > 0) query = query.in("area", selectedAreaValues);
       if (queryFilters.connection) query = query.eq("connection_preference", queryFilters.connection);
       if (queryFilters.meeting) query = query.eq("meeting_range", queryFilters.meeting);
       if (queryFilters.tags.length > 0) query = query.overlaps("child_interest_tags", queryFilters.tags);
@@ -590,7 +602,7 @@ export default function SearchPage() {
           .from("public_profiles")
           .select(PUBLIC_PROFILE_SEARCH_SELECT_FALLBACK)
           .neq("id", user.id);
-        if (queryFilters.area) fallbackQuery = fallbackQuery.eq("area", queryFilters.area);
+        if (selectedAreaValues.length > 0) fallbackQuery = fallbackQuery.in("area", selectedAreaValues);
         if (queryFilters.connection) fallbackQuery = fallbackQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) fallbackQuery = fallbackQuery.eq("meeting_range", queryFilters.meeting);
         if (queryFilters.tags.length > 0) fallbackQuery = fallbackQuery.overlaps("child_interest_tags", queryFilters.tags);
@@ -663,8 +675,10 @@ export default function SearchPage() {
 
       const sorted = fetchedRows.sort((a, b) => {
         if (b.kw.rankScore !== a.kw.rankScore) return b.kw.rankScore - a.kw.rankScore;
-        const areaPriorityA = a.card.area === queryFilters.area && queryFilters.area ? 0 : 1;
-        const areaPriorityB = b.card.area === queryFilters.area && queryFilters.area ? 0 : 1;
+        const areaPriorityA =
+          selectedAreaValues.length > 0 && selectedAreaValues.includes(a.card.area) ? 0 : 1;
+        const areaPriorityB =
+          selectedAreaValues.length > 0 && selectedAreaValues.includes(b.card.area) ? 0 : 1;
         if (areaPriorityA !== areaPriorityB) return areaPriorityA - areaPriorityB;
         return new Date(b.card.created_at).getTime() - new Date(a.card.created_at).getTime();
       });
@@ -685,7 +699,7 @@ export default function SearchPage() {
           )
           .neq("id", user.id);
 
-        if (queryFilters.area) relaxedQuery = relaxedQuery.eq("area", queryFilters.area);
+        if (selectedAreaValues.length > 0) relaxedQuery = relaxedQuery.in("area", selectedAreaValues);
         if (queryFilters.connection) relaxedQuery = relaxedQuery.eq("connection_preference", queryFilters.connection);
         if (queryFilters.meeting) relaxedQuery = relaxedQuery.eq("meeting_range", queryFilters.meeting);
 
@@ -700,7 +714,7 @@ export default function SearchPage() {
               "id,nickname,area,connection_achievement_count,child_age_group,child_interest_tags,want_to_connect,intro,connection_preference,meeting_range,created_at"
             )
             .neq("id", user.id);
-          if (queryFilters.area) relaxedFallback = relaxedFallback.eq("area", queryFilters.area);
+          if (selectedAreaValues.length > 0) relaxedFallback = relaxedFallback.in("area", selectedAreaValues);
           if (queryFilters.connection) relaxedFallback = relaxedFallback.eq("connection_preference", queryFilters.connection);
           if (queryFilters.meeting) relaxedFallback = relaxedFallback.eq("meeting_range", queryFilters.meeting);
           const fallbackRes = await relaxedFallback.order("created_at", { ascending: false }).limit(relaxedLimit);
