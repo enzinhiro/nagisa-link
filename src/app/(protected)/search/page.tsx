@@ -113,7 +113,7 @@ function chipPreview(text: string, max = 18) {
 }
 
 function normalizeSearchText(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s　]+/g, "");
+  return value.trim().toLowerCase().normalize("NFKC").replace(/[\s　]+/g, "");
 }
 
 /** キーワード検索用に、エリアの正式表記と「市」「町」を落とした略称の両方を対象に含める */
@@ -242,7 +242,7 @@ function hasGameGroupMatch(normalizedKeyword: string, normalizedText: string): b
 function matchesKeyword(card: SearchProfileCard, rawKeyword: string): boolean {
   const keyword = normalizeSearchText(rawKeyword);
   if (!keyword) return true;
-  const displayName = toMamaDisplayName(card.nickname);
+  if (keywordMatchesStoredArea(keyword, card.area)) return true;
   const candidateTexts = keywordMatchCandidateTexts(card);
   return candidateTexts.some((text) => {
     const normalizedText = normalizeSearchText(text);
@@ -271,37 +271,59 @@ function keywordMatchCandidateTexts(card: SearchProfileCard): string[] {
   ];
 }
 
-const AREA_OPTIONS = ["逗子市", "葉山町", "横須賀市"];
+/** 運営で揃えた地域の正式名と、キーワード検索で同一扱いする別名 */
+const AREA_ALIAS_GROUPS = {
+  逗子市: ["逗子市", "逗子"],
+  葉山町: ["葉山町", "葉山"],
+  横須賀市: ["横須賀市", "横須賀"],
+} as const;
 
-/**
- * キーワードが特定の運営エリア名（および「市」「町」を除いた呼び方）に一致するときのみ返す。
- * 1〜2ユーザーではなく大量ユーザーのとき、作成日順の上位 N 件取得だけだとヒットしないため、
- * `.in(\"area\", ...)` での追加フェッチ判定に使う。
- */
-function canonicalAreasFromKeyword(normalizedKeyword: string): string[] {
-  if (!normalizedKeyword || normalizedKeyword.length < 2) return [];
-  const hits = new Set<string>();
+type OfficialServiceArea = keyof typeof AREA_ALIAS_GROUPS;
+
+const AREA_OPTIONS: OfficialServiceArea[] = ["逗子市", "葉山町", "横須賀市"];
+
+function areaAliasTokensForOfficial(official: OfficialServiceArea): string[] {
+  const aliases = AREA_ALIAS_GROUPS[official];
+  return [official, ...aliases].map((t) => normalizeSearchText(t));
+}
+
+/** キーワードから、DBの area に入っている正式地名（逗子市 等）を解決する */
+function getAreaTargetsFromKeyword(rawKeyword: string): OfficialServiceArea[] {
+  const normKw = normalizeSearchText(rawKeyword);
+  /** 単一文字のみは別エリアにも掛かり得るためエリアヒットは出さない */
+  if (!normKw || normKw.length < 2) return [];
+  const hits = new Set<OfficialServiceArea>();
   for (const official of AREA_OPTIONS) {
-    const nOff = normalizeSearchText(official);
-    const bare = official.replace(/市$/, "").replace(/町$/, "");
-    const nBare = normalizeSearchText(bare);
-    const matchesBarePrefix = nBare.length >= 2 && nBare.startsWith(normalizedKeyword);
-    const matchesOffPrefix = nOff.startsWith(normalizedKeyword);
-    if (
-      normalizedKeyword === nOff ||
-      normalizedKeyword === nBare ||
-      matchesOffPrefix ||
-      matchesBarePrefix
-    ) {
-      hits.add(official);
-    }
+    const tokens = areaAliasTokensForOfficial(official);
+    const matched = tokens.some(
+      (tok) => tok === normKw || tok.startsWith(normKw) || normKw.startsWith(tok)
+    );
+    if (matched) hits.add(official);
   }
   return [...hits];
 }
 
-/** 詳細エリア指定と矛盾するキーワードなら追加フェッチしない */
-function supplementaryAreaTargets(normalizedKeyword: string, detailAreaFilter: string): string[] | null {
-  const fromKw = canonicalAreasFromKeyword(normalizedKeyword);
+/** card.area が正式キーとして登録済みのとき、「逗子」「逗子市」など別名検索でも true */
+function keywordMatchesStoredArea(normalizedKeyword: string, cardAreaRaw: string): boolean {
+  const trimmed = cardAreaRaw.trim();
+  if (!trimmed || !(trimmed in AREA_ALIAS_GROUPS)) return false;
+  if (!normalizedKeyword || normalizedKeyword.length < 2) return false;
+  const official = trimmed as OfficialServiceArea;
+  const tokens = areaAliasTokensForOfficial(official);
+  return tokens.some(
+    (tok) => tok === normalizedKeyword || tok.startsWith(normalizedKeyword) || normalizedKeyword.startsWith(tok)
+  );
+}
+
+/**
+ * キーワードがエリア別名に一致する場合の area IN (...) 用。
+ * 詳細条件のエリアと矛盾する（例: 詳細=葉山・キーワード=逗子）ときは追加フェッチしない。
+ */
+function supplementaryAreaTargetsForFetch(
+  rawKeyword: string,
+  detailAreaFilter: string
+): OfficialServiceArea[] | null {
+  const fromKw = getAreaTargetsFromKeyword(rawKeyword);
   if (fromKw.length === 0) return null;
   const trimmedDetail = detailAreaFilter.trim();
   if (!trimmedDetail) return fromKw;
@@ -316,12 +338,6 @@ function mergeProfilesById(a: SearchProfileCard[], b: SearchProfileCard[]): Sear
   return [...map.values()];
 }
 
-/** `.env.local` に NEXT_PUBLIC_DEBUG_SEARCH=1 がない限りコンソールに出ない */
-function searchDebug(...args: unknown[]) {
-  if (process.env.NEXT_PUBLIC_DEBUG_SEARCH === "1") {
-    console.log("[search-debug]", ...args);
-  }
-}
 const AGE_OPTIONS = [...CHILD_AGE_GROUP_OPTIONS];
 const CONNECTION_OPTIONS = [...CONNECTION_PREFERENCE_OPTIONS];
 const MEETING_RANGE_OPTIONS = [
@@ -388,11 +404,6 @@ export default function SearchPage() {
     if (nextQuery === searchParams.toString()) return;
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }, [queryFilters, router, pathname, searchParams]);
-
-  const normalizedKeyword = useMemo(
-    () => normalizeSearchText(queryFilters.keyword),
-    [queryFilters.keyword]
-  );
 
   const runSearch = useCallback(() => {
     pendingScrollRef.current = true;
@@ -473,7 +484,7 @@ export default function SearchPage() {
       }
 
       let mergedRows = (data ?? []) as SearchProfileCard[];
-      const supTargets = supplementaryAreaTargets(normalizedKeyword, queryFilters.area);
+      const supTargets = supplementaryAreaTargetsForFetch(queryFilters.keyword, queryFilters.area);
       if (keywordActive && supTargets && supTargets.length > 0) {
         const supLimit = 400;
         if (usingFallbackColumns) {
@@ -511,34 +522,9 @@ export default function SearchPage() {
         }
       }
 
-      const anDebug = mergedRows.find((c) => c.nickname.includes("杏"));
-      searchDebug({
-        rawKeyword: queryFilters.keyword,
-        normalizedKeyword,
-        keywordActive,
-        fetchLimit,
-        primaryRowCount: (data ?? []).length,
-        mergedRowCount: mergedRows.length,
-        supplementaryTargets: supTargets,
-        anMamaInPrimary: Boolean((data ?? []).find((c) => (c as SearchProfileCard).nickname.includes("杏"))),
-        anMamaInMerged: Boolean(anDebug),
-        anMamaProfile: anDebug
-          ? {
-              nickname: anDebug.nickname,
-              displayName: toMamaDisplayName(anDebug.nickname),
-              area: anDebug.area,
-              areaKeywordTexts: areaTextsForKeywordMatch(anDebug.area),
-              candidateTexts: keywordMatchCandidateTexts(anDebug),
-              matchesKeyword: matchesKeyword(anDebug, queryFilters.keyword),
-              matchesAge: matchesAgeFilter(anDebug, queryFilters.age),
-              matchesMom: matchesMomInterests(anDebug, queryFilters.momInterests),
-            }
-          : null,
-      });
-
       const fetched = mergedRows.filter((card) => {
         return (
-          matchesKeyword(card, normalizedKeyword) &&
+          matchesKeyword(card, queryFilters.keyword) &&
           matchesAgeFilter(card, queryFilters.age) &&
           matchesMomInterests(card, queryFilters.momInterests)
         );
@@ -592,7 +578,7 @@ export default function SearchPage() {
         }
         const relaxedFetched = ((relaxedData ?? []) as SearchProfileCard[]).filter((card) => {
           return (
-            matchesKeyword(card, normalizedKeyword) &&
+            matchesKeyword(card, queryFilters.keyword) &&
             matchesAgeFilter(card, queryFilters.age) &&
             matchesMomInterests(card, queryFilters.momInterests)
           );
@@ -619,7 +605,7 @@ export default function SearchPage() {
     queryFilters.connection,
     queryFilters.meeting,
     queryFilters.tags,
-    normalizedKeyword,
+    queryFilters.keyword,
   ]);
 
   const appliedChips = useMemo(() => {
