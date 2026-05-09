@@ -360,29 +360,7 @@ export default function ProfileOnboardingPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack">
-        <header className="soft-card flex flex-col gap-3">
-          <p className="inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium pill-blue">
-            プロフィール登録
-          </p>
-          <h1 className="hero-title text-2xl font-semibold">
-            {isEditingProfile ? "プロフィールを編集しましょう" : "はじめにプロフィールを登録しましょう"}
-          </h1>
-          <p className="muted-text text-sm leading-6">
-            {isEditingProfile ? "内容を更新して保存できます。" : "3つのステップで入力できます。"}
-          </p>
-          {!isEditingProfile ? (
-            <div className="soft-card-subtle">
-              <p className="text-sm leading-6 text-[#406984]">
-                あと少しで利用開始できます。プロフィールを完了すると、さがす・話したい・チャットが使えるようになります。
-              </p>
-            </div>
-          ) : null}
-        </header>
-
-        <form className="screen-stack gap-3.5" onSubmit={handleSubmit}>
-          <section className="soft-card">
-            <p className="text-xs muted-text">「必須」がついた項目は入力が必要です。</p>
-          </section>
+        <form className="screen-stack gap-3" onSubmit={handleSubmit}>
           <section className="soft-card flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <span className="step-chip">STEP 1 / 3</span>
