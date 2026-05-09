@@ -791,7 +791,6 @@ export default function SearchPage() {
   const hasSearchFilters = hasAnyFilter(queryFilters);
   const visibleCards = cards.slice(0, visibleCount);
   const canShowMore = !loading && !message && cards.length > visibleCount;
-  const initialVisibleLabel = `${visibleCards.length}人表示しています`;
 
   return (
     <div className="mock-page">
@@ -954,7 +953,7 @@ export default function SearchPage() {
         {!loading && !message && countLabel ? (
           <section className="flex flex-col gap-2">
             <h2 className="section-title text-base">{hasSearchFilters ? "検索結果" : "ママ一覧"}</h2>
-            <p className="text-sm font-medium text-[#365f78]">{hasSearchFilters ? countLabel : initialVisibleLabel}</p>
+            {hasSearchFilters ? <p className="text-sm font-medium text-[#365f78]">{countLabel}</p> : null}
             {appliedChips.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {appliedChips.map((c) => (
