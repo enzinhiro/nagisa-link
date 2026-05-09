@@ -240,21 +240,27 @@ export default function SearchDetailPage() {
               <section className="soft-card flex flex-col gap-3">
                 <h2 className="section-title text-[15px]">プロフィール補足</h2>
                 {visibleInterestTags.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {visibleInterestTags.map((tag) => (
-                      <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
-                        {tag}
-                      </span>
-                    ))}
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold text-[#5e8198]">お子さんの好きなこと</p>
+                    <div className="flex flex-wrap gap-2">
+                      {visibleInterestTags.map((tag) => (
+                        <span key={tag} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-blue">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
                 {visibleMomInterests.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {visibleMomInterests.map((tag) => (
-                      <span key={`mom-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
-                        {tag}
-                      </span>
-                    ))}
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold text-[#7d6070]">ママの興味・関心</p>
+                    <div className="flex flex-wrap gap-2">
+                      {visibleMomInterests.map((tag) => (
+                        <span key={`mom-${tag}`} className="inline-flex rounded-full px-2.5 py-1 text-xs pill-pink">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
                 {showChildGender || showConnectionPreference || showMeetingRange ? (
