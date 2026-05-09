@@ -60,6 +60,12 @@ export default function AnnouncementsPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
+        console.error("[announcements] select failed", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
         setMessage("お知らせの取得に失敗しました。時間をおいて再度お試しください。");
         setItems([]);
         setLoading(false);
@@ -74,7 +80,12 @@ export default function AnnouncementsPage() {
         .eq("id", user.id);
 
       if (updateError) {
-        console.warn("[announcements] failed to update announcements_last_read_at");
+        console.error("[announcements] announcements_last_read_at update failed", {
+          message: updateError.message,
+          code: updateError.code,
+          details: updateError.details,
+          hint: updateError.hint,
+        });
       }
 
       setLoading(false);

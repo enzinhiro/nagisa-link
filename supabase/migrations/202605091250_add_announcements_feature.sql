@@ -21,12 +21,22 @@ create index if not exists announcements_published_created_idx
 
 alter table public.announcements enable row level security;
 
+grant select on table public.announcements to authenticated;
+
 drop policy if exists "announcements_select_published_or_admin" on public.announcements;
-create policy "announcements_select_published_or_admin"
+drop policy if exists "announcements_select_published" on public.announcements;
+create policy "announcements_select_published"
 on public.announcements
 for select
 to authenticated
-using (is_published = true or public.is_admin_user());
+using (is_published = true);
+
+drop policy if exists "announcements_select_admin_all" on public.announcements;
+create policy "announcements_select_admin_all"
+on public.announcements
+for select
+to authenticated
+using (public.is_admin_user());
 
 drop policy if exists "announcements_insert_admin" on public.announcements;
 create policy "announcements_insert_admin"
