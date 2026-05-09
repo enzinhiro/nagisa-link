@@ -16,6 +16,15 @@ import {
 } from "../../../lib/profile/connection-preference";
 
 const STEP_1_AREAS = ["逗子市", "葉山町", "横須賀市"];
+const AREA_ALIAS_TO_OFFICIAL: Record<string, string> = {
+  逗子: "逗子市",
+  逗子市: "逗子市",
+  葉山: "葉山町",
+  葉山町: "葉山町",
+  横須賀: "横須賀市",
+  横須賀市: "横須賀市",
+};
+const VALID_PROFILE_AREAS = new Set(STEP_1_AREAS);
 const PROFILE_SAVE_ERROR_UI =
   "プロフィールの保存に失敗しました。時間をおいてもう一度お試しください。";
 const PROFILE_BOOTSTRAP_ERROR_UI =
@@ -45,6 +54,13 @@ function containsUrlLikeText(value: string): boolean {
   const urlLikePattern =
     /(https?:\/\/[^\s]+)|(www\.[^\s]+)|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+\b/i;
   return urlLikePattern.test(normalized);
+}
+
+function normalizeProfileArea(value: string | null | undefined): string {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return "";
+  const aliasResolved = AREA_ALIAS_TO_OFFICIAL[trimmed] ?? trimmed;
+  return VALID_PROFILE_AREAS.has(aliasResolved) ? aliasResolved : "";
 }
 
 const CHILD_INTEREST_TAGS = [
@@ -133,7 +149,7 @@ export default function ProfileOnboardingPage() {
         setAvatarSeed(Number.isInteger(data.avatar_seed) ? Number(data.avatar_seed) : null);
         setRealName((data.real_name ?? authRealName) || "");
         setNickname(data.nickname ?? "");
-        setArea(data.area ?? "");
+        setArea(normalizeProfileArea(data.area));
         const normalizedChildAgeGroups = normalizeChildAgeGroups(data.child_age_groups ?? []);
         setChildAgeGroups(
           normalizedChildAgeGroups.length > 0
@@ -169,7 +185,7 @@ export default function ProfileOnboardingPage() {
   const requiredChecks: Array<{ label: string; ok: boolean }> = [
     { label: "本名", ok: realName.trim().length > 0 },
     { label: "ニックネーム", ok: nickname.trim().length > 0 },
-    { label: "お住まいのエリア", ok: area.trim().length > 0 },
+    { label: "お住まいのエリア", ok: VALID_PROFILE_AREAS.has(normalizeProfileArea(area)) },
     { label: "お子さんの年齢帯", ok: childAgeGroups.length >= 1 },
     { label: "お子さんの性別", ok: childGender.trim().length > 0 },
     { label: "お子さんの好きなこと", ok: childInterestTags.length >= 1 && childInterestTags.length <= 5 },
@@ -212,10 +228,11 @@ export default function ProfileOnboardingPage() {
       return;
     }
 
+    const normalizedArea = normalizeProfileArea(area);
+
     const requiredValues = [
       realName,
       nickname,
-      area,
       childGender,
       wantToConnect,
       connectionPreference,
@@ -225,6 +242,11 @@ export default function ProfileOnboardingPage() {
 
     if (requiredValues.some((value) => value.trim().length === 0)) {
       setMessage("まだ入力が必要な項目があります。すべて入力してから保存してください。");
+      return;
+    }
+
+    if (!VALID_PROFILE_AREAS.has(normalizedArea)) {
+      setMessage("お住まいのエリアを選択してください");
       return;
     }
 
@@ -268,7 +290,7 @@ export default function ProfileOnboardingPage() {
     const profilePayload = {
       real_name: realName.trim(),
       nickname: nickname.trim(),
-      area,
+      area: normalizedArea,
       child_age_group: childAgeGroups[0] ?? "",
       child_age_groups: childAgeGroups,
       child_gender: normalizeChildGender(childGender),
