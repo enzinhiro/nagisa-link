@@ -38,13 +38,22 @@ export default function AnnouncementsPage() {
   const [items, setItems] = useState<AnnouncementRow[]>([]);
 
   useEffect(() => {
-    const fetchAnnouncements = async () => {
+    let cancelled = false;
+
+    const load = async () => {
       setLoading(true);
       setMessage("");
+
+      const firstSession = (await supabase.auth.getSession()).data.session;
+      if (!firstSession) {
+        await supabase.auth.refreshSession();
+      }
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      if (cancelled) return;
 
       if (!user) {
         setMessage("ログイン状態を確認できませんでした。");
@@ -58,6 +67,8 @@ export default function AnnouncementsPage() {
         .select("id,title,body,type,created_at")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
+
+      if (cancelled) return;
 
       if (error) {
         console.error("[announcements] select failed", {
@@ -73,6 +84,7 @@ export default function AnnouncementsPage() {
       }
 
       setItems((data ?? []) as AnnouncementRow[]);
+      setLoading(false);
 
       const { error: updateError } = await supabase
         .from("profiles")
@@ -87,11 +99,12 @@ export default function AnnouncementsPage() {
           hint: updateError.hint,
         });
       }
-
-      setLoading(false);
     };
 
-    void fetchAnnouncements();
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

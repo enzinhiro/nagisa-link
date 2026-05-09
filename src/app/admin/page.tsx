@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { AdminBottomNav } from "./_components/admin-bottom-nav";
 
 export default function AdminHomePage() {
   const [loading, setLoading] = useState(true);
@@ -80,7 +79,7 @@ export default function AdminHomePage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-20">
+      <main className="mock-shell screen-stack pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">管理画面</h1>
         </header>
@@ -154,7 +153,6 @@ export default function AdminHomePage() {
           </>
         ) : null}
       </main>
-      <AdminBottomNav />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AdminBottomNav } from "../_components/admin-bottom-nav";
+import { AdminSectionNav } from "../_components/admin-section-nav";
 import { supabase } from "../../../lib/supabase/client";
 import { PERK_AREAS, PERK_CATEGORIES } from "../../../lib/perks";
 
@@ -161,11 +161,15 @@ export default function AdminPerksPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-20">
+      <main className="mock-shell screen-stack pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">地元特典管理</h1>
           <p className="section-note mt-1">公開中 {publishedCount} 件 / 全 {items.length} 件</p>
         </header>
+
+        <section className="soft-card !py-2.5">
+          <AdminSectionNav current="perks" />
+        </section>
 
         {loading ? (
           <section className="soft-card">
@@ -338,7 +342,6 @@ export default function AdminPerksPage() {
           </section>
         ) : null}
       </main>
-      <AdminBottomNav />
     </div>
   );
 }

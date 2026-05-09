@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { AdminBottomNav } from "../_components/admin-bottom-nav";
+import { AdminSectionNav } from "../_components/admin-section-nav";
 
 type AnnouncementType = "notice" | "event" | "update" | "perk" | "important";
 type AdminAnnouncementRow = {
@@ -124,10 +124,14 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-20">
+      <main className="mock-shell screen-stack pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">お知らせ管理</h1>
         </header>
+
+        <section className="soft-card !py-2.5">
+          <AdminSectionNav current="announcements" />
+        </section>
 
         <section className="soft-card">
           <h2 className="section-title text-[17px]">新規作成</h2>
@@ -207,7 +211,6 @@ export default function AdminAnnouncementsPage() {
           </section>
         ) : null}
       </main>
-      <AdminBottomNav />
     </div>
   );
 }

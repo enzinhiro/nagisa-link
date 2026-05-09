@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { AdminBottomNav } from "../_components/admin-bottom-nav";
+import { AdminSectionNav } from "../_components/admin-section-nav";
 
 type AdminUserRow = {
   id: string;
@@ -93,10 +93,14 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mock-page">
-      <main className="mock-shell screen-stack pb-20">
+      <main className="mock-shell screen-stack pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <header className="soft-card !py-2.5">
           <h1 className="hero-title text-2xl font-semibold">ユーザー一覧</h1>
         </header>
+
+        <section className="soft-card !py-2.5">
+          <AdminSectionNav current="users" />
+        </section>
 
         {loading ? (
           <section className="soft-card">
@@ -217,7 +221,6 @@ export default function AdminUsersPage() {
             </article>
           ))}
       </main>
-      <AdminBottomNav />
     </div>
   );
 }

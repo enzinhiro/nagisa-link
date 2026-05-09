@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 
-type AdminSection = "home" | "invite-codes" | "users" | "announcements" | "reports";
+type AdminSection = "home" | "invite-codes" | "users" | "perks" | "announcements" | "reports";
 
 const SECTION_LINKS: Array<{ key: AdminSection; href: string; label: string }> = [
   { key: "home", href: "/admin", label: "管理トップ" },
   { key: "invite-codes", href: "/admin/invite-codes", label: "招待コード管理" },
   { key: "users", href: "/admin/users", label: "ユーザー一覧" },
+  { key: "perks", href: "/admin/perks", label: "地元特典管理" },
   { key: "announcements", href: "/admin/announcements", label: "お知らせ管理" },
   { key: "reports", href: "/admin/reports", label: "通報管理" },
 ];

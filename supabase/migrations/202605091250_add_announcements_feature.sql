@@ -25,7 +25,8 @@ grant select on table public.announcements to authenticated;
 
 drop policy if exists "announcements_select_published_or_admin" on public.announcements;
 drop policy if exists "announcements_select_published" on public.announcements;
-create policy "announcements_select_published"
+drop policy if exists "Authenticated users can read published announcements" on public.announcements;
+create policy "Authenticated users can read published announcements"
 on public.announcements
 for select
 to authenticated
