@@ -90,13 +90,13 @@ export default function PerksPage() {
   return (
     <div className="mock-page">
       <main className="mock-shell screen-stack !gap-2">
-        <section className="flex flex-col gap-2 rounded-[14px] border border-[#e6eef5] bg-[#fcfeff] px-3 py-2.5 shadow-[0_2px_10px_rgba(102,119,137,0.05)]">
-          <div className="flex flex-col gap-2">
-            <label className="block">
+        <section className="flex w-full flex-col gap-2 rounded-2xl border border-[#e6eef5] bg-[#fcfeff] p-3 shadow-sm">
+          <div className="flex w-full flex-col gap-2">
+            <label className="block w-full">
               <span className="sr-only">地元特典を検索</span>
               <input
                 type="search"
-                className="mock-input !h-10"
+                className="mock-input !h-10 w-full min-w-0"
                 placeholder="店名・エリア・カテゴリーで検索"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -109,7 +109,7 @@ export default function PerksPage() {
                 setIsDetailOpen((current) => !current);
                 setCategoryError("");
               }}
-              className="secondary-btn !h-10 w-full sm:w-auto sm:self-start"
+              className="secondary-btn !h-10 w-full max-w-none shrink-0"
             >
               {isDetailOpen ? "条件を閉じる" : "詳細条件"}
             </button>
