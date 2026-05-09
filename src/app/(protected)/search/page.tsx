@@ -868,27 +868,6 @@ export default function SearchPage() {
               </label>
               <label>
                 <span className="label-text">
-                  ママの興味・関心（複数選択）
-                  {filters.momInterests.length > 0 ? ` : ${filters.momInterests.length}件選択中` : ""}
-                </span>
-                <select
-                  className="mock-select"
-                  value={filters.momInterests}
-                  onChange={(e) =>
-                    setFilters((f) => ({ ...f, momInterests: Array.from(e.target.selectedOptions, (opt) => opt.value) }))
-                  }
-                  multiple
-                  size={5}
-                >
-                  {MOM_INTEREST_TAG_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span className="label-text">
                   お子さんの好きなこと（複数選択）
                   {filters.tags.length > 0 ? ` : ${filters.tags.length}件選択中` : ""}
                 </span>
@@ -902,6 +881,27 @@ export default function SearchPage() {
                   size={5}
                 >
                   {TAG_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="label-text">
+                  ママの興味・関心（複数選択）
+                  {filters.momInterests.length > 0 ? ` : ${filters.momInterests.length}件選択中` : ""}
+                </span>
+                <select
+                  className="mock-select"
+                  value={filters.momInterests}
+                  onChange={(e) =>
+                    setFilters((f) => ({ ...f, momInterests: Array.from(e.target.selectedOptions, (opt) => opt.value) }))
+                  }
+                  multiple
+                  size={5}
+                >
+                  {MOM_INTEREST_TAG_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
